@@ -1,0 +1,19 @@
+[
+  { "id": "tough-wick", "name": "Tough Wick", "desc": "+3 max HP", "grants": [{ "stat": "maxHp", "flat": 3 }], "weight": 1 },
+  { "id": "sharp-edges", "name": "Sharp Edges", "desc": "+2 melee damage", "grants": [{ "stat": "meleeDamage", "flat": 2 }], "weight": 1 },
+  { "id": "steady-hands", "name": "Steady Hands", "desc": "+2 ranged damage", "grants": [{ "stat": "rangedDamage", "flat": 2 }], "weight": 1 },
+  { "id": "bright-spark", "name": "Bright Spark", "desc": "+1 magic damage (all schools)", "grants": [
+    { "stat": "fireDamage", "flat": 1 }, { "stat": "lightningDamage", "flat": 1 }, { "stat": "iceDamage", "flat": 1 },
+    { "stat": "poisonDamage", "flat": 1 }, { "stat": "arcaneDamage", "flat": 1 }
+  ], "weight": 1 },
+  { "id": "lucky-nick", "name": "Lucky Nick", "desc": "+4% crit chance", "grants": [{ "stat": "critChance", "flat": 0.04 }], "weight": 1 },
+  { "id": "heavy-swing", "name": "Heavy Swing", "desc": "+15% crit damage", "grants": [{ "stat": "critDamage", "flat": 0.15 }], "weight": 1 },
+  { "id": "thick-tallow", "name": "Thick Tallow", "desc": "+2 armor", "grants": [{ "stat": "armor", "flat": 2 }], "weight": 1 },
+  { "id": "nimble-flame", "name": "Nimble Flame", "desc": "+3% dodge", "grants": [{ "stat": "dodge", "flat": 0.03 }], "weight": 1 },
+  { "id": "quick-feet", "name": "Quick Feet", "desc": "+6% move speed", "grants": [{ "stat": "moveSpeed", "flat": 0.06 }], "weight": 1 },
+  { "id": "long-arms", "name": "Long Arms", "desc": "+10% area", "grants": [{ "stat": "area", "flat": 0.1 }], "weight": 1 },
+  { "id": "greedy-glow", "name": "Greedy Glow", "desc": "+20% pickup radius", "grants": [{ "stat": "pickupRadius", "pct": 0.2 }], "weight": 1 },
+  { "id": "swift-strikes", "name": "Swift Strikes", "desc": "+8% attack speed", "grants": [{ "stat": "cooldownRate", "flat": 0.08 }], "weight": 1 },
+  { "id": "fleet-shots", "name": "Fleet Shots", "desc": "+15% projectile speed", "grants": [{ "stat": "projectileSpeed", "flat": 0.15 }], "weight": 1 },
+  { "id": "warm-heart", "name": "Warm Heart", "desc": "+0.3 HP/s regen", "grants": [{ "stat": "hpRegen", "flat": 0.3 }], "weight": 0.8 }
+]

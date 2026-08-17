@@ -21,6 +21,8 @@ export type DebugApi = {
   snapshot(): unknown;
   /** Current screen name (title, arena, ...). */
   screen(): string;
+  /** Debug-only cheats: 'killAll', 'clearWave', ... (debug mode only). */
+  cheat(action: string): void;
 };
 
 const MAX_ERRORS = 500;
@@ -45,6 +47,7 @@ export type DebugHooks = {
   screen: () => string;
   step: (ticks: number, input: InputFrame) => void;
   setPaused: (paused: boolean) => void;
+  cheat: (action: string) => void;
 };
 
 export function createDebugApi(hooks: DebugHooks, version: string): DebugApi {
@@ -77,6 +80,10 @@ export function createDebugApi(hooks: DebugHooks, version: string): DebugApi {
     },
     snapshot: () => hooks.snapshot(),
     screen: () => hooks.screen(),
+    cheat: (action) => {
+      if (!debug) return;
+      hooks.cheat(action);
+    },
   };
 
   (window as unknown as { __debug: DebugApi }).__debug = api;

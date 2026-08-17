@@ -137,6 +137,16 @@ export const ActWavesSchema = z
   })
   .strict();
 
+export const BoonSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    name: z.string(), // migrates to strings/en.json keys in M4
+    desc: z.string(),
+    grants: z.array(GrantSchema).min(1),
+    weight: z.number().positive().default(1),
+  })
+  .strict();
+
 export const BalanceSchema = z
   .object({
     schemaVersion: z.number(),
@@ -192,4 +202,5 @@ export type BalanceDef = z.infer<typeof BalanceSchema>;
 export type Grant = z.infer<typeof GrantSchema>;
 export type EffectDef = z.infer<typeof EffectSchema>;
 export type WaveDef = z.infer<typeof WaveSchema>;
+export type BoonDef = z.infer<typeof BoonSchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;

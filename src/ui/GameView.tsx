@@ -1,26 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from '@game/shell/engine';
+import { IntermissionOverlay } from './IntermissionOverlay';
 
 type Hud = ReturnType<Engine['hud']>;
+type IntermissionData = ReturnType<Engine['intermission']>;
 
 export function GameView({ seed }: { seed: number }) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const engineRef = useRef<Engine | null>(null);
   const [hud, setHud] = useState<Hud | null>(null);
+  const [intermission, setIntermission] = useState<IntermissionData>(null);
 
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
     const engine = new Engine(seed, 1);
+    engineRef.current = engine;
     let disposed = false;
     void engine.mount(el).catch((err) => {
       if (!disposed) console.error('engine mount failed', err);
     });
     const hudTimer = setInterval(() => {
-      if (!disposed) setHud(engine.hud());
-    }, 250);
+      if (!disposed) {
+        setHud(engine.hud());
+        setIntermission(engine.intermission());
+      }
+    }, 200);
     return () => {
       disposed = true;
       clearInterval(hudTimer);
+      engineRef.current = null;
       engine.dispose();
     };
   }, [seed]);
@@ -49,6 +58,9 @@ export function GameView({ seed }: { seed: number }) {
             {hud.chests > 0 && <> 🧰 {hud.chests}</>}
           </div>
         </div>
+      )}
+      {intermission && engineRef.current && (
+        <IntermissionOverlay data={intermission} engine={engineRef.current} />
       )}
       {hud && (
         <div

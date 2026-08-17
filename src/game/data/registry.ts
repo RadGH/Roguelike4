@@ -6,13 +6,16 @@ import balanceJson from '@data/balance.json';
 import weaponsJson from '@data/items/weapons.json';
 import enemiesAct1Json from '@data/enemies/act1.json';
 import wavesAct1Json from '@data/waves/act1.json';
+import boonsJson from '@data/boons.json';
 import {
   ActWavesSchema,
   BalanceSchema,
+  BoonSchema,
   EnemySchema,
   WeaponSchema,
   type ActWavesDef,
   type BalanceDef,
+  type BoonDef,
   type EnemyDef,
   type WaveDef,
   type WeaponDef,
@@ -48,6 +51,7 @@ export type Registry = {
   weapons: Map<string, WeaponDef>;
   enemies: Map<string, EnemyDef>;
   waves: Map<number, ActWavesDef>; // act → waves
+  boons: Map<string, BoonDef>;
 };
 
 let cached: Registry | null = null;
@@ -60,6 +64,7 @@ export function loadRegistry(): Registry {
     weapons: parseList(WeaponSchema, weaponsJson as unknown[], 'weapons'),
     enemies: parseList(EnemySchema, enemiesAct1Json as unknown[], 'enemies.act1'),
     waves: new Map([[act1Waves.act, act1Waves]]),
+    boons: parseList(BoonSchema, boonsJson as unknown[], 'boons'),
   };
   // Cross-reference checks: every wave entry and splitter child must exist.
   for (const [act, aw] of reg.waves) {

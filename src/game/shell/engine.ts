@@ -35,6 +35,28 @@ export class Engine {
         setPaused: (p: boolean) => {
           this.pausedByDebug = p;
         },
+        cheat: (action: string) => {
+          if (action === 'killAll') {
+            for (const e of [...this.sim.state.enemies]) {
+              this.sim.applyDamageToEnemy(
+                e,
+                { kind: 'spell', types: ['void'], multiplier: 0, flat: [0, 0], noCrit: true },
+                null,
+                {
+                  actor: { kind: 'player', index: 0 },
+                  itemId: 'debug',
+                  grantedBy: 'cheat',
+                  deliveryTag: 'explosion',
+                  hitId: this.sim.tracker.newHitId(),
+                },
+                { rawOverride: 999999, noCrit: true },
+              );
+            }
+          } else if (action === 'stopSpawns') {
+            this.sim.state.spawning.queue.forEach((q) => (q.count = 0));
+            this.sim.state.spawning.done = true;
+          }
+        },
       },
       GAME_VERSION,
     );
@@ -54,10 +76,54 @@ export class Engine {
     this.renderer.app.ticker.add(() => this.frame());
   }
 
-  private waveBreakTimer = 0;
-
   private startWave(n: number): void {
     this.sim.startWaveNumber(n);
+  }
+
+  // ---- intermission (between waves; replaced by full screens in M2) ----
+
+  private intermissionActive = false;
+  private boonChoices: string[] | null = null;
+
+  intermission() {
+    if (!this.intermissionActive) return null;
+    const p = this.sim.state.players[0]!;
+    const items = this.sim.tracker.byPlayerItem.get(0);
+    const damageDealt = items ? [...items.values()].reduce((a, b) => a + b.total, 0) : 0;
+    return {
+      wave: this.sim.state.wave,
+      lastWaveOfAct: !this.sim.hasNextWave(),
+      recap: {
+        kills: this.sim.tracker.killsByPlayer.get(0) ?? 0,
+        damageDealt: Math.round(damageDealt),
+        damageTaken: Math.round(this.sim.tracker.damageTakenByPlayer.get(0) ?? 0),
+        gold: p.gold,
+        level: p.level,
+      },
+      pendingBoons: p.pendingBoons,
+      boonChoices:
+        this.boonChoices?.map((id) => {
+          const b = this.sim.registry.boons.get(id)!;
+          return { id, name: b.name, desc: b.desc };
+        }) ?? null,
+    };
+  }
+
+  chooseBoon(boonId: string): void {
+    if (!this.intermissionActive || !this.boonChoices?.includes(boonId)) return;
+    this.sim.applyBoon(0, boonId);
+    const p = this.sim.state.players[0]!;
+    this.boonChoices = p.pendingBoons > 0 ? this.sim.rollBoonChoices(4) : null;
+  }
+
+  continueToNextWave(): void {
+    if (!this.intermissionActive) return;
+    const p = this.sim.state.players[0]!;
+    if (p.pendingBoons > 0) return; // pick your boons first
+    this.intermissionActive = false;
+    this.boonChoices = null;
+    if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
+    else this.startWave(1); // act loop placeholder until acts 2-4 land
   }
 
   /** Small HUD summary for the React overlay (polled at low frequency). */
@@ -99,15 +165,12 @@ export class Engine {
         this.stepOnce(frames.length ? frames : [neutralInput()]);
         this.accumulator -= TICK_SECONDS;
       }
-      // Wave progression: cleared → short breather → next wave (the real
-      // recap/reward/boon screen flow replaces this breather in M1-C).
-      if (this.sim.state.phase === 'cleared') {
-        this.waveBreakTimer += elapsed;
-        if (this.waveBreakTimer >= 2.5) {
-          this.waveBreakTimer = 0;
-          if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
-          else this.startWave(1); // act loop placeholder until acts 2-4 land
-        }
+      // Wave cleared → open the intermission (recap + boon picks). The sim keeps
+      // running so players can stroll and vacuum leftover pickups.
+      if (this.sim.state.phase === 'cleared' && !this.intermissionActive) {
+        this.intermissionActive = true;
+        const p = this.sim.state.players[0]!;
+        this.boonChoices = p.pendingBoons > 0 ? this.sim.rollBoonChoices(4) : null;
       }
     }
     const alpha = this.pausedByDebug ? 1 : this.accumulator / TICK_SECONDS;

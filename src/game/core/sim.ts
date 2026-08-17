@@ -45,6 +45,7 @@ export type PlayerState = {
   level: number;
   pendingBoons: number;
   pendingChests: number;
+  boonIds: string[];
   dashTimer: number;
   dashCooldown: number;
   iframeTimer: number;
@@ -204,6 +205,7 @@ export class Sim {
       level: 1,
       pendingBoons: 0,
       pendingChests: 0,
+      boonIds: [],
       dashTimer: 0,
       dashCooldown: 0,
       iframeTimer: 0,
@@ -213,6 +215,57 @@ export class Sim {
       moving: false,
       contactHitCooldown: 0,
     };
+  }
+
+  // ---- boons ----
+
+  /** Rebuild a player's stat sheet from base + weapons + boons. Never mutate incrementally. */
+  recomputeStats(p: PlayerState): void {
+    const bal = this.registry.balance;
+    const prevMax = stat(p.stats, 'maxHp');
+    const grantSets = [
+      ...p.weapons.map((w) => getWeapon(this.registry, w.itemId).grants),
+      ...p.boonIds.map((id) => {
+        const b = this.registry.boons.get(id);
+        if (!b) throw new Error(`Unknown boon "${id}"`);
+        return b.grants;
+      }),
+    ];
+    p.stats = buildStats(bal.player.baseStats as StatSheet, grantSets);
+    p.defense = defenseFromStats(p.stats);
+    const newMax = stat(p.stats, 'maxHp');
+    if (newMax > prevMax) p.hp += newMax - prevMax; // max HP gains heal the delta
+    p.hp = Math.min(p.hp, newMax);
+  }
+
+  /** Weighted 1-of-N boon choices (no duplicates within one offer). */
+  rollBoonChoices(count = 4): string[] {
+    const pool = [...this.registry.boons.values()];
+    const out: string[] = [];
+    for (let i = 0; i < count && pool.length > 0; i++) {
+      const totalWeight = pool.reduce((a, b) => a + b.weight, 0);
+      let roll = this.rng.drops.next() * totalWeight;
+      let picked = pool.length - 1;
+      for (let j = 0; j < pool.length; j++) {
+        roll -= pool[j]!.weight;
+        if (roll <= 0) {
+          picked = j;
+          break;
+        }
+      }
+      out.push(pool[picked]!.id);
+      pool.splice(picked, 1);
+    }
+    return out;
+  }
+
+  applyBoon(playerIndex: number, boonId: string): void {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    if (!this.registry.boons.has(boonId)) throw new Error(`Unknown boon "${boonId}"`);
+    p.boonIds.push(boonId);
+    if (p.pendingBoons > 0) p.pendingBoons--;
+    this.recomputeStats(p);
   }
 
   // ---- wave control ----
@@ -331,6 +384,8 @@ export class Sim {
     if (p.dashCooldown > 0) p.dashCooldown = Math.max(0, p.dashCooldown - dt);
     if (p.iframeTimer > 0) p.iframeTimer = Math.max(0, p.iframeTimer - dt);
     if (p.contactHitCooldown > 0) p.contactHitCooldown = Math.max(0, p.contactHitCooldown - dt);
+    const regen = stat(p.stats, 'hpRegen');
+    if (regen > 0) p.hp = Math.min(stat(p.stats, 'maxHp'), p.hp + regen * dt);
 
     let mx = input.moveX;
     let my = input.moveY;
