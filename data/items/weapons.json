@@ -1,0 +1,53 @@
+[
+  {
+    "id": "shortsword",
+    "category": "weapon",
+    "tags": ["melee1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["melee"], "multiplier": 1.0, "flat": [2, 4] },
+    "delivery": { "type": "meleeArc", "reach": 2.2, "arcDeg": 126, "cooldown": 0.35 },
+    "grants": [{ "stat": "meleeDamage", "flat": 3 }],
+    "rarity": "common"
+  },
+  {
+    "id": "sling",
+    "category": "weapon",
+    "tags": ["ranged1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["ranged"], "multiplier": 0.8, "flat": [1, 3] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 13,
+      "radius": 0.22,
+      "range": 12,
+      "cooldown": 0.55
+    },
+    "grants": [{ "stat": "rangedDamage", "flat": 2 }],
+    "rarity": "common"
+  },
+  {
+    "id": "wand",
+    "category": "weapon",
+    "tags": ["spell", "magical"],
+    "hands": 1,
+    "kind": "spell",
+    "damage": { "types": ["fire"], "multiplier": 0.75, "flat": [1, 3] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 11,
+      "radius": 0.25,
+      "range": 13,
+      "cooldown": 0.5
+    },
+    "grants": [
+      { "stat": "fireDamage", "flat": 3 },
+      { "stat": "lightningDamage", "flat": 3 },
+      { "stat": "iceDamage", "flat": 3 },
+      { "stat": "poisonDamage", "flat": 3 },
+      { "stat": "arcaneDamage", "flat": 3 }
+    ],
+    "rarity": "common"
+  }
+]

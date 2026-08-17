@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Thistle Archer: a prickly purple thistle with a tiny bow -->
+  <ellipse cx="32" cy="58" rx="12" ry="3.5" fill="#00000022"/>
+  <path d="M30 40 q2 12 0 17 h4 q-2 -5 0 -17 z" fill="#5f9e4a"/>
+  <path d="M32 8 l4 8 l8 -4 l-3 9 l9 2 l-8 5 l6 7 l-10 -1 l1 10 l-7 -7 l-7 7 l1 -10 l-10 1 l6 -7 l-8 -5 l9 -2 l-3 -9 l8 4 z" fill="#a06fd4"/>
+  <circle cx="32" cy="30" r="9" fill="#b88ae0"/>
+  <circle cx="29" cy="29" r="2" fill="#3d2b55"/>
+  <circle cx="36" cy="29" r="2" fill="#3d2b55"/>
+  <path d="M29 35 q3 2 6 0" stroke="#3d2b55" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M46 26 q8 6 0 16" stroke="#7a5c3e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M46 26 l0 16" stroke="#e8e0d0" stroke-width="1"/>
+</svg>

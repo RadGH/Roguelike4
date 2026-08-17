@@ -48,9 +48,38 @@ export class Engine {
     this.renderer.buildArena(this.sim.state.arena.width, this.sim.state.arena.height);
     this.input.attach(el);
     this.input.playerScreenPos = (i) => this.renderer.playerScreenPos(i, this.currSnap);
+    this.startWave(1);
     this.running = true;
     this.lastTime = performance.now();
     this.renderer.app.ticker.add(() => this.frame());
+  }
+
+  /** Sandbox wave scripts until data-driven wave files land (M1-B). */
+  private startWave(n: number): void {
+    this.sim.state.wave = n;
+    const base = 4 + n * 2;
+    const entries = [
+      { defId: 'snuffling', count: base, atSecond: 0 },
+      { defId: 'puffball', count: Math.floor(base / 2), atSecond: 6 },
+    ];
+    if (n >= 2) entries.push({ defId: 'thistle-archer', count: Math.floor(n * 1.5), atSecond: 10 });
+    this.sim.startWave(entries);
+  }
+
+  /** Small HUD summary for the React overlay (polled at low frequency). */
+  hud() {
+    const p = this.sim.state.players[0]!;
+    return {
+      hp: Math.ceil(p.hp),
+      maxHp: Math.ceil(p.stats.maxHp ?? 10),
+      gold: p.gold,
+      xp: p.xp,
+      wave: this.sim.state.wave,
+      enemies: this.sim.aliveEnemyCount(),
+      combo: this.sim.state.combo.count,
+      alive: p.alive,
+      kills: this.sim.tracker.killsByPlayer.get(0) ?? 0,
+    };
   }
 
   private stepOnce(inputs: readonly InputFrame[]): void {
@@ -72,6 +101,10 @@ export class Engine {
         const frames = this.input.sample(this.sim.state.players.length);
         this.stepOnce(frames.length ? frames : [neutralInput()]);
         this.accumulator -= TICK_SECONDS;
+      }
+      // Sandbox wave progression: cleared → next wave
+      if (this.sim.state.spawning.done && this.sim.aliveEnemyCount() === 0) {
+        this.startWave(this.sim.state.wave + 1);
       }
     }
     const alpha = this.pausedByDebug ? 1 : this.accumulator / TICK_SECONDS;

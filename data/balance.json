@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "player": {
+    "baseStats": {
+      "maxHp": 10,
+      "critDamage": 0.5,
+      "pickupRadius": 1.5
+    },
+    "moveUnitsPerSec": 6.8,
+    "dashSpeed": 18.75,
+    "dashDuration": 0.18,
+    "dashIframes": 0.15,
+    "dashCooldown": 0.9,
+    "radius": 0.55,
+    "critBase": 0.5
+  },
+  "defense": {
+    "armorKneeBase": 25,
+    "armorKneePerWave": 5,
+    "armorCap": 0.85,
+    "dodgeCap": 0.6,
+    "resistCap": 0.75
+  },
+  "combo": {
+    "decaySeconds": 3,
+    "xpPerStack": 0.05,
+    "maxMult": 3
+  },
+  "drops": {
+    "pickupBaseRadius": 1.5,
+    "goldValue": 1,
+    "xpValue": 1
+  }
+}
