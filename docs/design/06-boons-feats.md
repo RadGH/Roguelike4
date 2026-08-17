@@ -7,8 +7,9 @@ and every-3-levels "perk that acts like an item".]
 
 ## Boons — every level
 
-- On each level gained, the player picks **1 of 4** random boons (a rare item —
-  Lucky Ribbon — makes it 5; Oracle class also gets 5).
+- On each level gained, the player picks **1 of 4** random boons. The Lucky Ribbon
+  item makes boon picks 1 of 5; the Jester always sees 5 but one is a joke. (Oracle's
+  Foresight affects choice CHESTS, not boons.)
 - Boons are small, stackable, immediate: +2 max HP, +1 melee, +4% crit, +8% area,
   +5% move speed, +1 armor, +3% dodge (cap-aware), +1 fire damage, +10% burn duration,
   +5% pickup radius, +1 HP/s regen while stationary, etc.
@@ -22,8 +23,8 @@ and every-3-levels "perk that acts like an item".]
   it cannot be dropped or salvaged, and acts exactly like a passive item for stats,
   triggers, and combat tracking attribution.
 - Choice of **1 of 4** from the unlocked feat pool; class-tagged feats are weighted up
-  for matching classes; some feats are fully generic.
-- Jester's cadence perk example: feats every 2 levels, but one option is always a joke.
+  for matching classes; some feats are fully generic. (Classes may modify the cadence
+  via data — none of the launch 24 do; the knob exists for future classes.)
 - Target pool: 40+ feats (`data/feats.json`). Feats carry the wild special effects:
 
 | Feat | Effect |

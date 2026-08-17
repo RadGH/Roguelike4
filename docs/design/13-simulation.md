@@ -15,9 +15,12 @@ thousands of runs batched for balance sweeps).
   distributions (a Charger reaches melee more often than a Shooter; player mobility
   stat shifts the distribution). Attack uptimes, AoE overlap counts (how many enemies
   a Meteor typically clips at a given density), and hit/dodge rolls come from these
-  distributions. Distributions live in `data/sim-profiles.json` and are calibrated
-  against instrumented REAL play sessions (the tracker makes real and simulated runs
-  directly comparable — same event stream, same meters).
+  distributions. Distributions live in `data/sim-profiles.json`. **Honesty clause: v0 profiles are
+  hand-authored estimates** — real calibration requires instrumented play sessions that
+  don't exist until the game does. A calibration milestone (record N real sessions,
+  diff sim-vs-real meters on the same event stream, adjust profiles) gates before sim
+  results are trusted for balance sign-off; until then sim gates are smoke tests, not
+  truth.
 - **Decision policies:** pluggable per-player bots choose rewards/boons/feats/tinkering:
   `random`, `greedy-dps`, `survival-first`, `build-script` (follows a target build,
   e.g. the frostfire dream build — used to verify reachability), `human-trace`
@@ -38,7 +41,8 @@ thousands of runs batched for balance sweeps).
 - Class guardrails: every class ≥60% Act 1 solo clear (novelty ≥40%) at launch tuning.
 - Dream-build reachability: build-script bots must assemble each dream build by wave
   20 in ≥50% of seeded attempts.
-- Regression: balance-affecting PRs run a 500-run sweep; deltas beyond thresholds
-  flag for review.
-- In-game surface (dev/curiosity screen at Chronicler Soot, hidden behind a toggle):
-  "Simulate this build ×100" for the player's current character.
+- Unlock-graph reachability (the day-one audit's probabilistic double-check) and
+  rarity monotonicity (higher rarity never strictly worse).
+- Regression: balance-affecting changes run a 500-run sweep; deltas beyond thresholds
+  flag for review. Milestone snapshot dirs enable A/B diffs over time.
+- In-game surface only in debug mode (`?debug=1`): "Simulate this build ×100".

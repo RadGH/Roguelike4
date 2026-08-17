@@ -30,7 +30,10 @@ Key attribution rules:
   credits Fireball and notes the perk). 
 - Mitigation events credit the DEFENSIVE source: a dodge granted by an avoidance-perk
   item logs that item, so "how many times did Lucky Slippers save me" is answerable.
+- **Enemy-side mitigation is logged too** — "how much damage did Pillowman's armor
+  absorb" must be answerable, or offensive tuning goes blind (predecessor lesson).
 - Reflected/triggered damage chains keep both links (trigger source + original).
+- Attribution keys are STRUCTURED IDs, never display strings (predecessor lesson).
 
 ## Aggregation & UI
 
@@ -48,8 +51,11 @@ Key attribution rules:
 
 ## Persistence
 
-Run history stores per-run aggregate trees + final build snapshots (not raw events;
-export raw log of the LAST run as JSON for nerds/debugging via settings toggle).
+Run history stores per-run aggregate trees + final build snapshots in IndexedDB,
+capped at 50 runs + pinned favorites (oldest unpinned evicted). Raw events are not
+retained by default; when the settings toggle "export combat log" is ON, events stream
+to an append buffer for the whole run (memory-bounded with a visible warning) and can
+be downloaded as JSON at run end. Toggle off = only the current act's ring log exists.
 
 ## Performance
 

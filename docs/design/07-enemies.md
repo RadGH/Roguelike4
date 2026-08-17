@@ -32,7 +32,8 @@ Imp (shooter, slowing shots), Yodeler (summoner via echo), Frostbitten Knight
 (stomper), Chatterjaw (skitterer), Draft Ghast (debuffer: chills your attack speed).
 
 **Act 4 — The Snuffed Palace:** Pillowman (big chaser, absorbs first N hits),
-Night-Light Snatcher (steals gold on touch — killing it refunds double), Velvet
+Night-Light Snatcher (steals gold from the player it touches — killing it refunds
+double *to that player*; personal, not mirrored), Velvet
 Archer (shooter, void bolts), Duvet Golem (stomper), Candle-Snuffer (anti-pet
 specialist), Hush (silences an area: no spell weapons inside).
 
@@ -41,9 +42,9 @@ specialist), Hush (silences an area: no spell weapons inside).
 - Per-wave scaling curve on HP/damage/speed/count (`data/balance.json`), plus act
   multipliers, plus post-act-completion "stirred" variants (first act completion
   upgrades that act's pool with harder versions + new attacks).
-- **Size rolls:** Enlarged (+HP, −speed... no wait: brief says size affects speed and
-  max HP: Enlarged = +HP +size +speed-slightly-slower; Reduced = fast, tiny, VERY rare
-  because it's annoying to aim at).
+- **Size rolls:** Enlarged — +60% max HP, −15% move speed, +40% size. Reduced — −40%
+  max HP, +30% move speed, −40% size; VERY rare (annoying to aim at, by design a
+  novelty spice, never more than one group per wave).
 - **Resistances:** any enemy may roll 1–2 typed 50% absorbs (icons shown). Void ignores.
 - **Elites:** named tint + modifier(s): Shielded, Hasty, Vampiric, Stormy (retaliate
   sparks), Anchored (immune to knockback), Gilded (double gold). Reduced stun/freeze

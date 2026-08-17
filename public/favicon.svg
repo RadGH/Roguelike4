@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- A cheerful candle flame — placeholder mark until the real logo lands -->
+  <circle cx="32" cy="34" r="28" fill="#2b2140"/>
+  <path d="M32 12 C40 22 46 28 46 38 a14 14 0 0 1 -28 0 C18 28 24 22 32 12 Z" fill="#ffb347"/>
+  <path d="M32 22 C37 28 41 32 41 39 a9 9 0 0 1 -18 0 C23 32 27 28 32 22 Z" fill="#ffd97a"/>
+  <circle cx="32" cy="40" r="5" fill="#fff3c4"/>
+</svg>

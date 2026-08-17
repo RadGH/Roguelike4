@@ -48,8 +48,9 @@ with stats/flavor/progress bars, completion %. Responsive: same grid collapse.
 
 ### 11. Run history & meters (Chronicler Soot) — shared
 Run list (date, party, classes, result, wave reached) → run detail: recap table +
-full meter drill-down (see `12-tracking.md#aggregation--ui`) + build snapshots per
-player. Dev-toggle: "simulate this build ×100". Responsive: meter tables become
+full meter drill-down (see `12-tracking.md`) + build snapshots per player.
+"Simulate this build ×100" appears only in debug mode (`?debug=1`) — dev surfaces
+never ship in the default UI (predecessor lesson). Responsive: meter tables become
 stacked bars + tap-to-expand rows on narrow screens; this screen is the stress test
 for table responsiveness.
 
@@ -63,14 +64,19 @@ Hot-join here adds a panel live. Quarter-screen rule fully applies.
 
 ### 13. Arena HUD — shared overlay
 Per-player corner clusters (HP bar, level, dash pips, class ability cooldown, gold);
-wave number + spawn progress ticker top-center; boss bar with phase notches when
-active; unlock toasts; pickup sparkles. Party wipes → run-end transition. Colorblind-
+wave number + spawn progress ticker top-center; combo-streak counter with shout tiers
+(see 03-combat); boss bar with phase notches when active; unlock toasts; pickup
+sparkles. **Boss intro cinematic** on boss spawn: brief overlay dim → boss name
+scale-punch + subtitle → 1.3s hold → fade to the persistent boss bar (cheap, effective,
+skip-safe — players keep control). Party wipes → run-end transition. Colorblind-
 safe player outline colors. Responsive: clusters shrink; on solo mobile, HUD anchors
 re-inset for safe areas.
 
 ### 14. Pause — shared (any player, whole screen, gameplay frozen)
 Resume, Settings, Codex (read-only), Meters (current run), Drop out (per player),
 Abandon run (all players confirm), Quit to town. Shows controller assignments.
+Pause is available during personal screens too: it overlays them, all panel choices
+are preserved, unpause returns everyone exactly where they were.
 
 ### 15. Wave recap — shared
 Party table: kills, damage dealt/taken, healing, deaths/survived, gold this wave;
@@ -80,12 +86,16 @@ cards on narrow.
 
 ### 16. Rewards — PERSONAL panels
 Each player's chest queue from round-robin: open exact chests (reveal → equip/
-salvage) and choice chests (4 cards, 5 with Oracle/Lucky Ribbon → pick → equip/
-salvage). Equipping over full hands prompts what to swap (salvage the loser).
-Tinkering tab: spend Bits to upgrade quality of equipped items; gold peddler tab
-when the wandering peddler visits. Ready check per player; a shared "next wave in
-3-2-1" only once all ready. Quarter-screen: cards become a swipeable/focus-cycled
-stack; all info visible without hover.
+satchel/salvage) and choice chests (4 cards; 5 with Oracle's Foresight, which also
+previews contents → pick → equip/satchel/salvage). Every item card shows the
+**three-panel diff tooltip**: the new item, the currently equipped competitor, and a
+green/red stat-delta column — an equip decision never requires memory. Equipping over
+full hand points prompts what to displace (displaced item → satchel). Satchel tab:
+per-player run storage; equip or salvage anything from earlier waves. Tinkering tab:
+spend Bits to upgrade quality tiers. Peddler tab on visit waves (gold purchases;
+reroll offers for gold). Ready check per player; a shared "next wave in 3-2-1" only
+once all ready. Quarter-screen: cards become a focus-cycled stack; all info visible
+without hover, couch text minimums apply.
 
 ### 17. Level-up: boons — PERSONAL panels (queued per level gained)
 1-of-4 boon cards (5 with Lucky Ribbon/Oracle) per level gained this wave, resolved
@@ -110,7 +120,12 @@ Auto-pause + reconnect instructions; reassign device to player.
 ### 21. NPC rescue event — in-arena diegetic prompt
 Caged NPC + guard burst; freed → thank-you bubble + toast "New face in town!".
 
-### 22. First-run tutorial — diegetic, minimal
+### 22. Debug quick start — `?debug=1` only
+Skips title/slots: class picker, level, act/wave, item grants, instant arena. Plus
+`window` debug helpers + ring-buffer error log for Playwright-driven testing (spec in
+`16-engine.md`). Never reachable in normal builds' UI.
+
+### 23. First-run tutorial — diegetic, minimal
 Wave 0.5 walk-in: move/aim/dash prompts fade after first use; interact prompt at
 first chest. No modal tutorial walls. Replayable from settings.
 

@@ -4,6 +4,10 @@ The foundation for the game. Read in order for the full picture; each doc stands
 alone for its system. Bracketed [DECISION]/[INTERPRETATION] notes mark judgment
 calls made during design that the user hasn't explicitly confirmed.
 
+Revision 2 (2026-08-17): all 16 docs revised after an adversarial design review
+(56 findings — starting loadouts, day-one unlock audit, shield/off-hand model,
+rarity mechanics, determinism spec, staged milestones, and ~40 more fixes).
+
 | Doc | Covers |
 |-----|--------|
 | [00-vision.md](00-vision.md) | Pillars, scope, tech stack, non-goals |
@@ -22,3 +26,5 @@ calls made during design that the user hasn't explicitly confirmed.
 | [13-simulation.md](13-simulation.md) | Headless run simulator, balance gates |
 | [14-data-schemas.md](14-data-schemas.md) | JSON layout, validation, modding |
 | [15-website.md](15-website.md) | The site manual generated from game data |
+| [16-engine.md](16-engine.md) | One combat core, determinism, perf budgets, art pipeline, debug harness |
+| [17-milestones.md](17-milestones.md) | Build order — visible staging, no silent shelving |

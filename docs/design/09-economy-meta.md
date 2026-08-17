@@ -4,9 +4,9 @@
 
 | Currency | Scope | Sources | Sinks |
 |----------|-------|---------|-------|
-| **Gold** | run-only, mirrored to all players | kills, chests, gilded elites | [DECISION: in-run gold sinks — wandering peddler chests between waves + reroll fees on reward screens — gold must have a purpose since it doesn't carry over] |
-| **Bits** | run-only, per player | salvaging items | Tinkering (quality upgrades), reward rerolls |
-| **Glimmers** | PERSISTENT (account/save slot) | boss kills, act completions, gem chests, deeds | town shops: unlock classes/items/feats, town upgrades, starting-stat upgrades |
+| **Gold** | run-only, mirrored to all non-retired players (incl. snuffed) | kills, chests, gilded elites | Wandering Peddler purchases; reward-screen reroll fees. (Gold sinks are gold-only.) |
+| **Bits** | run-only, per player | salvaging items | Tinkering (quality upgrades) ONLY |
+| **Glimmers** | PERSISTENT (per save slot) | boss kills, act completions, gem chests, first-time deed bonuses (select deeds award 1–5 Glimmers) | town shops: unlock classes/items/feats, town upgrades, starting-stat upgrades |
 | **Emberkeys** | persistent, one per act | first completion of each act | relight Beacon Pillars (act unlocks; the ceremony animation) |
 
 ## Town shops (all prices in Glimmers; all inventories data-driven)
@@ -22,10 +22,23 @@
   quality weapon of choice, Bellhop act-start packages, cosmetic town growth
   (each upgrade visibly builds the town — banners, lamps, gardens).
 
+## Glimmer budget (launch targets — tunable in balance.json, gated by sim economy sweep)
+
+| Source | Glimmers |
+|--------|----------|
+| Failed Act 1 run (typical) | 3–6 |
+| First clear of an act (Emberkey run) | 15 + boss drops |
+| Repeat act clear | 8–12 per act reached |
+| First-time deed bonuses (total across all deeds) | ~120 |
+| **Total sink cost** (all classes + item lines + feats + town upgrades) | **~600** |
+| Target: full town from zero | 15–20 runs of improving quality |
+
 ## Starting-stat upgrade track (Mayor)
 
 Small, capped, visible: +1 max HP ×10, +1 base damage (choose stat) ×5, +5% pickup
 radius ×4, +1 starting boon pick ×1. Caps keep runs skill-forward, town assists.
+(The Mayor's "starting weapon of choice" upgrade lets you PICK your starting weapon
+from unlocked items — every class already starts armed by default; see 04-classes.)
 
 ## Discoverable NPCs
 
@@ -47,7 +60,11 @@ one notch (town scene has 5 lighting states: 0–4 keys + post-win Everflame bla
 
 ## Save slots & profile
 
-- A save slot = one town + unlock state + run history + settings-independent profile.
+- A save slot = one town + unlock state + run history + profile. (Terminology:
+  "save slot" everywhere — there is no account. The couch shares a slot's unlocks.)
 - 3+ slots, export/import as JSON file (versioned, forward-migratable).
-- Deeds/unlock progress tracked account-wide per slot (e.g. "burn kills: 73/100"
-  visible in codex).
+- Deed/unlock progress tracked per slot (e.g. "burn kills: 73/100" visible in codex).
+- Run history is capped (50 runs + pinned favorites) and lives in IndexedDB; unlocks
+  and settings live in localStorage, all keys namespaced by the branding slug.
+- **Domain-move caveat**: browser saves are per-origin. A future move to a custom
+  domain requires export/import — the release notes must prompt users to export first.

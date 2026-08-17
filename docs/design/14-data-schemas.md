@@ -41,6 +41,16 @@ data/
   the same validation, from a local folder or pasted text).
 - **Balance-sweepable:** all tunables in `balance.json` or entity-local numbers;
   the sim can override any numeric leaf via patch files for tuning experiments.
+- **Strings:** entity JSON stores string KEYS (`item.fireball.name`); display text and
+  flavor live in `strings/en.json`. Nothing player-facing is inline in entity data.
+
+## Balance hygiene (policy, from predecessor scar tissue)
+
+- Every tunable change records a `note` (why) next to the value.
+- Balance snapshots are archived per milestone for A/B diffing; sweep results are
+  never aggregated across versions.
+- Tune per-entity curves, not global multipliers — a global knob that has been
+  changed three times is a design smell, not a fix.
 
 ## Mod support (v1: quiet but real)
 

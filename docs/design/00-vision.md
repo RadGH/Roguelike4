@@ -1,7 +1,8 @@
 # Vision & Pillars
 
-> Internal design doc. The game's display title is set in ONE place in code
-> (`src/game/branding.ts`). Docs refer to it as "the game" where possible.
+> Internal design doc. The game's display title lives in ONE place:
+> `data/branding.json` (code reads it via a typed accessor — the string itself exists
+> nowhere else). Docs refer to it as "the game" where possible.
 
 ## What the game is
 
@@ -20,8 +21,8 @@ when not aiming). Keyboard + mouse fully supported for player 1.
 1. **Co-op native.** One camera zooms to fit all players. Loot is dealt round-robin;
    gold is mirrored to every player. Every per-player screen works at quarter-screen size.
 2. **Builds are the game.** Classes are frameworks; items, perks, and feats combine into
-   absurd, discoverable machines. Every "dream build" in `docs/design/05-items.md#build-enablers`
-   must be reachable and fun.
+   absurd, discoverable machines. Every "dream build" in `05-items.md` ("Build-enabler
+   map" section) must be reachable and fun.
 3. **Everything is data.** Classes, items, perks, enemies, waves, unlocks, lore text —
    all JSON with strict schemas. Adding content or modding never requires engine changes.
 4. **Track everything.** Every point of damage, healing, and mitigation is an attributed
@@ -47,12 +48,20 @@ when not aiming). Keyboard + mouse fully supported for player 1.
 ## Tech
 
 - Vite + React + TypeScript; PixiJS (WebGL) renders the arena; React renders all menus/screens
-- SVG art (authored in-repo, rasterized to textures at load); "squish" locomotion animation
-- Procedural Web Audio for SFX/music
+- Fixed-tick deterministic simulation with seeded RNG streams (`16-engine.md`) —
+  this is what makes sim parity, replay, and future netcode possible
+- SVG art (authored in-repo, rasterized to texture atlases at fixed scales — pipeline
+  in `16-engine.md`); "squish" locomotion animation
+- Procedural Web Audio for SFX; music is staged (simple generative loops first,
+  real composition later — see `17-milestones.md`)
+- Touch gameplay for solo mobile: floating dual-stick scheme specced in `02-coop-controls.md`
 - Gamepad API (4 pads) + keyboard/mouse; hot-join
 - GitHub Pages hosting; no backend. Online co-op is out of scope for v1 but the
   game loop keeps deterministic, input-driven state transitions so netcode can be added later.
 - UI components sync to Claude Design for design iteration (`.design-sync/`)
+
+Build order is explicitly staged in `17-milestones.md` — anything that slips a
+milestone is visibly re-staged there, never silently dropped.
 
 ## Non-goals (v1)
 

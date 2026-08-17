@@ -41,8 +41,12 @@ No wave timer — pace is the player's, pressure is the script's.
 - Endless runs go past wave 40 as if an Act 5 existed (there isn't — the game
   invents escalating remix waves: all-act enemy pools, stacked elite modifiers,
   +8% enemy stats per wave compounding, extra simultaneous scripts past wave 50).
+- Every 10th endless wave (50, 60, …) a "stirred" version of a story boss returns
+  with stacked elite modifiers.
 - Glimmers do NOT drop in endless (no town-farming incentive) — endless is for
   glory: deepest wave reached is recorded per class and party size in run history.
+- Deed counters DO progress in endless (it's the natural farm for kill-count deeds).
+  NPC rescue events do not appear (they belong to the story acts).
 - Death is the only exit; recap celebrates the final wave count.
 
 ## Failure & retirement
