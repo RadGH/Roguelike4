@@ -36,9 +36,13 @@ export type RenderSnapshot = {
     radius: number;
     hpFrac: number;
     hitFlash: boolean;
+    elite: boolean;
+    frozen: boolean;
+    stunned: boolean;
+    telegraphing: boolean;
   }[];
   projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
-  pickups: { x: number; y: number; kind: 'gold' | 'xp' }[];
+  pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' }[];
 };
 
 export function takeSnapshot(sim: Sim): RenderSnapshot {
@@ -63,8 +67,12 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
           x: e.x,
           y: e.y,
           radius: def?.radius ?? 0.4,
-          hpFrac: Math.max(0, e.hp) / Math.max(1, def?.maxHp ?? 1),
+          hpFrac: Math.max(0, e.hp) / Math.max(1, e.maxHp),
           hitFlash: e.hitFlash > 0,
+          elite: e.elite,
+          frozen: e.status.freezeLeft > 0,
+          stunned: e.status.stunLeft > 0,
+          telegraphing: e.charge.phase === 'windup',
         };
       }),
     projectiles: sim.state.projectiles
@@ -163,6 +171,11 @@ export class GameRenderer {
 
   private drawHpBar(v: SpriteVisual, frac: number, widthPx: number): void {
     v.hpBar.clear();
+    this.drawHpBarKeep(v, frac, widthPx);
+  }
+
+  /** Draw without clearing (caller may have drawn a ring first). */
+  private drawHpBarKeep(v: SpriteVisual, frac: number, widthPx: number): void {
     if (frac >= 1 || frac <= 0) return;
     v.hpBar
       .rect(-widthPx / 2, 0, widthPx, 4)
@@ -219,8 +232,23 @@ export class GameRenderer {
       }
       const p0 = prev.enemies.find((pe) => pe.instance === e.instance) ?? e;
       v.root.position.set(lerp(p0.x, e.x) * PX_PER_UNIT, lerp(p0.y, e.y) * PX_PER_UNIT);
-      v.sprite.tint = e.hitFlash ? 0xffb3b3 : 0xffffff;
-      this.drawHpBar(v, e.hpFrac, 30);
+      v.sprite.tint = e.telegraphing
+        ? 0xff8080
+        : e.hitFlash
+          ? 0xffb3b3
+          : e.frozen
+            ? 0x9be8ff
+            : e.stunned
+              ? 0xfff2a0
+              : 0xffffff;
+      // Elite: golden ring under the sprite
+      v.hpBar.clear();
+      if (e.elite) {
+        v.hpBar
+          .ellipse(0, e.radius * PX_PER_UNIT * 0.8, e.radius * PX_PER_UNIT * 1.2, e.radius * PX_PER_UNIT * 0.45)
+          .stroke({ color: 0xffd97a, width: 3 });
+      }
+      this.drawHpBarKeep(v, e.hpFrac, 30);
     }
     for (const [instance, v] of this.enemyVisuals) {
       if (!seen.has(instance)) {
@@ -246,8 +274,15 @@ export class GameRenderer {
       const y = pk.y * PX_PER_UNIT;
       if (pk.kind === 'gold') {
         this.pickupGfx.circle(x, y, 5).fill({ color: 0xffd97a }).stroke({ color: 0xc89020, width: 1.5 });
-      } else {
+      } else if (pk.kind === 'xp') {
         this.pickupGfx.star(x, y, 4, 5, 2).fill({ color: 0x9be8ff });
+      } else {
+        // chest: little golden box with a lid line
+        this.pickupGfx
+          .roundRect(x - 7, y - 6, 14, 12, 2)
+          .fill({ color: 0xc98f3d })
+          .stroke({ color: 0x8a5a20, width: 2 });
+        this.pickupGfx.moveTo(x - 7, y - 1).lineTo(x + 7, y - 1).stroke({ color: 0x8a5a20, width: 1.5 });
       }
     }
 

@@ -26,6 +26,21 @@
     "xpPerStack": 0.05,
     "maxMult": 3
   },
+  "leveling": {
+    "base": 10,
+    "perLevel": 6
+  },
+  "waves": {
+    "hpGrowthPerWave": 0.1,
+    "dmgGrowthPerWave": 0.08,
+    "elite": {
+      "hpMult": 1.5,
+      "dmgMult": 1.4,
+      "speedMult": 1.1,
+      "xpMult": 1.5,
+      "chestChance": 0.5
+    }
+  },
   "drops": {
     "pickupBaseRadius": 1.5,
     "goldValue": 1,

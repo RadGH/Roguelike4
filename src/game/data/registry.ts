@@ -5,12 +5,16 @@ import { z } from 'zod';
 import balanceJson from '@data/balance.json';
 import weaponsJson from '@data/items/weapons.json';
 import enemiesAct1Json from '@data/enemies/act1.json';
+import wavesAct1Json from '@data/waves/act1.json';
 import {
+  ActWavesSchema,
   BalanceSchema,
   EnemySchema,
   WeaponSchema,
+  type ActWavesDef,
   type BalanceDef,
   type EnemyDef,
+  type WaveDef,
   type WeaponDef,
 } from './schemas';
 
@@ -43,19 +47,48 @@ export type Registry = {
   balance: BalanceDef;
   weapons: Map<string, WeaponDef>;
   enemies: Map<string, EnemyDef>;
+  waves: Map<number, ActWavesDef>; // act → waves
 };
 
 let cached: Registry | null = null;
 
 export function loadRegistry(): Registry {
   if (cached) return cached;
+  const act1Waves = parse(ActWavesSchema, wavesAct1Json, 'waves.act1');
   const reg: Registry = {
     balance: parse(BalanceSchema, balanceJson, 'balance'),
     weapons: parseList(WeaponSchema, weaponsJson as unknown[], 'weapons'),
     enemies: parseList(EnemySchema, enemiesAct1Json as unknown[], 'enemies.act1'),
+    waves: new Map([[act1Waves.act, act1Waves]]),
   };
+  // Cross-reference checks: every wave entry and splitter child must exist.
+  for (const [act, aw] of reg.waves) {
+    for (const w of aw.waves) {
+      for (const e of w.entries) {
+        if (!reg.enemies.has(e.defId))
+          throw new Error(`waves.act${act} wave ${w.wave}: unknown enemy "${e.defId}"`);
+      }
+    }
+  }
+  for (const [id, e] of reg.enemies) {
+    if (e.splitInto && !reg.enemies.has(e.splitInto))
+      throw new Error(`enemy "${id}": splitInto references unknown enemy "${e.splitInto}"`);
+  }
   cached = reg;
   return reg;
+}
+
+export function getWave(reg: Registry, act: number, wave: number): WaveDef {
+  const aw = reg.waves.get(act);
+  const w = aw?.waves.find((x) => x.wave === wave);
+  if (!w) throw new Error(`No wave data for act ${act} wave ${wave}`);
+  return w;
+}
+
+export function maxWave(reg: Registry, act: number): number {
+  const aw = reg.waves.get(act);
+  if (!aw) return 0;
+  return Math.max(...aw.waves.map((w) => w.wave));
 }
 
 export function getWeapon(reg: Registry, id: string): WeaponDef {

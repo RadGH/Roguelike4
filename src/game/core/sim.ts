@@ -1,8 +1,7 @@
 // The simulation core: pure TypeScript, no browser APIs, no rendering.
 // The live game, the headless simulator, and the tests all drive THIS.
-// M1-A scope: players (move/dash), equipped weapons auto-firing (melee arcs +
-// projectiles), enemies (chaser/skitterer/shooter), damage pipeline, tracker,
-// gold/XP drops with pickup radii, combo streaks, continuous spawning.
+// M1-B scope adds: status effects (burn/poison/stun/slow/freeze), leveling,
+// data-driven waves, charger/splitter archetypes, elites, chest drops.
 
 import { TICK_SECONDS } from './constants';
 import { type InputFrame, neutralInput } from './input';
@@ -17,13 +16,18 @@ import {
 } from './combat';
 import { Tracker, type ActorRef, type SourceChain } from './tracker';
 import { SpatialHash, type SpatialEntry } from './spatial';
-import { loadRegistry, getEnemy, getWeapon, type Registry } from '../data/registry';
+import {
+  applyEffect,
+  freshStatus,
+  isControlled,
+  moveMult,
+  tickStatus,
+  type StatusState,
+} from './status';
+import { loadRegistry, getEnemy, getWave, getWeapon, maxWave, type Registry } from '../data/registry';
 import type { EnemyDef, WeaponDef } from '../data/schemas';
 
-export type WeaponSlot = {
-  itemId: string;
-  cooldownLeft: number;
-};
+export type WeaponSlot = { itemId: string; cooldownLeft: number };
 
 export type PlayerState = {
   index: number;
@@ -37,7 +41,10 @@ export type PlayerState = {
   weapons: WeaponSlot[];
   gold: number;
   xp: number;
+  xpIntoLevel: number;
   level: number;
+  pendingBoons: number;
+  pendingChests: number;
   dashTimer: number;
   dashCooldown: number;
   iframeTimer: number;
@@ -48,6 +55,13 @@ export type PlayerState = {
   contactHitCooldown: number;
 };
 
+export type ChargeState = {
+  phase: 'none' | 'windup' | 'charging' | 'recover';
+  timer: number;
+  dirX: number;
+  dirY: number;
+};
+
 export type EnemyState = {
   instance: number;
   defId: string;
@@ -55,11 +69,20 @@ export type EnemyState = {
   y: number;
   hp: number;
   alive: boolean;
+  // scaled-at-spawn values (wave growth + elite multipliers applied once)
+  maxHp: number;
+  damage: number;
+  moveSpeed: number;
+  xp: number;
+  chestChance: number;
+  elite: boolean;
+  status: StatusState;
+  charge: ChargeState;
   attackCooldown: number;
   targetPlayer: number;
   wanderAngle: number;
   wanderTimer: number;
-  hitFlash: number; // cosmetic, deterministic
+  hitFlash: number;
 };
 
 export type ProjectileState = {
@@ -74,30 +97,33 @@ export type ProjectileState = {
   fromPlayer: number; // -1 = enemy projectile
   itemId: string | null;
   enemyDefId: string | null;
+  enemyDamage: number; // scaled damage for enemy projectiles
   pierceLeft: number;
   hitIds: Set<number>;
 };
 
-export type PickupState = {
-  active: boolean;
-  x: number;
-  y: number;
-  kind: 'gold' | 'xp';
-  amount: number;
-};
+export type PickupKind = 'gold' | 'xp' | 'chest';
+export type PickupState = { active: boolean; x: number; y: number; kind: PickupKind; amount: number };
 
 export type Arena = { width: number; height: number };
+export type Phase = 'fighting' | 'cleared';
 
 export type SimState = {
   tick: number;
+  act: number;
   wave: number;
+  phase: Phase;
   arena: Arena;
   players: PlayerState[];
   enemies: EnemyState[];
   projectiles: ProjectileState[];
   pickups: PickupState[];
   combo: { count: number; decay: number; best: number };
-  spawning: { queue: { defId: string; count: number; atSecond: number }[]; elapsed: number; done: boolean };
+  spawning: {
+    queue: { defId: string; count: number; atSecond: number; elite: boolean }[];
+    elapsed: number;
+    done: boolean;
+  };
 };
 
 export type SimEvent =
@@ -105,7 +131,10 @@ export type SimEvent =
   | { type: 'enemyKilled'; defId: string; instance: number; byPlayer: number }
   | { type: 'playerHit'; player: number; amount: number }
   | { type: 'playerDown'; player: number }
-  | { type: 'comboTier'; count: number };
+  | { type: 'comboTier'; count: number }
+  | { type: 'levelUp'; player: number; level: number }
+  | { type: 'waveCleared'; wave: number }
+  | { type: 'chargeTelegraph'; instance: number };
 
 const MAX_PROJECTILES = 512;
 const MAX_PICKUPS = 1024;
@@ -119,6 +148,7 @@ export class Sim {
   private nextEnemyInstance = 1;
   private spatial = new SpatialHash(3);
   private spatialScratch: SpatialEntry[] = [];
+  private enemyByInstance = new Map<number, EnemyState>();
 
   constructor(seed: number, playerCount = 1, arena: Arena = { width: 40, height: 30 }) {
     this.registry = loadRegistry();
@@ -128,28 +158,18 @@ export class Sim {
     const projectiles: ProjectileState[] = [];
     for (let i = 0; i < MAX_PROJECTILES; i++) {
       projectiles.push({
-        active: false,
-        x: 0,
-        y: 0,
-        vx: 0,
-        vy: 0,
-        radius: 0,
-        traveled: 0,
-        range: 0,
-        fromPlayer: -1,
-        itemId: null,
-        enemyDefId: null,
-        pierceLeft: 0,
+        active: false, x: 0, y: 0, vx: 0, vy: 0, radius: 0, traveled: 0, range: 0,
+        fromPlayer: -1, itemId: null, enemyDefId: null, enemyDamage: 0, pierceLeft: 0,
         hitIds: new Set(),
       });
     }
     const pickups: PickupState[] = [];
-    for (let i = 0; i < MAX_PICKUPS; i++) {
-      pickups.push({ active: false, x: 0, y: 0, kind: 'gold', amount: 0 });
-    }
+    for (let i = 0; i < MAX_PICKUPS; i++) pickups.push({ active: false, x: 0, y: 0, kind: 'gold', amount: 0 });
     this.state = {
       tick: 0,
-      wave: 1,
+      act: 1,
+      wave: 0,
+      phase: 'cleared',
       arena,
       players,
       enemies: [],
@@ -180,7 +200,10 @@ export class Sim {
       weapons,
       gold: 0,
       xp: 0,
+      xpIntoLevel: 0,
       level: 1,
+      pendingBoons: 0,
+      pendingChests: 0,
       dashTimer: 0,
       dashCooldown: 0,
       iframeTimer: 0,
@@ -192,20 +215,56 @@ export class Sim {
     };
   }
 
-  /** Queue a simple spawn script: entries appear over time at arena edges. */
-  startWave(entries: { defId: string; count: number; atSecond: number }[]): void {
-    this.state.spawning = { queue: [...entries], elapsed: 0, done: false };
+  // ---- wave control ----
+
+  /** Start the given wave of the current act from wave data. */
+  startWaveNumber(wave: number): void {
+    const w = getWave(this.registry, this.state.act, wave);
+    this.state.wave = wave;
+    this.state.phase = 'fighting';
+    this.state.spawning = {
+      queue: w.entries.map((e) => ({ defId: e.defId, count: e.count, atSecond: e.atSecond, elite: e.elite })),
+      elapsed: 0,
+      done: false,
+    };
   }
 
-  spawnEnemy(defId: string, x: number, y: number): EnemyState {
+  /** True while the current act has a next wave. */
+  hasNextWave(): boolean {
+    return this.state.wave < maxWave(this.registry, this.state.act);
+  }
+
+  /** Custom scripts (tests/sandbox). */
+  startWave(entries: { defId: string; count: number; atSecond: number; elite?: boolean }[]): void {
+    this.state.phase = 'fighting';
+    this.state.spawning = {
+      queue: entries.map((e) => ({ ...e, elite: e.elite ?? false })),
+      elapsed: 0,
+      done: false,
+    };
+  }
+
+  spawnEnemy(defId: string, x: number, y: number, elite = false): EnemyState {
     const def = getEnemy(this.registry, defId);
+    const bal = this.registry.balance;
+    const waveGrowthHp = 1 + bal.waves.hpGrowthPerWave * Math.max(0, this.state.wave - 1);
+    const waveGrowthDmg = 1 + bal.waves.dmgGrowthPerWave * Math.max(0, this.state.wave - 1);
+    const em = bal.waves.elite;
     const e: EnemyState = {
       instance: this.nextEnemyInstance++,
       defId,
       x,
       y,
-      hp: def.maxHp,
+      hp: def.maxHp * waveGrowthHp * (elite ? em.hpMult : 1),
       alive: true,
+      maxHp: def.maxHp * waveGrowthHp * (elite ? em.hpMult : 1),
+      damage: def.damage * waveGrowthDmg * (elite ? em.dmgMult : 1),
+      moveSpeed: def.moveSpeed * (elite ? em.speedMult : 1),
+      xp: def.xp * (elite ? em.xpMult : 1),
+      chestChance: Math.max(def.chestChance, elite ? em.chestChance : 0),
+      elite,
+      status: freshStatus(),
+      charge: { phase: 'none', timer: 0, dirX: 0, dirY: 0 },
       attackCooldown: 0,
       targetPlayer: 0,
       wanderAngle: 0,
@@ -213,6 +272,7 @@ export class Sim {
       hitFlash: 0,
     };
     this.state.enemies.push(e);
+    this.enemyByInstance.set(e.instance, e);
     return e;
   }
 
@@ -228,7 +288,6 @@ export class Sim {
       this.tickPlayerMovement(p, inputs[p.index] ?? neutralInput(), dt);
     }
 
-    // Rebuild spatial hash with live enemies (used by weapons + projectiles)
     this.spatial.clear();
     for (const e of s.enemies) {
       if (!e.alive) continue;
@@ -246,12 +305,19 @@ export class Sim {
     this.tickPickups(dt);
     this.tickCombo(dt);
 
-    // Swap-remove dead enemies (arrays never accumulate corpses)
     for (let i = s.enemies.length - 1; i >= 0; i--) {
-      if (!s.enemies[i]!.alive) {
+      const e = s.enemies[i]!;
+      if (!e.alive) {
+        this.enemyByInstance.delete(e.instance);
         s.enemies[i] = s.enemies[s.enemies.length - 1]!;
         s.enemies.pop();
       }
+    }
+
+    // Wave clear detection
+    if (s.phase === 'fighting' && s.spawning.done && s.enemies.length === 0) {
+      s.phase = 'cleared';
+      this.eventsThisTick.push({ type: 'waveCleared', wave: s.wave });
     }
 
     s.tick++;
@@ -318,7 +384,6 @@ export class Sim {
       if (slot.cooldownLeft > 0) slot.cooldownLeft = Math.max(0, slot.cooldownLeft - dt);
       if (slot.cooldownLeft > 0) continue;
       const weapon = getWeapon(this.registry, slot.itemId);
-      // Fire direction: aim, else nearest enemy, else hold fire
       let dir: number | null = null;
       if (aiming) dir = Math.atan2(input.aimY, input.aimX);
       else {
@@ -339,7 +404,7 @@ export class Sim {
       const hitId = this.tracker.newHitId();
       const candidates = this.spatial.query(p.x, p.y, reach + 1, this.spatialScratch);
       for (const c of candidates) {
-        const enemy = this.findEnemy(c.id);
+        const enemy = this.enemyByInstance.get(c.id);
         if (!enemy || !enemy.alive) continue;
         const def = getEnemy(this.registry, enemy.defId);
         const dx = enemy.x - p.x;
@@ -349,14 +414,13 @@ export class Sim {
         let angleDiff = Math.abs(Math.atan2(dy, dx) - dir);
         if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
         if (angleDiff > halfArc) continue;
-        this.damageEnemy(enemy, p, weapon, 'melee', hitId);
+        this.weaponHitEnemy(enemy, p, weapon, 'melee', hitId);
       }
     } else {
       const d = weapon.delivery;
-      const count = d.count;
       const spread = (d.spreadDeg * Math.PI) / 180;
-      for (let i = 0; i < count; i++) {
-        const offset = count > 1 ? (i / (count - 1) - 0.5) * spread : 0;
+      for (let i = 0; i < d.count; i++) {
+        const offset = d.count > 1 ? (i / (d.count - 1) - 0.5) * spread : 0;
         const a = dir + offset;
         const proj = this.allocProjectile();
         if (!proj) return;
@@ -372,27 +436,67 @@ export class Sim {
         proj.fromPlayer = p.index;
         proj.itemId = weapon.id;
         proj.enemyDefId = null;
+        proj.enemyDamage = 0;
         proj.pierceLeft = d.pierce;
         proj.hitIds.clear();
       }
     }
   }
 
-  private damageEnemy(
+  /** Weapon → enemy damage, including listed effect application. */
+  private weaponHitEnemy(
     enemy: EnemyState,
     p: PlayerState,
     weapon: WeaponDef,
     deliveryTag: SourceChain['deliveryTag'],
     hitId: number,
   ): void {
-    const def = getEnemy(this.registry, enemy.defId);
     const attack: AttackProfile = {
       kind: weapon.kind,
       types: weapon.damage.types,
       multiplier: weapon.damage.multiplier,
       flat: weapon.damage.flat,
     };
-    const rolled = rollAttack(attack, p.stats, this.rng.combat, this.registry.balance);
+    const source: SourceChain = {
+      actor: { kind: 'player', index: p.index },
+      itemId: weapon.id,
+      grantedBy: null,
+      deliveryTag,
+      hitId,
+    };
+    this.applyDamageToEnemy(enemy, attack, p.stats, source);
+    if (enemy.alive) {
+      for (const eff of weapon.effects) {
+        if (this.rng.combat.chance(eff.chance)) {
+          applyEffect(enemy.status, eff, source, enemy.elite ? 'elite' : 'normal');
+        }
+      }
+    }
+  }
+
+  /** THE enemy damage entry point — weapons, DoTs, and later triggers all land here. */
+  applyDamageToEnemy(
+    enemy: EnemyState,
+    attack: AttackProfile,
+    attackerStats: StatSheet | null,
+    source: SourceChain,
+    opts: { rawOverride?: number; noCrit?: boolean } = {},
+  ): void {
+    if (!enemy.alive) return;
+    const def = getEnemy(this.registry, enemy.defId);
+    let raw: number;
+    let crit = false;
+    if (opts.rawOverride !== undefined) raw = opts.rawOverride;
+    else {
+      const rolled = rollAttack(
+        { ...attack, noCrit: opts.noCrit || attack.noCrit },
+        attackerStats ?? {},
+        this.rng.combat,
+        this.registry.balance,
+      );
+      raw = rolled.raw;
+      crit = rolled.crit;
+    }
     const enemyDefense: DefenseProfile = {
       armor: def.armor,
       dodge: 0,
@@ -402,21 +506,7 @@ export class Sim {
       resists: {},
       flatReduction: 0,
     };
-    const hit = resolveHit(
-      rolled.raw,
-      attack,
-      enemyDefense,
-      this.state.wave,
-      this.rng.combat,
-      this.registry.balance,
-    );
-    const source: SourceChain = {
-      actor: { kind: 'player', index: p.index },
-      itemId: weapon.id,
-      grantedBy: null,
-      deliveryTag,
-      hitId,
-    };
+    const hit = resolveHit(raw, attack, enemyDefense, this.state.wave, this.rng.combat, this.registry.balance);
     const target: ActorRef = { kind: 'enemy', id: enemy.defId, instance: enemy.instance };
     const overkill = Math.max(0, hit.amount - enemy.hp);
     enemy.hp -= hit.amount;
@@ -428,44 +518,50 @@ export class Sim {
       source,
       target,
       amount: hit.amount,
-      raw: Math.round(rolled.raw),
+      raw: Math.round(raw),
       types: attack.types,
-      crit: rolled.crit,
+      crit,
       mitigated: hit.mitigation,
       overkill,
     });
     if (enemy.hp <= 0 && enemy.alive) {
       enemy.alive = false;
       this.tracker.push({ type: 'kill', tick: this.state.tick, wave: this.state.wave, source, target });
-      this.onEnemyKilled(enemy, def, p.index);
+      const byPlayer =
+        source.actor.kind === 'player' ? source.actor.index : source.actor.kind === 'pet' ? source.actor.owner : -1;
+      this.onEnemyKilled(enemy, def, byPlayer);
     }
   }
 
   private onEnemyKilled(enemy: EnemyState, def: EnemyDef, byPlayer: number): void {
-    this.eventsThisTick.push({
-      type: 'enemyKilled',
-      defId: enemy.defId,
-      instance: enemy.instance,
-      byPlayer,
-    });
-    // Combo streak
+    this.eventsThisTick.push({ type: 'enemyKilled', defId: enemy.defId, instance: enemy.instance, byPlayer });
     const combo = this.state.combo;
     combo.count++;
     combo.decay = this.registry.balance.combo.decaySeconds;
     if (combo.count > combo.best) combo.best = combo.count;
     if (combo.count % 5 === 0) this.eventsThisTick.push({ type: 'comboTier', count: combo.count });
 
-    // Drops: gold + xp pickups scatter near the corpse
+    // Splitter: children rise where the parent popped
+    if (def.archetype === 'splitter' && def.splitInto && def.splitCount) {
+      for (let i = 0; i < def.splitCount; i++) {
+        const a = (i / def.splitCount) * Math.PI * 2 + this.rng.waves.next();
+        this.spawnEnemy(def.splitInto, enemy.x + Math.cos(a) * 0.5, enemy.y + Math.sin(a) * 0.5, false);
+      }
+    }
+
     const goldAmount = this.rng.drops.int(def.gold[0], def.gold[1]);
     for (let i = 0; i < goldAmount; i++) this.dropPickup(enemy.x, enemy.y, 'gold', 1);
     const comboMult = Math.min(
       this.registry.balance.combo.maxMult,
       1 + combo.count * this.registry.balance.combo.xpPerStack,
     );
-    this.dropPickup(enemy.x, enemy.y, 'xp', Math.round(def.xp * comboMult));
+    this.dropPickup(enemy.x, enemy.y, 'xp', Math.round(enemy.xp * comboMult));
+    if (enemy.chestChance > 0 && this.rng.drops.chance(enemy.chestChance)) {
+      this.dropPickup(enemy.x, enemy.y, 'chest', 1);
+    }
   }
 
-  private dropPickup(x: number, y: number, kind: 'gold' | 'xp', amount: number): void {
+  private dropPickup(x: number, y: number, kind: PickupKind, amount: number): void {
     if (amount <= 0) return;
     for (const pk of this.state.pickups) {
       if (pk.active) continue;
@@ -476,7 +572,6 @@ export class Sim {
       pk.amount = amount;
       return;
     }
-    // Pool exhausted: merge into the oldest active pickup of the same kind.
     const fallback = this.state.pickups.find((p) => p.active && p.kind === kind);
     if (fallback) fallback.amount += amount;
   }
@@ -503,7 +598,7 @@ export class Sim {
                 : edge === 2
                   ? { x: 1, y: t * a.height }
                   : { x: a.width - 1, y: t * a.height };
-          this.spawnEnemy(entry.defId, pos.x, pos.y);
+          this.spawnEnemy(entry.defId, pos.x, pos.y, entry.elite);
         }
         entry.count = 0;
       } else allSpawned = false;
@@ -519,7 +614,25 @@ export class Sim {
       if (e.hitFlash > 0) e.hitFlash = Math.max(0, e.hitFlash - dt);
       if (e.attackCooldown > 0) e.attackCooldown = Math.max(0, e.attackCooldown - dt);
 
-      // Target nearest living player
+      // Status DoT ticks + control
+      for (const dot of tickStatus(e.status, dt)) {
+        this.applyDamageToEnemy(
+          e,
+          {
+            kind: 'spell',
+            types: [dot.kind === 'burn' ? 'fire' : 'poison'],
+            multiplier: 0,
+            flat: [0, 0],
+            noCrit: true,
+          },
+          null,
+          { ...dot.source, grantedBy: dot.kind, deliveryTag: 'pool' },
+          { rawOverride: dot.amount, noCrit: true },
+        );
+      }
+      if (!e.alive) continue;
+      if (isControlled(e.status)) continue; // stunned/frozen: no act, no move
+
       let target: PlayerState | null = null;
       let bestDist = Infinity;
       for (const p of this.state.players) {
@@ -535,6 +648,48 @@ export class Sim {
       const dx = target.x - e.x;
       const dy = target.y - e.y;
       const dist = Math.hypot(dx, dy) || 1;
+      const statusMove = moveMult(e.status);
+
+      // Charger state machine
+      if (def.archetype === 'charger') {
+        const ch = e.charge;
+        if (ch.phase === 'windup') {
+          ch.timer -= dt;
+          if (ch.timer <= 0) {
+            ch.phase = 'charging';
+            ch.timer = def.chargeDuration!;
+          }
+          continue; // rooted while winding up (telegraph)
+        }
+        if (ch.phase === 'charging') {
+          ch.timer -= dt;
+          const speed = e.moveSpeed * def.chargeSpeedMult! * statusMove;
+          e.x += ch.dirX * speed * dt;
+          e.y += ch.dirY * speed * dt;
+          this.clampEnemy(e, def);
+          // Contact during charge hits harder
+          if (dist <= def.radius + bal.player.radius + 0.2 && e.attackCooldown <= 0) {
+            e.attackCooldown = def.attackCooldown;
+            this.damagePlayer(target, e.damage * 1.5, def, 'contact');
+          }
+          if (ch.timer <= 0) {
+            ch.phase = 'recover';
+            ch.timer = def.chargeCooldown!;
+          }
+          continue;
+        }
+        if (ch.phase === 'recover') {
+          ch.timer -= dt;
+          if (ch.timer <= 0) ch.phase = 'none';
+        } else if (ch.phase === 'none' && dist <= def.chargeTriggerRange! && dist > 1.2) {
+          ch.phase = 'windup';
+          ch.timer = def.chargeWindup!;
+          ch.dirX = dx / dist;
+          ch.dirY = dy / dist;
+          this.eventsThisTick.push({ type: 'chargeTelegraph', instance: e.instance });
+          continue;
+        }
+      }
 
       let moveX = dx / dist;
       let moveY = dy / dist;
@@ -556,7 +711,6 @@ export class Sim {
           moveX = -moveX;
           moveY = -moveY;
         } else if (dist < range) {
-          // strafe perpendicular
           const px = -moveY;
           const py = moveX;
           moveX = px;
@@ -578,25 +732,29 @@ export class Sim {
             proj.fromPlayer = -1;
             proj.itemId = null;
             proj.enemyDefId = e.defId;
+            proj.enemyDamage = e.damage;
             proj.pierceLeft = 0;
             proj.hitIds.clear();
           }
         }
       }
 
-      e.x += moveX * def.moveSpeed * dt;
-      e.y += moveY * def.moveSpeed * dt;
-      const a = this.state.arena;
-      e.x = Math.min(a.width - def.radius, Math.max(def.radius, e.x));
-      e.y = Math.min(a.height - def.radius, Math.max(def.radius, e.y));
+      e.x += moveX * e.moveSpeed * statusMove * dt;
+      e.y += moveY * e.moveSpeed * statusMove * dt;
+      this.clampEnemy(e, def);
 
-      // Contact damage (chasers/skitterers, and shooters that get close)
       const touchDist = def.radius + bal.player.radius;
       if (dist <= touchDist + 0.1 && e.attackCooldown <= 0 && def.archetype !== 'shooter') {
         e.attackCooldown = def.attackCooldown;
-        this.damagePlayer(target, def.damage, def, 'contact');
+        this.damagePlayer(target, e.damage, def, 'contact');
       }
     }
+  }
+
+  private clampEnemy(e: EnemyState, def: EnemyDef): void {
+    const a = this.state.arena;
+    e.x = Math.min(a.width - def.radius, Math.max(def.radius, e.x));
+    e.y = Math.min(a.height - def.radius, Math.max(def.radius, e.y));
   }
 
   private damagePlayer(
@@ -612,14 +770,7 @@ export class Sim {
       multiplier: 0,
       flat: [baseAmount, baseAmount],
     };
-    const hit = resolveHit(
-      baseAmount,
-      attack,
-      p.defense,
-      this.state.wave,
-      this.rng.combat,
-      this.registry.balance,
-    );
+    const hit = resolveHit(baseAmount, attack, p.defense, this.state.wave, this.rng.combat, this.registry.balance);
     const source: SourceChain = {
       actor: { kind: 'enemy', id: def.id, instance: 0 },
       itemId: null,
@@ -675,19 +826,16 @@ export class Sim {
         continue;
       }
       if (pr.fromPlayer >= 0) {
-        // Player projectile vs enemies
         const candidates = this.spatial.query(pr.x, pr.y, pr.radius + 1, this.spatialScratch);
         for (const c of candidates) {
           if (pr.hitIds.has(c.id)) continue;
-          const enemy = this.findEnemy(c.id);
+          const enemy = this.enemyByInstance.get(c.id);
           if (!enemy || !enemy.alive) continue;
           const def = getEnemy(this.registry, enemy.defId);
           if (Math.hypot(enemy.x - pr.x, enemy.y - pr.y) > def.radius + pr.radius) continue;
           const p = this.state.players[pr.fromPlayer]!;
           const weapon = pr.itemId ? getWeapon(this.registry, pr.itemId) : null;
-          if (weapon) {
-            this.damageEnemy(enemy, p, weapon, 'projectile', this.tracker.newHitId());
-          }
+          if (weapon) this.weaponHitEnemy(enemy, p, weapon, 'projectile', this.tracker.newHitId());
           pr.hitIds.add(c.id);
           if (pr.pierceLeft > 0) pr.pierceLeft--;
           else {
@@ -696,12 +844,11 @@ export class Sim {
           }
         }
       } else {
-        // Enemy projectile vs players
         for (const p of this.state.players) {
           if (!p.alive) continue;
           if (Math.hypot(p.x - pr.x, p.y - pr.y) > bal.player.radius + pr.radius) continue;
           const def = pr.enemyDefId ? getEnemy(this.registry, pr.enemyDefId) : null;
-          if (def) this.damagePlayer(p, def.damage, def, 'projectile');
+          if (def) this.damagePlayer(p, pr.enemyDamage || def.damage, def, 'projectile');
           pr.active = false;
           break;
         }
@@ -710,11 +857,10 @@ export class Sim {
   }
 
   private tickPickups(dt: number): void {
-    const MAGNET_SPEED = 9; // units/s once inside a player's pickup radius
+    const MAGNET_SPEED = 9;
     const COLLECT_DIST = 0.5;
     for (const pk of this.state.pickups) {
       if (!pk.active) continue;
-      // Find the nearest living player whose pickup radius covers this drop
       let puller: PlayerState | null = null;
       let pullerDist = Infinity;
       for (const p of this.state.players) {
@@ -728,7 +874,6 @@ export class Sim {
       }
       if (!puller) continue;
       if (pullerDist > COLLECT_DIST) {
-        // Magnetize toward the collector
         const dx = puller.x - pk.x;
         const dy = puller.y - pk.y;
         const d = pullerDist || 1;
@@ -740,20 +885,36 @@ export class Sim {
         const p = puller;
         pk.active = false;
         if (pk.kind === 'gold') {
-          // Mirrored gold: every living-or-snuffed (non-retired) player receives it
+          // Mirrored gold: every non-retired player receives it (snuffed included)
           for (const other of this.state.players) other.gold += pk.amount;
+        } else if (pk.kind === 'xp') {
+          for (const other of this.state.players) this.grantXp(other, pk.amount);
         } else {
-          for (const other of this.state.players) other.xp += pk.amount;
+          p.pendingChests += pk.amount;
         }
         this.tracker.push({
           type: 'pickup',
           tick: this.state.tick,
           wave: this.state.wave,
           player: p.index,
-          what: pk.kind,
+          what: pk.kind === 'chest' ? 'gold' : pk.kind, // tracker chest support lands with reward flow
           amount: pk.amount,
         });
       }
+    }
+  }
+
+  private grantXp(p: PlayerState, amount: number): void {
+    p.xp += amount;
+    p.xpIntoLevel += amount;
+    const bal = this.registry.balance.leveling;
+    let threshold = bal.base + bal.perLevel * (p.level - 1);
+    while (p.xpIntoLevel >= threshold) {
+      p.xpIntoLevel -= threshold;
+      p.level++;
+      p.pendingBoons++;
+      this.eventsThisTick.push({ type: 'levelUp', player: p.index, level: p.level });
+      threshold = bal.base + bal.perLevel * (p.level - 1);
     }
   }
 
@@ -766,10 +927,6 @@ export class Sim {
   }
 
   // ---- helpers ----
-
-  private findEnemy(instance: number): EnemyState | undefined {
-    return this.state.enemies.find((e) => e.instance === instance);
-  }
 
   nearestEnemy(x: number, y: number, maxDist: number): EnemyState | null {
     let best: EnemyState | null = null;
@@ -785,10 +942,12 @@ export class Sim {
     return best;
   }
 
+  getEnemyByInstance(instance: number): EnemyState | undefined {
+    return this.enemyByInstance.get(instance);
+  }
+
   aliveEnemyCount(): number {
-    let n = 0;
-    for (const e of this.state.enemies) if (e.alive) n++;
-    return n;
+    return this.state.enemies.length;
   }
 
   hash(): number {
@@ -804,6 +963,7 @@ export class Sim {
       mix(p.hp);
       mix(p.gold);
       mix(p.xp);
+      mix(p.level);
     }
     for (const e of this.state.enemies) {
       mix(e.x);

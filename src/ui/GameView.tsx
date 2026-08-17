@@ -42,9 +42,12 @@ export function GameView({ seed }: { seed: number }) {
           }}
         >
           <div style={{ fontSize: 18 }}>
-            ❤️ {hud.hp}/{hud.maxHp} {!hud.alive && '— snuffed!'}
+            ❤️ {hud.hp}/{hud.maxHp} · Lv {hud.level} {!hud.alive && '— snuffed!'}
           </div>
-          <div>💰 {hud.gold} ✨ {hud.xp} ⚔️ {hud.kills}</div>
+          <div>
+            💰 {hud.gold} ✨ {hud.xp} ⚔️ {hud.kills}
+            {hud.chests > 0 && <> 🧰 {hud.chests}</>}
+          </div>
         </div>
       )}
       {hud && (
@@ -63,7 +66,9 @@ export function GameView({ seed }: { seed: number }) {
           }}
         >
           <div style={{ fontSize: 20 }}>Wave {hud.wave}</div>
-          <div style={{ fontSize: 13, opacity: 0.85 }}>{hud.enemies} foes about</div>
+          <div style={{ fontSize: 13, opacity: 0.85 }}>
+            {hud.cleared ? 'wave cleared! ✨' : `${hud.enemies} foes about`}
+          </div>
           {hud.combo >= 5 && (
             <div style={{ fontSize: 22, color: hud.combo >= 20 ? '#ff5c5c' : hud.combo >= 10 ? '#ffb347' : '#ffee66' }}>
               ×{hud.combo} COMBO!

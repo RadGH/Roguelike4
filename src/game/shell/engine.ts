@@ -54,16 +54,10 @@ export class Engine {
     this.renderer.app.ticker.add(() => this.frame());
   }
 
-  /** Sandbox wave scripts until data-driven wave files land (M1-B). */
+  private waveBreakTimer = 0;
+
   private startWave(n: number): void {
-    this.sim.state.wave = n;
-    const base = 4 + n * 2;
-    const entries = [
-      { defId: 'snuffling', count: base, atSecond: 0 },
-      { defId: 'puffball', count: Math.floor(base / 2), atSecond: 6 },
-    ];
-    if (n >= 2) entries.push({ defId: 'thistle-archer', count: Math.floor(n * 1.5), atSecond: 10 });
-    this.sim.startWave(entries);
+    this.sim.startWaveNumber(n);
   }
 
   /** Small HUD summary for the React overlay (polled at low frequency). */
@@ -74,7 +68,10 @@ export class Engine {
       maxHp: Math.ceil(p.stats.maxHp ?? 10),
       gold: p.gold,
       xp: p.xp,
+      level: p.level,
+      chests: p.pendingChests,
       wave: this.sim.state.wave,
+      cleared: this.sim.state.phase === 'cleared',
       enemies: this.sim.aliveEnemyCount(),
       combo: this.sim.state.combo.count,
       alive: p.alive,
@@ -102,9 +99,15 @@ export class Engine {
         this.stepOnce(frames.length ? frames : [neutralInput()]);
         this.accumulator -= TICK_SECONDS;
       }
-      // Sandbox wave progression: cleared → next wave
-      if (this.sim.state.spawning.done && this.sim.aliveEnemyCount() === 0) {
-        this.startWave(this.sim.state.wave + 1);
+      // Wave progression: cleared → short breather → next wave (the real
+      // recap/reward/boon screen flow replaces this breather in M1-C).
+      if (this.sim.state.phase === 'cleared') {
+        this.waveBreakTimer += elapsed;
+        if (this.waveBreakTimer >= 2.5) {
+          this.waveBreakTimer = 0;
+          if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
+          else this.startWave(1); // act loop placeholder until acts 2-4 land
+        }
       }
     }
     const alpha = this.pausedByDebug ? 1 : this.accumulator / TICK_SECONDS;

@@ -79,7 +79,7 @@ export const WeaponSchema = z
 export const EnemySchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
-    archetype: z.enum(['chaser', 'skitterer', 'shooter']),
+    archetype: z.enum(['chaser', 'skitterer', 'shooter', 'charger', 'splitter']),
     radius: z.number().positive(),
     maxHp: z.number().positive(),
     damage: z.number().positive(), // contact or projectile damage
@@ -91,6 +91,49 @@ export const EnemySchema = z
     range: z.number().positive().optional(), // shooters
     projectileSpeed: z.number().positive().optional(),
     armor: z.number().nonnegative().default(0),
+    // charger fields
+    chargeWindup: z.number().positive().optional(), // telegraph seconds
+    chargeSpeedMult: z.number().positive().optional(),
+    chargeDuration: z.number().positive().optional(),
+    chargeCooldown: z.number().positive().optional(),
+    chargeTriggerRange: z.number().positive().optional(),
+    // splitter fields
+    splitInto: z.string().optional(),
+    splitCount: z.number().int().positive().optional(),
+    // drops
+    chestChance: z.number().min(0).max(1).default(0),
+  })
+  .strict()
+  .refine((e) => e.archetype !== 'splitter' || (e.splitInto && e.splitCount), {
+    message: 'splitter needs splitInto + splitCount',
+  })
+  .refine(
+    (e) =>
+      e.archetype !== 'charger' ||
+      (e.chargeWindup && e.chargeSpeedMult && e.chargeDuration && e.chargeCooldown && e.chargeTriggerRange),
+    { message: 'charger needs chargeWindup/SpeedMult/Duration/Cooldown/TriggerRange' },
+  );
+
+export const WaveEntrySchema = z
+  .object({
+    atSecond: z.number().nonnegative(),
+    defId: z.string(),
+    count: z.number().int().positive(),
+    elite: z.boolean().default(false),
+  })
+  .strict();
+
+export const WaveSchema = z
+  .object({
+    wave: z.number().int().positive(),
+    entries: z.array(WaveEntrySchema).min(1),
+  })
+  .strict();
+
+export const ActWavesSchema = z
+  .object({
+    act: z.number().int().positive(),
+    waves: z.array(WaveSchema).min(1),
   })
   .strict();
 
@@ -121,6 +164,18 @@ export const BalanceSchema = z
     combo: z
       .object({ decaySeconds: z.number(), xpPerStack: z.number(), maxMult: z.number() })
       .strict(),
+    leveling: z
+      .object({ base: z.number(), perLevel: z.number() })
+      .strict(),
+    waves: z
+      .object({
+        hpGrowthPerWave: z.number(),
+        dmgGrowthPerWave: z.number(),
+        elite: z
+          .object({ hpMult: z.number(), dmgMult: z.number(), speedMult: z.number(), xpMult: z.number(), chestChance: z.number() })
+          .strict(),
+      })
+      .strict(),
     drops: z
       .object({
         pickupBaseRadius: z.number(),
@@ -136,3 +191,5 @@ export type EnemyDef = z.infer<typeof EnemySchema>;
 export type BalanceDef = z.infer<typeof BalanceSchema>;
 export type Grant = z.infer<typeof GrantSchema>;
 export type EffectDef = z.infer<typeof EffectSchema>;
+export type WaveDef = z.infer<typeof WaveSchema>;
+export type ActWavesDef = z.infer<typeof ActWavesSchema>;

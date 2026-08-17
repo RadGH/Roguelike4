@@ -1,0 +1,92 @@
+{
+  "act": 1,
+  "waves": [
+    {
+      "wave": 1,
+      "entries": [
+        { "atSecond": 0, "defId": "snuffling", "count": 5 },
+        { "atSecond": 8, "defId": "snuffling", "count": 4 }
+      ]
+    },
+    {
+      "wave": 2,
+      "entries": [
+        { "atSecond": 0, "defId": "snuffling", "count": 5 },
+        { "atSecond": 5, "defId": "puffball", "count": 4 },
+        { "atSecond": 12, "defId": "snuffling", "count": 4 }
+      ]
+    },
+    {
+      "wave": 3,
+      "entries": [
+        { "atSecond": 0, "defId": "puffball", "count": 5 },
+        { "atSecond": 4, "defId": "thistle-archer", "count": 2 },
+        { "atSecond": 12, "defId": "snuffling", "count": 6 }
+      ]
+    },
+    {
+      "wave": 4,
+      "entries": [
+        { "atSecond": 0, "defId": "dandelion-popper", "count": 4 },
+        { "atSecond": 6, "defId": "thistle-archer", "count": 2 },
+        { "atSecond": 12, "defId": "snuffling", "count": 5 },
+        { "atSecond": 16, "defId": "grumble-beetle", "count": 1 }
+      ]
+    },
+    {
+      "wave": 5,
+      "entries": [
+        { "atSecond": 0, "defId": "grumble-beetle", "count": 2 },
+        { "atSecond": 4, "defId": "puffball", "count": 6 },
+        { "atSecond": 10, "defId": "snuffling", "count": 6, "elite": true },
+        { "atSecond": 16, "defId": "thistle-archer", "count": 3 }
+      ]
+    },
+    {
+      "wave": 6,
+      "entries": [
+        { "atSecond": 0, "defId": "snuffling", "count": 8 },
+        { "atSecond": 5, "defId": "dandelion-popper", "count": 4 },
+        { "atSecond": 12, "defId": "grumble-beetle", "count": 2 },
+        { "atSecond": 18, "defId": "thistle-archer", "count": 3 }
+      ]
+    },
+    {
+      "wave": 7,
+      "entries": [
+        { "atSecond": 0, "defId": "puffball", "count": 8 },
+        { "atSecond": 6, "defId": "thistle-archer", "count": 4 },
+        { "atSecond": 12, "defId": "grumble-beetle", "count": 2, "elite": true },
+        { "atSecond": 18, "defId": "snuffling", "count": 8 }
+      ]
+    },
+    {
+      "wave": 8,
+      "entries": [
+        { "atSecond": 0, "defId": "dandelion-popper", "count": 6 },
+        { "atSecond": 6, "defId": "snuffling", "count": 8, "elite": true },
+        { "atSecond": 14, "defId": "thistle-archer", "count": 4, "elite": true },
+        { "atSecond": 20, "defId": "grumble-beetle", "count": 2 }
+      ]
+    },
+    {
+      "wave": 9,
+      "entries": [
+        { "atSecond": 0, "defId": "snuffling", "count": 10 },
+        { "atSecond": 5, "defId": "puffball", "count": 8 },
+        { "atSecond": 10, "defId": "dandelion-popper", "count": 5 },
+        { "atSecond": 16, "defId": "grumble-beetle", "count": 3 },
+        { "atSecond": 22, "defId": "thistle-archer", "count": 4 }
+      ]
+    },
+    {
+      "wave": 10,
+      "entries": [
+        { "atSecond": 0, "defId": "grumble-beetle", "count": 3, "elite": true },
+        { "atSecond": 8, "defId": "snuffling", "count": 10 },
+        { "atSecond": 14, "defId": "thistle-archer", "count": 5 },
+        { "atSecond": 20, "defId": "dandelion-popper", "count": 6, "elite": true }
+      ]
+    }
+  ]
+}
