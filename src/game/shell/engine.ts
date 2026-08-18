@@ -201,7 +201,9 @@ export class Engine {
     if (p.pendingClassItems.length > 0) return; // class choice panel shows first
     if (p.pendingChests > 0) {
       if (!this.chestChoices.has(playerIndex)) {
-        this.chestChoices.set(playerIndex, this.sim.rollChestChoices(playerIndex, 3));
+        // Oracle's Foresight: the chest shows five futures instead of three
+        const n = this.sim.classDef(p.classId).mechanic === 'foresight' ? 5 : 3;
+        this.chestChoices.set(playerIndex, this.sim.rollChestChoices(playerIndex, n));
       }
     } else {
       this.chestChoices.delete(playerIndex);

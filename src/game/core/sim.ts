@@ -77,6 +77,7 @@ export type PlayerState = {
   staticReady: boolean; // staticCharge: next hit stuns
   staticHits: number; // stormcaller: hit counter toward the 8th-hit chain
   coinMeter: number; // tycoon: gold collected toward the next coin toss
+  angerTimer: number; // beekeeper: swarm anger seconds remaining
   usedSecondWick: boolean; // once-per-run fatal save spent
   coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
   bits: number; // salvage material — spent on Tinkering quality upgrades
@@ -163,6 +164,7 @@ export type ProjectileState = {
   poolRadius: number;
   poolDps: number;
   poolDuration: number;
+  poolType: 'fire' | 'poison';
   // passive mods
   splitOnHit: boolean; // splitter-prism: fork on first impact
   isChild: boolean; // split children can't split again
@@ -184,6 +186,7 @@ export type PoolState = {
   friendly: boolean; // player-owned pools damage enemies instead
   ownerPlayer: number;
   itemId: string | null; // attribution for friendly pools
+  damageType: 'fire' | 'poison'; // friendly pools only
 };
 
 export type PetState = {
@@ -277,7 +280,7 @@ export class Sim {
         active: false, x: 0, y: 0, vx: 0, vy: 0, radius: 0, traveled: 0, range: 0,
         fromPlayer: -1, itemId: null, enemyDefId: null, enemyDamage: 0, pierceLeft: 0,
         blastRadius: 0,
-        poolRadius: 0, poolDps: 0, poolDuration: 0,
+        poolRadius: 0, poolDps: 0, poolDuration: 0, poolType: 'fire',
         splitOnHit: false, isChild: false, bouncesLeft: 0, damageScale: 1,
         resolved: null,
         hitIds: new Set(),
@@ -289,7 +292,7 @@ export class Sim {
     for (let i = 0; i < 96; i++) {
       pools.push({
         active: false, x: 0, y: 0, radius: 0, dps: 0, duration: 0, tickIn: 0,
-        ownerDefId: '', friendly: false, ownerPlayer: -1, itemId: null,
+        ownerDefId: '', friendly: false, ownerPlayer: -1, itemId: null, damageType: 'fire',
       });
     }
     this.state = {
@@ -351,6 +354,7 @@ export class Sim {
       staticReady: false,
       staticHits: 0,
       coinMeter: 0,
+      angerTimer: 0,
       usedSecondWick: false,
       coinCharge: 0,
       bits: 0,
@@ -499,9 +503,11 @@ export class Sim {
     target: EnemyState,
   ): void {
     const owner = this.state.players[pet.owner]!;
+    // an angry swarm bites harder (Beekeeper's mechanic rides every pet)
+    const anger = owner.angerTimer > 0 ? 1.25 : 1;
     this.applyDamageToEnemy(
       target,
-      { kind: 'attack', types, multiplier, flat },
+      { kind: 'attack', types, multiplier: multiplier * anger, flat },
       owner.stats, // pet damage scales from the OWNER's stats (petDamage et al.)
       {
         actor: { kind: 'pet', owner: pet.owner, id: pet.defId, instance: pet.instance },
@@ -580,7 +586,8 @@ export class Sim {
   healPlayer(p: PlayerState, amount: number, grantedBy: string | null): number {
     if (!p.alive || amount <= 0) return 0;
     const cls = this.classDef(p.classId);
-    const cap = stat(p.stats, 'maxHp') * (cls.mechanic === 'redline' ? 0.8 : 1);
+    const capMult = cls.mechanic === 'redline' ? 0.8 : cls.mechanic === 'miseEnPlace' ? 1.25 : 1;
+    const cap = stat(p.stats, 'maxHp') * capMult;
     const healed = Math.min(amount, Math.max(0, cap - p.hp));
     if (healed <= 0) return 0;
     p.hp += healed;
@@ -1128,6 +1135,7 @@ export class Sim {
     if (p.dashCooldown > 0) p.dashCooldown = Math.max(0, p.dashCooldown - dt);
     if (p.iframeTimer > 0) p.iframeTimer = Math.max(0, p.iframeTimer - dt);
     if (p.contactHitCooldown > 0) p.contactHitCooldown = Math.max(0, p.contactHitCooldown - dt);
+    if (p.angerTimer > 0) p.angerTimer = Math.max(0, p.angerTimer - dt);
     const regen = stat(p.stats, 'hpRegen');
     if (regen > 0) {
       const cls = this.classDef(p.classId);
@@ -1293,9 +1301,10 @@ export class Sim {
         proj.enemyDamage = 0;
         proj.pierceLeft = d.pierce;
         proj.blastRadius = d.blastRadius * (1 + stat(p.stats, 'area'));
-        proj.poolRadius = 0;
-        proj.poolDps = 0;
-        proj.poolDuration = 0;
+        proj.poolRadius = d.poolRadius * (1 + stat(p.stats, 'area'));
+        proj.poolDps = d.poolDps;
+        proj.poolDuration = d.poolDuration;
+        proj.poolType = d.poolType;
         proj.splitOnHit = this.hasMod(p, 'projectileSplit');
         proj.isChild = false;
         proj.bouncesLeft = this.hasMod(p, 'projectileBounce')
@@ -1343,6 +1352,8 @@ export class Sim {
       const maxHp = stat(p.stats, 'maxHp') || 1;
       damageMult *= 1 + Math.max(0, 1 - p.hp / maxHp);
     }
+    // Beekeeper's swarm fights angrier after its keeper is hurt
+    if (p.angerTimer > 0) damageMult *= 1.25;
     // Coin-Operated Blade: spend the charge on this hit
     if (p.coinCharge > 0) {
       damageMult *= 1 + p.coinCharge;
@@ -1598,6 +1609,24 @@ export class Sim {
     // Kill triggers (Powder Keg Belt, Zombie Flute, ...)
     const killer = this.state.players[byPlayer];
     if (killer) {
+      // Alchemist's Spillage: some kills leave a puddle of regret
+      if (this.classDef(killer.classId).mechanic === 'spillage' && this.rng.combat.chance(0.15)) {
+        const pool = this.state.pools.find((pl) => !pl.active);
+        if (pool) {
+          pool.active = true;
+          pool.x = enemy.x;
+          pool.y = enemy.y;
+          pool.radius = 1.2;
+          pool.dps = 3;
+          pool.duration = 2.5;
+          pool.tickIn = 0.25;
+          pool.ownerDefId = '';
+          pool.friendly = true;
+          pool.ownerPlayer = killer.index;
+          pool.itemId = 'spillage';
+          pool.damageType = 'poison';
+        }
+      }
       // Necromancer's Rise and Shine: kills may rejoin the fight, politely
       if (this.classDef(killer.classId).mechanic === 'riseAndShine' && this.rng.combat.chance(0.2)) {
         this.spawnPet('zombie', killer.index, killer.classId, enemy.x, enemy.y);
@@ -1645,8 +1674,14 @@ export class Sim {
       bal.evil.bellowsGold * this.evilCount('evilBellows');
     const goldAmount = Math.round(this.rng.drops.int(def.gold[0], def.gold[1]) * goldEvil);
     for (let i = 0; i < goldAmount; i++) this.dropPickup(enemy.x, enemy.y, 'gold', 1);
-    // Hearts: the meadow provides (personal heal for whoever grabs it)
-    if (this.rng.drops.chance(bal.drops.heartChance)) {
+    // Hearts: the meadow provides (personal heal for whoever grabs it);
+    // a Chef in the party keeps the pantry stocked (+50% drop chance)
+    const chefMult = this.state.players.some(
+      (pl) => this.classDef(pl.classId).mechanic === 'miseEnPlace',
+    )
+      ? 1.5
+      : 1;
+    if (this.rng.drops.chance(Math.min(1, bal.drops.heartChance * chefMult))) {
       this.dropPickup(enemy.x, enemy.y, 'heart', bal.drops.heartHeal);
     }
     // Mimics telegraph their prize — and pay up honestly when defeated
@@ -1661,7 +1696,7 @@ export class Sim {
     }
   }
 
-  private dropPickup(x: number, y: number, kind: PickupKind, amount: number): void {
+  dropPickup(x: number, y: number, kind: PickupKind, amount: number): void {
     if (amount <= 0) return;
     // Magpie's Eye: any player may pocket ANY gold drop instantly (reacts to all
     // drops, per the brief — maximizing each player's items in co-op)
@@ -1961,6 +1996,7 @@ export class Sim {
             proj.poolRadius = 0;
             proj.poolDps = 0;
             proj.poolDuration = 0;
+            proj.poolType = 'fire';
             proj.splitOnHit = false;
             proj.isChild = false;
             proj.bouncesLeft = 0;
@@ -2046,6 +2082,7 @@ export class Sim {
             proj.poolRadius = 0;
             proj.poolDps = 0;
             proj.poolDuration = 0;
+            proj.poolType = 'fire';
             proj.splitOnHit = false;
             proj.isChild = false;
             proj.bouncesLeft = 0;
@@ -2108,6 +2145,7 @@ export class Sim {
             proj.poolRadius = 0;
             proj.poolDps = 0;
             proj.poolDuration = 0;
+            proj.poolType = 'fire';
             proj.splitOnHit = false;
             proj.isChild = false;
             proj.bouncesLeft = 0;
@@ -2232,6 +2270,7 @@ export class Sim {
     // Post-hit invulnerability: damage arrives in beats, never as an instant melt
     p.iframeTimer = Math.max(p.iframeTimer, this.registry.balance.player.hitIframes);
     this.eventsThisTick.push({ type: 'playerHit', player: p.index, amount: hit.amount });
+    if (this.classDef(p.classId).mechanic === 'swarmAnger') p.angerTimer = 5;
     this.eventsThisTick.push({
       type: 'damageNumber',
       x: p.x,
@@ -2389,10 +2428,19 @@ export class Sim {
     pool.dps = pr.poolDps;
     pool.duration = pr.poolDuration;
     pool.tickIn = 0.25;
-    pool.ownerDefId = pr.enemyDefId ?? '';
-    pool.friendly = false;
-    pool.ownerPlayer = -1;
-    pool.itemId = null;
+    if (pr.fromPlayer >= 0) {
+      pool.ownerDefId = '';
+      pool.friendly = true;
+      pool.ownerPlayer = pr.fromPlayer;
+      pool.itemId = pr.itemId;
+      pool.damageType = pr.poolType ?? 'fire';
+    } else {
+      pool.ownerDefId = pr.enemyDefId ?? '';
+      pool.friendly = false;
+      pool.ownerPlayer = -1;
+      pool.itemId = null;
+      pool.damageType = 'fire';
+    }
   }
 
   private tickPools(dt: number): void {
@@ -2415,7 +2463,7 @@ export class Sim {
             if (Math.hypot(e.x - pool.x, e.y - pool.y) <= pool.radius + def.radius) {
               this.applyDamageToEnemy(
                 e,
-                { kind: 'spell', types: ['fire'], multiplier: 0, flat: [0, 0], noCrit: true },
+                { kind: 'spell', types: [pool.damageType], multiplier: 0, flat: [0, 0], noCrit: true },
                 null,
                 {
                   actor: { kind: 'player', index: pool.ownerPlayer },

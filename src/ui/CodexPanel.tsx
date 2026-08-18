@@ -12,7 +12,7 @@ function prettify(id: string): string {
     .join(' ');
 }
 
-type Tab = 'deeds' | 'weapons' | 'enemies';
+type Tab = 'deeds' | 'weapons' | 'feats' | 'enemies';
 
 export function CodexPanel({ profile }: { profile: Profile }) {
   const [tab, setTab] = useState<Tab>('deeds');
@@ -22,7 +22,7 @@ export function CodexPanel({ profile }: { profile: Profile }) {
   return (
     <div data-codex style={{ textAlign: 'left', maxWidth: 560 }}>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 10 }}>
-        {(['deeds', 'weapons', 'enemies'] as Tab[]).map((t) => (
+        {(['deeds', 'weapons', 'feats', 'enemies'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -136,6 +136,32 @@ export function CodexPanel({ profile }: { profile: Profile }) {
                 ) : (
                   <div style={{ opacity: 0.8, fontStyle: 'italic' }}>🔒 {deed?.hint ?? 'A deed will reveal it.'}</div>
                 )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab === 'feats' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+          {[...reg.feats.values()].map((f) => {
+            const isUnlocked = !f.unlockDeed || profile.unlockedFeats.includes(f.id);
+            const deed = f.unlockDeed ? reg.deeds.get(f.unlockDeed) : null;
+            return (
+              <div
+                key={f.id}
+                style={{
+                  border: `2px solid ${isUnlocked ? '#ffb0c8' : '#555'}`,
+                  borderRadius: 10,
+                  padding: '8px 10px',
+                  opacity: isUnlocked ? 1 : 0.65,
+                  fontSize: 12.5,
+                }}
+              >
+                <div style={{ fontWeight: 800 }}>⭐ {isUnlocked ? f.name : '???'}</div>
+                <div style={{ opacity: 0.8, fontStyle: isUnlocked ? 'normal' : 'italic' }}>
+                  {isUnlocked ? f.desc : `🔒 ${deed?.hint ?? 'A deed will reveal it.'}`}
+                </div>
               </div>
             );
           })}

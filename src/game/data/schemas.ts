@@ -32,6 +32,11 @@ export const DeliverySchema = z.discriminatedUnion('type', [
       count: z.number().int().min(1).default(1), // multishot
       spreadDeg: z.number().nonnegative().default(0),
       pierce: z.number().int().nonnegative().default(0),
+      // impact pools (flasks): >0 radius leaves a damaging puddle where the shot lands
+      poolRadius: z.number().nonnegative().default(0),
+      poolDps: z.number().nonnegative().default(0),
+      poolDuration: z.number().nonnegative().default(0),
+      poolType: z.enum(['fire', 'poison']).default('fire'),
     })
     .strict(),
   z
@@ -296,6 +301,10 @@ export const ClassSchema = z
         'goldStandard', // tycoon: +25% gold; every 15 gold collected flicks a coin
         'wheelOfWhee', // jester: a free random boon each wave; boon picks offer 5
         'pact', // warlock: 10% of damage echoes as void; the contract collects 1 HP per wave
+        'foresight', // oracle: chests offer 5 choices instead of 3
+        'miseEnPlace', // chef: hearts drop 50% more often and can overheal 25%
+        'swarmAnger', // beekeeper: taking a hit angers the swarm (+25% damage 5s)
+        'spillage', // alchemist: 15% of kills leave an acid pool
       ])
       .default('none'),
     startingPets: z.array(z.string()).default([]),
@@ -307,6 +316,8 @@ export const ClassSchema = z
       .discriminatedUnion('type', [
         z.object({ type: z.literal('default') }).strict(),
         z.object({ type: z.literal('deed'), deedId: z.string() }).strict(),
+        // sold for Glimmers only (discovery-rescue ceremony arrives with polish)
+        z.object({ type: z.literal('shop') }).strict(),
       ])
       .default({ type: 'default' }),
   })

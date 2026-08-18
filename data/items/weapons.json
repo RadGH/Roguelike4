@@ -731,5 +731,171 @@
       }
     ],
     "rarity": "common"
+  },
+  {
+    "id": "crystal-ball",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "arcane"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 8,
+      "radius": 0.32,
+      "range": 11,
+      "cooldown": 0.75,
+      "pierce": 1
+    },
+    "grants": [
+      {
+        "stat": "arcaneDamage",
+        "flat": 2
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "frying-pan",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.1,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.0,
+      "arcDeg": 110,
+      "cooldown": 0.5
+    },
+    "effects": [
+      {
+        "kind": "stun",
+        "duration": 0.5,
+        "chance": 0.15
+      }
+    ],
+    "grants": [
+      {
+        "stat": "maxHp",
+        "flat": 1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "smoker",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 0.7,
+      "flat": [
+        1,
+        2
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 7,
+      "radius": 0.3,
+      "range": 5,
+      "cooldown": 0.5,
+      "count": 3,
+      "spreadDeg": 28
+    },
+    "effects": [
+      {
+        "kind": "slow",
+        "duration": 1.2,
+        "magnitude": 0.3,
+        "chance": 1
+      }
+    ],
+    "grants": [
+      {
+        "stat": "petDamage",
+        "flat": 2
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "acid-flask",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "poison"
+      ],
+      "multiplier": 0.9,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 9,
+      "radius": 0.3,
+      "range": 9,
+      "cooldown": 0.9,
+      "blastRadius": 1.0,
+      "poolRadius": 1.2,
+      "poolDps": 3,
+      "poolDuration": 2.5,
+      "poolType": "poison"
+    },
+    "effects": [
+      {
+        "kind": "poison",
+        "amount": 4,
+        "chance": 1
+      }
+    ],
+    "grants": [
+      {
+        "stat": "poisonDamage",
+        "flat": 2
+      }
+    ],
+    "rarity": "uncommon"
   }
 ]

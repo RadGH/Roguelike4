@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Sim } from './sim';
 import { stat } from './stats';
+import { neutralInput } from './input';
 
 describe('second class batch', () => {
   it('all six new classes exist with legal starting gear', () => {
@@ -96,14 +97,5 @@ describe('second class batch', () => {
 });
 
 function neutral() {
-  return {
-    moveX: 0,
-    moveY: 0,
-    aimX: 0,
-    aimY: 0,
-    fire: false,
-    dash: false,
-    interact: false,
-    pause: false,
-  };
+  return neutralInput();
 }

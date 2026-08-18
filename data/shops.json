@@ -54,6 +54,22 @@
       {
         "id": "warlock",
         "price": 35
+      },
+      {
+        "id": "oracle",
+        "price": 40
+      },
+      {
+        "id": "chef",
+        "price": 25
+      },
+      {
+        "id": "beekeeper",
+        "price": 25
+      },
+      {
+        "id": "alchemist",
+        "price": 30
       }
     ]
   },

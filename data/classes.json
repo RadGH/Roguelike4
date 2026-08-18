@@ -372,5 +372,98 @@
       "type": "deed",
       "deedId": "mimic-kills-13"
     }
+  },
+  {
+    "id": "oracle",
+    "name": "Oracle",
+    "blurb": "Sees next Tuesday clearly, today only dimly.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "crystal-ball"
+    ],
+    "denyTags": [
+      "physical"
+    ],
+    "statMods": [
+      {
+        "stat": "arcaneDamage",
+        "flat": 3
+      }
+    ],
+    "mechanic": "foresight",
+    "unlock": {
+      "type": "shop"
+    }
+  },
+  {
+    "id": "chef",
+    "name": "Chef",
+    "blurb": "The pan is both weapon and instrument.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "frying-pan"
+    ],
+    "denyTags": [
+      "spell"
+    ],
+    "statMods": [
+      {
+        "stat": "maxHp",
+        "flat": 2
+      }
+    ],
+    "mechanic": "miseEnPlace",
+    "unlock": {
+      "type": "shop"
+    }
+  },
+  {
+    "id": "beekeeper",
+    "name": "Beekeeper",
+    "blurb": "Calm in a way that unsettles the bees' enemies.",
+    "handPoints": 1,
+    "startingWeapons": [
+      "smoker"
+    ],
+    "startingPets": [
+      "bee"
+    ],
+    "denyTags": [
+      "melee2h",
+      "ranged2h"
+    ],
+    "statMods": [
+      {
+        "stat": "petDamage",
+        "flat": 3
+      }
+    ],
+    "mechanic": "swarmAnger",
+    "unlock": {
+      "type": "shop"
+    }
+  },
+  {
+    "id": "alchemist",
+    "name": "Alchemist",
+    "blurb": "Licensed in three counties, banned in two.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "acid-flask"
+    ],
+    "denyTags": [
+      "melee2h",
+      "ranged2h"
+    ],
+    "statMods": [
+      {
+        "stat": "poisonDamage",
+        "flat": 3
+      }
+    ],
+    "mechanic": "spillage",
+    "unlock": {
+      "type": "shop"
+    }
   }
 ]
