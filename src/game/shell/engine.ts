@@ -8,6 +8,7 @@ import { neutralInput, type InputFrame } from '@game/core/input';
 import { DeedEngine } from '@game/core/deeds';
 import { loadProfile, saveProfile, type KeyValueStorage, type Profile } from '@game/meta/profile';
 import { townBonuses } from '@game/meta/shop';
+import { recordRun } from '@game/meta/history';
 import { GameRenderer, takeSnapshot, type RenderSnapshot } from './renderer';
 import { AudioEngine } from './audio';
 import { InputSampler } from './inputSources';
@@ -31,6 +32,11 @@ export class Engine {
   private profileStorage: KeyValueStorage;
   private deedEngine: DeedEngine;
   private maxGoldHeld = 0;
+  /** Set when THIS victory earned a brand-new Emberkey — the ceremony plays once. */
+  keystoneCeremony: number | null = null;
+  private slot = 1;
+  private runStartMs = performance.now();
+  private runRecorded = false;
   private toasts: { id: number; text: string; until: number }[] = [];
   private nextToastId = 1;
 
@@ -43,7 +49,8 @@ export class Engine {
     this.sim = new Sim(seed, playerCount, undefined, opts.classIds ?? []);
     if (opts.startAct && opts.startAct > 1) this.sim.setStartingAct(opts.startAct);
     this.profileStorage = storage;
-    this.profile = loadProfile(storage, opts.slot ?? 1);
+    this.slot = opts.slot ?? 1;
+    this.profile = loadProfile(storage, this.slot);
     this.sim.unlockedItems = new Set(this.profile.unlockedItems);
     this.sim.unlockedFeats = new Set(this.profile.unlockedFeats);
     const bonuses = townBonuses(this.profile);
@@ -670,6 +677,7 @@ export class Engine {
       this.profile.actsCleared.push(act);
       this.profile.emberkeys++;
       this.profile.glimmers += 15; // first-clear bounty
+      this.keystoneCeremony = act; // the run-end screen holds the ceremony
       this.pushToast(`🔑 Emberkey earned — Act ${act} beacon relit!`);
       if (act === 4) {
         this.profile.endlessUnlocked = true;
@@ -704,6 +712,35 @@ export class Engine {
     this.profile.lifetime.kills += [...this.sim.tracker.killsByPlayer.values()].reduce((a, b) => a + b, 0);
     this.profile.lifetime.deepestWave = Math.max(this.profile.lifetime.deepestWave, this.sim.state.wave);
     this.persistProfile();
+    if (this.runRecorded) return; // one chronicle entry per run
+    this.runRecorded = true;
+    // Party-wide top damage items for the chronicle drill-down
+    const itemTotals = new Map<string, number>();
+    for (const perItem of this.sim.tracker.byPlayerItem.values()) {
+      for (const [itemId, agg] of perItem) itemTotals.set(itemId, (itemTotals.get(itemId) ?? 0) + agg.total);
+    }
+    const topItems = [...itemTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([itemId, damage]) => ({ itemId, damage: Math.round(damage) }));
+    void recordRun({
+      ts: Date.now(),
+      slot: this.slot,
+      won,
+      actReached: this.sim.state.act,
+      waveReached: this.sim.state.wave,
+      players: this.sim.state.players.map((p) => ({
+        classId: p.classId,
+        level: p.level,
+        kills: this.sim.tracker.killsByPlayer.get(p.index) ?? 0,
+        damage: Math.round(
+          [...(this.sim.tracker.byPlayerItem.get(p.index)?.values() ?? [])].reduce((a, b) => a + b.total, 0),
+        ),
+      })),
+      topItems,
+      goldEarned: this.sim.state.players[0]?.gold ?? 0,
+      durationSec: Math.round((performance.now() - this.runStartMs) / 1000),
+    });
   }
 
   /** Victory-screen exit: the run ends here (stats recorded once). */

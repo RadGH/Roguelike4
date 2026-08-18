@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { loadProfile, saveProfile } from '@game/meta/profile';
 import { buyClass, buyItem, buyUpgrade, SHOPS, upgradeLevel, upgradePrice } from '@game/meta/shop';
 import { loadRegistry } from '@game/data/registry';
+import { listRuns, type RunRecord } from '@game/meta/history';
 import { GAME_TITLE } from '@game/branding';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { cardBtnStyle, COLORS, panelStyle, screenStyle } from './theme';
@@ -37,6 +38,17 @@ export function TownScreen({
   onBack: () => void;
 }) {
   const [view, setView] = useState<TownView>('square');
+  const [runHistory, setRunHistory] = useState<RunRecord[] | null>(null);
+  useEffect(() => {
+    if (view !== 'chronicle') return;
+    let alive = true;
+    void listRuns(slot, 10).then((rows) => {
+      if (alive) setRunHistory(rows.reverse()); // newest first
+    });
+    return () => {
+      alive = false;
+    };
+  }, [view, slot]);
   const [selectedAct, setSelectedAct] = useState(1);
   const [, forceRender] = useState(0);
   const profile = loadProfile(window.localStorage, slot);
@@ -372,6 +384,39 @@ export function TownScreen({
                 </>
               )}
             </div>
+            <h3 style={{ color: COLORS.gold, fontSize: 14, margin: '14px 0 6px' }}>Recent runs</h3>
+            {runHistory === null ? (
+              <div style={{ opacity: 0.6, fontSize: 13 }}>Soot flips through the pages…</div>
+            ) : runHistory.length === 0 ? (
+              <div style={{ opacity: 0.6, fontSize: 13 }}>No entries yet — every story starts with a first run.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
+                {runHistory.map((r, i) => (
+                  <details key={i} style={{ border: `1px solid ${COLORS.panelBorder}`, borderRadius: 8, padding: '6px 10px', fontSize: 12.5 }}>
+                    <summary style={{ cursor: 'pointer' }}>
+                      {r.won ? '🏆' : '🕯️'} {new Date(r.ts).toLocaleDateString()} — Act {r.actReached}, wave {r.waveReached} ·{' '}
+                      {r.players.map((p) => p.classId).join(' + ')} · {r.durationSec >= 60 ? `${Math.floor(r.durationSec / 60)}m` : `${r.durationSec}s`}
+                    </summary>
+                    <div style={{ opacity: 0.85, marginTop: 4 }}>
+                      {r.players.map((p, pi) => (
+                        <div key={pi}>
+                          P{pi + 1} {p.classId} · Lv {p.level} · ⚔️ {p.kills} · {p.damage} dmg
+                        </div>
+                      ))}
+                      {r.topItems.length > 0 && (
+                        <div style={{ marginTop: 4 }}>
+                          <b>Top damage:</b>{' '}
+                          {r.topItems
+                            .slice(0, 5)
+                            .map((t) => `${t.itemId} (${t.damage})`)
+                            .join(' · ')}
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            )}
             <button onClick={() => setView('square')} style={{ ...miniLink, marginTop: 12 }} data-action="back-to-town">
               ← back to the square
             </button>

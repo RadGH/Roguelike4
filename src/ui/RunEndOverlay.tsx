@@ -59,6 +59,32 @@ export function RunEndOverlay({
       >
         {victory ? (
           <>
+            {engine.keystoneCeremony !== null && (
+              <div data-ceremony style={{ marginBottom: 6 }}>
+                <style>{`
+                  @keyframes keystone-rise { 0% { transform: translateY(24px) scale(0.6); opacity: 0; }
+                    60% { transform: translateY(-6px) scale(1.15); opacity: 1; }
+                    100% { transform: translateY(0) scale(1); opacity: 1; } }
+                  @keyframes keystone-glow { 0%,100% { text-shadow: 0 0 12px #ffd97a88; }
+                    50% { text-shadow: 0 0 34px #ffd97aee, 0 0 60px #ffb34766; } }
+                `}</style>
+                <div
+                  style={{
+                    fontSize: 56,
+                    animation: 'keystone-rise 1.1s ease-out, keystone-glow 2.2s ease-in-out infinite',
+                    display: 'inline-block',
+                  }}
+                >
+                  🔑
+                </div>
+                <div style={{ color: '#ffd97a', fontWeight: 800, letterSpacing: 1 }}>
+                  A NEW EMBERKEY JOINS THE PILLAR
+                </div>
+                <div style={{ opacity: 0.75, fontSize: 12 }}>
+                  Wickburrow's beacon for Act {engine.keystoneCeremony} burns once more.
+                </div>
+              </div>
+            )}
             <h1 style={{ margin: 0, color: '#ffd97a' }}>
               {act >= 4 ? '🔥 The Everflame Roars! 🔥' : `🔥 Act ${act} Relit! 🔥`}
             </h1>
