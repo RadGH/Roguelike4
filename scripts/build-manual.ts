@@ -364,7 +364,8 @@ start with the <a href="../guide/index.html">Player Guide</a> — it spoils noth
 <h2>How a run works</h2>
 <p>Pick a class, ring the bell, survive ten waves, and face what the act keeps at the bottom.
 Between waves you'll choose boons, open chests, and occasionally regret an item choice for
-several minutes. Clear an act's boss to earn its Emberkey — keys unlock later acts from town,
+several minutes. A Wandering Peddler visits a few times per act — gold burns a hole in every
+pocket, and rerolling a disappointing chest costs a little more each time. Clear an act's boss to earn its Emberkey — keys unlock later acts from town,
 and you may always press on instead of banking your win.</p>
 <h2 id="variants">Qualities and variants</h2>
 <p>Weapons come in five qualities: Rusty, Standard, Fine, Superb, Masterwork — better quality,

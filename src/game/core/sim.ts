@@ -52,6 +52,11 @@ export type ChestOffer =
   | { kind: 'weapon'; inst: WeaponInstance }
   | { kind: 'passive'; id: string };
 
+export type PeddlerOffer =
+  | { kind: 'weapon'; inst: WeaponInstance; price: number }
+  | { kind: 'passive'; id: string; price: number }
+  | { kind: 'snack'; price: number }; // Wax Snack: melts on purchase, heals to full
+
 export type PlayerState = {
   index: number;
   classId: string;
@@ -897,6 +902,39 @@ export class Sim {
       );
     }
     return out;
+  }
+
+  /** True when the Wandering Peddler visits this intermission (waves 3/6/9 of each act). */
+  peddlerVisiting(): boolean {
+    const waveInAct = ((this.state.wave - 1) % 10) + 1;
+    return this.registry.balance.peddler.visitWaves.includes(waveInAct);
+  }
+
+  /** Roll the Peddler's stock for one player: filtered items + the Wax Snack. */
+  rollPeddlerStock(playerIndex: number): PeddlerOffer[] {
+    const bal = this.registry.balance.peddler;
+    const price = bal.itemPriceBase + bal.itemPricePerAct * (this.state.act - 1);
+    const items = this.rollChestChoices(playerIndex, bal.stockSize);
+    const out: PeddlerOffer[] = items.map((o) =>
+      o.kind === 'passive' ? { kind: 'passive', id: o.id, price } : { kind: 'weapon', inst: o.inst, price },
+    );
+    out.push({ kind: 'snack', price: bal.snackPrice });
+    return out;
+  }
+
+  /** Deduct gold from ONE player (gold mirrors on earn; spending is personal). */
+  spendGold(playerIndex: number, amount: number): boolean {
+    const p = this.state.players[playerIndex];
+    if (!p || p.gold < amount) return false;
+    p.gold -= amount;
+    return true;
+  }
+
+  /** Wax Snack: heal to full on the spot. */
+  eatSnack(playerIndex: number): void {
+    const p = this.state.players[playerIndex];
+    if (!p) return;
+    this.healPlayer(p, Math.max(0, stat(p.stats, 'maxHp') - p.hp), 'snack');
   }
 
   /** Roll distinct weapon choices: unlocked, class-legal, not already held. */

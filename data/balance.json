@@ -65,5 +65,18 @@
     "heartChance": 0.1,
     "heartHeal": 4,
     "waveClearHearts": 1
+  },
+  "peddler": {
+    "visitWaves": [
+      3,
+      6,
+      9
+    ],
+    "stockSize": 3,
+    "itemPriceBase": 25,
+    "itemPricePerAct": 15,
+    "snackPrice": 15,
+    "rerollCostBase": 10,
+    "rerollCostGrowth": 5
   }
 }

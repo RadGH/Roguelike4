@@ -384,6 +384,17 @@ export const BalanceSchema = z
         waveClearHearts: z.number(),
       })
       .strict(),
+    peddler: z
+      .object({
+        visitWaves: z.array(z.number().int().min(1).max(10)), // wave-in-act schedule
+        stockSize: z.number().int().min(1),
+        itemPriceBase: z.number(),
+        itemPricePerAct: z.number(),
+        snackPrice: z.number(),
+        rerollCostBase: z.number(),
+        rerollCostGrowth: z.number(),
+      })
+      .strict(),
   })
   .strict();
 

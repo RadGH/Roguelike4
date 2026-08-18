@@ -38,9 +38,13 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
       } else {
         for (const c of panel.chest.choices) out.push(() => engine.chooseChestOffer(pi, c.idx));
         out.push(() => engine.salvageForBits(pi));
+        // engine guards affordability — indices must mirror the rendered buttons
+        out.push(() => engine.rerollChest(pi));
       }
     } else if (panel.boonChoices) {
       for (const c of panel.boonChoices) out.push(() => engine.chooseBoon(pi, c.id));
+    } else if (panel.done && panel.peddler) {
+      for (const o of panel.peddler) out.push(() => engine.buyPeddler(pi, o.idx));
     }
     return out;
   }, [panel, engine, pi]);
@@ -200,6 +204,23 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 Salvage
                 <div style={{ fontSize: 10, opacity: 0.8 }}>+2 bits 🔩</div>
               </button>
+              {panel.rerollCost !== null && (
+                <button
+                  onClick={() => engine.rerollChest(pi)}
+                  disabled={panel.gold < panel.rerollCost}
+                  data-action={`reroll-${pi}`}
+                  style={{
+                    ...cardBtn,
+                    border: '2px dashed #9be8ff88',
+                    background: 'transparent',
+                    color: panel.gold >= panel.rerollCost ? '#9be8ff' : '#666',
+                    ...focusStyle(panel.chest.choices.length + 1),
+                  }}
+                >
+                  Reroll
+                  <div style={{ fontSize: 10, opacity: 0.8 }}>{panel.rerollCost} 🪙</div>
+                </button>
+              )}
             </div>
           </>
         )
@@ -219,6 +240,38 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>{c.desc}</div>
                 {pi === 0 && <div style={{ fontSize: 9, opacity: 0.5, marginTop: 4 }}>[{i + 1}]</div>}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : panel.peddler ? (
+        <>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+            🛒 The Wandering Peddler — {panel.gold} 🪙
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {panel.peddler.map((o, i) => (
+              <button
+                key={o.idx}
+                onClick={() => engine.buyPeddler(pi, o.idx)}
+                disabled={o.sold || panel.gold < o.price}
+                data-peddler={`${pi}-${o.id}`}
+                style={{
+                  ...cardBtn,
+                  opacity: o.sold ? 0.35 : 1,
+                  border: `2px solid ${o.kind === 'snack' ? '#ffb0c8' : o.kind === 'passive' ? '#9be8ff' : '#ffd97a'}`,
+                  color: !o.sold && panel.gold >= o.price ? '#fff4d6' : '#888',
+                  ...focusStyle(i),
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 13 }}>
+                  {o.kind === 'snack' ? '🍬 ' : o.kind === 'passive' ? '💠 ' : ''}
+                  {o.name}
+                </div>
+                <div style={{ fontSize: 10, opacity: 0.9 }}>{o.desc}</div>
+                <div style={{ fontSize: 11, marginTop: 4, color: '#ffd97a' }}>
+                  {o.sold ? 'sold' : `${o.price} 🪙`}
+                </div>
               </button>
             ))}
           </div>

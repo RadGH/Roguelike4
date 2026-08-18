@@ -1,7 +1,7 @@
 // The engine shell: owns the Sim, the renderer, the input sampler, and the
 // fixed-timestep accumulator loop. React mounts/unmounts this.
 
-import { Sim, type ChestOffer } from '@game/core/sim';
+import { Sim, type ChestOffer, type PeddlerOffer } from '@game/core/sim';
 import { resolveWeapon, TINKER_COST, nextQuality, type WeaponInstance } from '@game/core/items';
 import { TICK_SECONDS } from '@game/core/constants';
 import { neutralInput, type InputFrame } from '@game/core/input';
@@ -90,6 +90,11 @@ export class Engine {
             this.startWave(10);
           } else if (action.startsWith('grantXp:')) {
             this.sim.grantXpTo(0, Number(action.slice(8)) || 0);
+          } else if (action.startsWith('grantGold:')) {
+            for (const p of this.sim.state.players) p.gold += Number(action.slice(10)) || 0;
+          } else if (action.startsWith('gotoWave:')) {
+            this.clearIntermission();
+            this.startWave(Number(action.slice(9)) || 1);
           } else if (action.startsWith('equip:')) {
             const [, weaponId, slotStr] = action.split(':');
             this.sim.replaceWeapon(0, Number(slotStr) || 0, weaponId!);
@@ -142,6 +147,9 @@ export class Engine {
   private chestChoices = new Map<number, ChestOffer[]>();
   private pendingEquip = new Map<number, WeaponInstance>();
   private classEquipPending = new Set<number>();
+  private peddlerStock = new Map<number, (PeddlerOffer & { sold?: boolean })[]>();
+  private peddlerEquipPending = new Set<number>();
+  private rerollsUsed = new Map<number, number>();
 
   /** Display info for a weapon instance: quality/variant label + effective numbers. */
   private instanceInfo(inst: WeaponInstance) {
@@ -227,7 +235,12 @@ export class Engine {
 
   private openIntermission(): void {
     this.intermissionActive = true;
-    for (const p of this.sim.state.players) this.refreshIntermissionOffers(p.index);
+    for (const p of this.sim.state.players) {
+      this.refreshIntermissionOffers(p.index);
+      if (this.sim.peddlerVisiting()) {
+        this.peddlerStock.set(p.index, this.sim.rollPeddlerStock(p.index));
+      }
+    }
   }
 
   private clearIntermission(): void {
@@ -236,6 +249,44 @@ export class Engine {
     this.chestChoices.clear();
     this.pendingEquip.clear();
     this.classEquipPending.clear();
+    this.peddlerStock.clear();
+    this.peddlerEquipPending.clear();
+    this.rerollsUsed.clear();
+  }
+
+  /** Chest reroll fee: grows with each reroll this intermission (gold sink). */
+  rerollCost(playerIndex: number): number {
+    const bal = this.sim.registry.balance.peddler;
+    return bal.rerollCostBase + bal.rerollCostGrowth * (this.rerollsUsed.get(playerIndex) ?? 0);
+  }
+
+  /** Pay gold to re-roll the current chest offers. */
+  rerollChest(playerIndex: number): void {
+    if (!this.intermissionActive || !this.chestChoices.has(playerIndex)) return;
+    if (this.pendingEquip.has(playerIndex)) return; // finish the equip decision first
+    if (!this.sim.spendGold(playerIndex, this.rerollCost(playerIndex))) return;
+    this.rerollsUsed.set(playerIndex, (this.rerollsUsed.get(playerIndex) ?? 0) + 1);
+    this.chestChoices.set(playerIndex, this.sim.rollChestChoices(playerIndex, 3));
+  }
+
+  /** Buy from the Wandering Peddler. Weapons follow the normal equip/replace flow. */
+  buyPeddler(playerIndex: number, offerIndex: number): void {
+    if (!this.intermissionActive) return;
+    const stock = this.peddlerStock.get(playerIndex);
+    const offer = stock?.[offerIndex];
+    if (!offer || offer.sold) return;
+    if (this.pendingEquip.has(playerIndex)) return; // one equip decision at a time
+    if (!this.sim.spendGold(playerIndex, offer.price)) return;
+    offer.sold = true;
+    if (offer.kind === 'snack') {
+      this.sim.eatSnack(playerIndex);
+    } else if (offer.kind === 'passive') {
+      this.sim.addPassive(playerIndex, offer.id);
+    } else if (!this.sim.equipWeapon(playerIndex, offer.inst)) {
+      // Hands full — route through the standard replace picker
+      this.pendingEquip.set(playerIndex, offer.inst);
+      this.peddlerEquipPending.add(playerIndex);
+    }
   }
 
   chooseChestOffer(playerIndex: number, offerIndex: number): void {
@@ -266,6 +317,17 @@ export class Engine {
   }
 
   cancelEquip(playerIndex: number): void {
+    // A canceled Peddler purchase is refunded — nobody pays for air
+    if (this.peddlerEquipPending.has(playerIndex)) {
+      const inst = this.pendingEquip.get(playerIndex);
+      const stock = this.peddlerStock.get(playerIndex);
+      const entry = stock?.find((o) => o.kind === 'weapon' && o.sold && o.inst === inst);
+      if (entry) {
+        entry.sold = false;
+        this.sim.state.players[playerIndex]!.gold += entry.price;
+      }
+      this.peddlerEquipPending.delete(playerIndex);
+    }
     this.pendingEquip.delete(playerIndex);
     this.classEquipPending.delete(playerIndex);
   }
@@ -274,7 +336,11 @@ export class Engine {
     const weaponId = this.pendingEquip.get(playerIndex);
     if (!this.intermissionActive || !weaponId) return;
     this.sim.replaceWeapon(playerIndex, slotIndex, weaponId);
-    if (this.classEquipPending.has(playerIndex)) {
+    if (this.peddlerEquipPending.has(playerIndex)) {
+      this.peddlerEquipPending.delete(playerIndex);
+      this.pendingEquip.delete(playerIndex);
+      this.refreshIntermissionOffers(playerIndex);
+    } else if (this.classEquipPending.has(playerIndex)) {
       this.classEquipPending.delete(playerIndex);
       this.pendingEquip.delete(playerIndex);
       this.sim.state.players[playerIndex]!.pendingClassItems.shift();
@@ -363,6 +429,19 @@ export class Engine {
               const b = this.sim.registry.boons.get(id)!;
               return { id, name: b.name, desc: b.desc };
             }) ?? null,
+          rerollCost: chest ? this.rerollCost(p.index) : null,
+          gold: p.gold,
+          peddler:
+            this.peddlerStock.get(p.index)?.map((o, idx) => ({
+              idx,
+              sold: !!o.sold,
+              price: o.price,
+              ...(o.kind === 'snack'
+                ? { id: 'wax-snack', name: 'Wax Snack', desc: 'Heals to full. Tastes like birthdays.', kind: 'snack' as const }
+                : o.kind === 'passive'
+                  ? this.weaponInfo(o.id)
+                  : this.instanceInfo(o.inst)),
+            })) ?? null,
         };
       }),
     };
