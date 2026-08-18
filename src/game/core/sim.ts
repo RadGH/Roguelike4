@@ -126,6 +126,7 @@ export type EnemyState = {
   boss: BossState | null;
   attackCooldown: number;
   summonTimer: number;
+  mimicAwake: boolean;
   targetPlayer: number;
   wanderAngle: number;
   wanderTimer: number;
@@ -599,20 +600,34 @@ export class Sim {
    *  with party size; per-player XP is divided so leveling stays flat vs solo. */
   startWaveNumber(wave: number): void {
     const w = getWave(this.registry, this.state.act, wave);
-    const coopMult =
-      1 + this.registry.balance.coop.spawnMultPerExtraPlayer * (this.state.players.length - 1);
+    const bal = this.registry.balance;
+    const coopMult = 1 + bal.coop.spawnMultPerExtraPlayer * (this.state.players.length - 1);
+    // Evil Candle: the flame draws more of the dark
+    const evilMult = 1 + bal.evil.candleSpawn * this.evilCount('evilCandle');
     this.state.wave = wave;
     this.state.phase = 'fighting';
-    this.state.spawning = {
-      queue: w.entries.map((e) => ({
-        defId: e.defId,
-        count: Math.round(e.count * coopMult),
-        atSecond: e.atSecond,
-        elite: e.elite,
-      })),
-      elapsed: 0,
-      done: false,
-    };
+    const queue = w.entries.map((e) => ({
+      defId: e.defId,
+      count: Math.round(e.count * coopMult * evilMult),
+      atSecond: e.atSecond,
+      elite: e.elite,
+    }));
+    // Evil Eye: a champion answers the invitation, every wave
+    const eyes = this.evilCount('evilEye');
+    const mini = Sim.ACT_MINIBOSS[this.state.act];
+    if (mini) {
+      for (let i = 0; i < eyes; i++) queue.push({ defId: mini, count: 1, atSecond: 8 + i * 4, elite: false });
+    }
+    this.state.spawning = { queue, elapsed: 0, done: false };
+    // Evil Fist: the deal includes an extra chest, somewhere out there
+    for (let i = 0; i < this.evilCount('evilFist'); i++) {
+      this.dropPickup(
+        2 + this.rng.drops.next() * (this.state.arena.width - 4),
+        2 + this.rng.drops.next() * (this.state.arena.height - 4),
+        'chest',
+        1,
+      );
+    }
   }
 
   /** True while the current act has a next wave (endless always does). */
@@ -690,8 +705,19 @@ export class Sim {
     const bal = this.registry.balance;
     // Past wave 40 (endless) growth compounds — the dark eventually wins
     const endlessMult = this.state.wave > 40 ? Math.pow(1.08, this.state.wave - 40) : 1;
-    const waveGrowthHp = (1 + bal.waves.hpGrowthPerWave * Math.max(0, this.state.wave - 1)) * endlessMult;
-    const waveGrowthDmg = (1 + bal.waves.dmgGrowthPerWave * Math.max(0, this.state.wave - 1)) * endlessMult;
+    // Evil items sharpen the dark
+    const drums = this.evilCount('evilDrum');
+    const fists = this.evilCount('evilFist');
+    const bellows = this.evilCount('evilBellows');
+    const hearts = this.evilCount('evilHeart');
+    const evilHp = 1 + bal.evil.drumHp * drums + bal.evil.heartStats * hearts;
+    const evilDmg = 1 + bal.evil.fistDmg * fists + bal.evil.heartStats * hearts;
+    const evilSpeed = 1 + bal.evil.bellowsSpeed * bellows;
+    const evilXp = 1 + bal.evil.drumXp * drums + bal.evil.heartReward * hearts;
+    const waveGrowthHp =
+      (1 + bal.waves.hpGrowthPerWave * Math.max(0, this.state.wave - 1)) * endlessMult * evilHp;
+    const waveGrowthDmg =
+      (1 + bal.waves.dmgGrowthPerWave * Math.max(0, this.state.wave - 1)) * endlessMult * evilDmg;
     const em = bal.waves.elite;
     const e: EnemyState = {
       instance: this.nextEnemyInstance++,
@@ -702,13 +728,14 @@ export class Sim {
       alive: true,
       maxHp: def.maxHp * waveGrowthHp * (elite ? em.hpMult : 1),
       damage: def.damage * waveGrowthDmg * (elite ? em.dmgMult : 1),
-      moveSpeed: def.moveSpeed * (elite ? em.speedMult : 1),
-      xp: def.xp * (elite ? em.xpMult : 1),
+      moveSpeed: def.moveSpeed * (elite ? em.speedMult : 1) * evilSpeed,
+      xp: def.xp * (elite ? em.xpMult : 1) * evilXp,
       chestChance: Math.max(def.chestChance, elite ? em.chestChance : 0),
       elite,
       status: freshStatus(),
       charge: { phase: 'none', timer: 0, dirX: 0, dirY: 0 },
       summonTimer: 0,
+      mimicAwake: false,
       boss:
         def.archetype === 'boss'
           ? { phaseIdx: 0, cooldown: 1.5, stage: 'idle', stageTimer: 0, targetX: x, targetY: y, fromX: x, fromY: y }
@@ -729,6 +756,24 @@ export class Sim {
 
   /** Item ids unlocked on this save slot; weapons with an unlockDeed need to be here. */
   unlockedItems = new Set<string>();
+
+  /** Evil item copies across the whole party (they stack). */
+  evilCount(mod: string): number {
+    let n = 0;
+    for (const p of this.state.players) {
+      for (const id of p.passives) {
+        if (this.registry.passives.get(id)?.mods.includes(mod as never)) n++;
+      }
+    }
+    return n;
+  }
+
+  private static ACT_MINIBOSS: Record<number, string> = {
+    1: 'sir-fluffington',
+    2: 'the-damp',
+    3: 'avalanche-jr',
+    4: 'the-understudy',
+  };
   /** Permanent town-upgrade bonuses, included in every stat rebuild. */
   private townGrants: import('../data/schemas').Grant[] = [];
 
@@ -1359,8 +1404,15 @@ export class Sim {
       }
     }
 
-    const goldAmount = this.rng.drops.int(def.gold[0], def.gold[1]);
+    const bal = this.registry.balance;
+    const goldEvil =
+      1 +
+      bal.evil.heartReward * this.evilCount('evilHeart') +
+      bal.evil.bellowsGold * this.evilCount('evilBellows');
+    const goldAmount = Math.round(this.rng.drops.int(def.gold[0], def.gold[1]) * goldEvil);
     for (let i = 0; i < goldAmount; i++) this.dropPickup(enemy.x, enemy.y, 'gold', 1);
+    // Mimics telegraph their prize — and pay up honestly when defeated
+    if (def.mimicDrop === 'chest') this.dropPickup(enemy.x, enemy.y, 'chest', 1);
     const comboMult = Math.min(
       this.registry.balance.combo.maxMult,
       1 + combo.count * this.registry.balance.combo.xpPerStack,
@@ -1493,6 +1545,18 @@ export class Sim {
       if (e.boss && def.bossPhases) {
         this.tickBoss(e, def, target, dx, dy, dist, statusMove, dt, bal);
         continue;
+      }
+
+      // Mimics play dead-chest until someone reaches for the latch
+      if (def.archetype === 'mimic') {
+        if (!e.mimicAwake) {
+          if (dist <= (def.mimicTriggerRange ?? 2.5)) {
+            e.mimicAwake = true;
+            this.eventsThisTick.push({ type: 'chargeTelegraph', instance: e.instance });
+          }
+          continue; // perfectly still. definitely just a chest.
+        }
+        // awake: falls through to default chase behavior below
       }
 
       // Charger state machine

@@ -153,5 +153,77 @@
     ],
     "rarity": "rare",
     "unlockDeed": "pet-kills-50"
+  },
+  {
+    "id": "evil-candle",
+    "category": "passive",
+    "desc": "It never goes out. +25% enemy spawns while carried. Why did you pick this up?",
+    "mods": [
+      "evilCandle"
+    ],
+    "rarity": "rare",
+    "tags": [
+      "evil"
+    ]
+  },
+  {
+    "id": "evil-heart",
+    "category": "passive",
+    "desc": "Thump. Enemies grow stronger \u2014 and drop +40% gold and XP. Thump.",
+    "mods": [
+      "evilHeart"
+    ],
+    "rarity": "rare",
+    "tags": [
+      "evil"
+    ]
+  },
+  {
+    "id": "evil-eye",
+    "category": "passive",
+    "desc": "It sees a champion in every wave, and invites one. Champions carry chests.",
+    "mods": [
+      "evilEye"
+    ],
+    "rarity": "rare",
+    "tags": [
+      "evil"
+    ]
+  },
+  {
+    "id": "evil-bellows",
+    "category": "passive",
+    "desc": "Puffs dark encouragement: +20% enemy speed, +15% gold.",
+    "mods": [
+      "evilBellows"
+    ],
+    "rarity": "rare",
+    "tags": [
+      "evil"
+    ]
+  },
+  {
+    "id": "evil-drum",
+    "category": "passive",
+    "desc": "Ba-dum. Enemies gain +30% health; you gain +20% XP. Ba-dum.",
+    "mods": [
+      "evilDrum"
+    ],
+    "rarity": "rare",
+    "tags": [
+      "evil"
+    ]
+  },
+  {
+    "id": "evil-fist",
+    "category": "passive",
+    "desc": "Enemies hit +15% harder, and an extra chest appears each wave. A firm deal.",
+    "mods": [
+      "evilFist"
+    ],
+    "rarity": "rare",
+    "tags": [
+      "evil"
+    ]
   }
 ]

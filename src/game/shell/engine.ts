@@ -49,6 +49,9 @@ export class Engine {
       this.sim.registry.deeds,
       this.profile.deedProgress,
       new Set(this.profile.deedsCompleted),
+      new Set(
+        [...this.sim.registry.enemies.values()].filter((e) => e.archetype === 'mimic').map((e) => e.id),
+      ),
     );
     this.prevSnap = takeSnapshot(this.sim);
     this.currSnap = takeSnapshot(this.sim);

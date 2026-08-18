@@ -5,10 +5,15 @@
     "radius": 0.75,
     "maxHp": 40,
     "damage": 6,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 2.4,
     "xp": 10,
-    "gold": [3, 6],
+    "gold": [
+      3,
+      6
+    ],
     "attackCooldown": 0.9,
     "armor": 6
   },
@@ -18,10 +23,15 @@
     "radius": 0.5,
     "maxHp": 16,
     "damage": 6,
-    "damageTypes": ["void"],
+    "damageTypes": [
+      "void"
+    ],
     "moveSpeed": 3.0,
     "xp": 9,
-    "gold": [3, 5],
+    "gold": [
+      3,
+      5
+    ],
     "attackCooldown": 1.7,
     "range": 9,
     "projectileSpeed": 9
@@ -32,10 +42,15 @@
     "radius": 0.45,
     "maxHp": 14,
     "damage": 4,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 5.6,
     "xp": 8,
-    "gold": [6, 10],
+    "gold": [
+      6,
+      10
+    ],
     "attackCooldown": 0.8
   },
   {
@@ -44,10 +59,15 @@
     "radius": 0.8,
     "maxHp": 46,
     "damage": 8,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 2.0,
     "xp": 12,
-    "gold": [4, 7],
+    "gold": [
+      4,
+      7
+    ],
     "attackCooldown": 1.0,
     "chargeWindup": 0.9,
     "chargeSpeedMult": 4,
@@ -62,10 +82,15 @@
     "radius": 0.5,
     "maxHp": 18,
     "damage": 3,
-    "damageTypes": ["void"],
+    "damageTypes": [
+      "void"
+    ],
     "moveSpeed": 3.2,
     "xp": 10,
-    "gold": [3, 6],
+    "gold": [
+      3,
+      6
+    ],
     "attackCooldown": 1.2,
     "auraRadius": 4.5,
     "auraSpeedMult": 1.3
@@ -76,10 +101,15 @@
     "radius": 0.5,
     "maxHp": 18,
     "damage": 5,
-    "damageTypes": ["void"],
+    "damageTypes": [
+      "void"
+    ],
     "moveSpeed": 2.4,
     "xp": 9,
-    "gold": [3, 5],
+    "gold": [
+      3,
+      5
+    ],
     "attackCooldown": 2.6,
     "range": 9,
     "projectileSpeed": 7,
@@ -94,18 +124,66 @@
     "radius": 2.0,
     "maxHp": 1400,
     "damage": 12,
-    "damageTypes": ["void"],
+    "damageTypes": [
+      "void"
+    ],
     "moveSpeed": 2.0,
     "xp": 600,
-    "gold": [120, 160],
+    "gold": [
+      120,
+      160
+    ],
     "attackCooldown": 1.1,
     "armor": 10,
     "chestChance": 1,
     "bossPhases": [
-      { "mode": "volley", "until": 0.75, "cooldown": 2.4, "volleyRing": 12, "volleyAimed": 3 },
-      { "mode": "summon", "until": 0.5, "cooldown": 2.6, "summonId": "velvet-archer", "summonCount": 2, "summonCap": 6 },
-      { "mode": "hop", "until": 0.25, "cooldown": 3.0 },
-      { "mode": "frenzy", "until": 0, "cooldown": 1.4 }
+      {
+        "mode": "volley",
+        "until": 0.75,
+        "cooldown": 2.4,
+        "volleyRing": 12,
+        "volleyAimed": 3
+      },
+      {
+        "mode": "summon",
+        "until": 0.5,
+        "cooldown": 2.6,
+        "summonId": "velvet-archer",
+        "summonCount": 2,
+        "summonCap": 6
+      },
+      {
+        "mode": "hop",
+        "until": 0.25,
+        "cooldown": 3.0
+      },
+      {
+        "mode": "frenzy",
+        "until": 0,
+        "cooldown": 1.4
+      }
     ]
+  },
+  {
+    "id": "the-understudy",
+    "name": "The Understudy",
+    "archetype": "shooter",
+    "radius": 0.9,
+    "maxHp": 280,
+    "damage": 10,
+    "damageTypes": [
+      "void"
+    ],
+    "moveSpeed": 2.8,
+    "xp": 120,
+    "gold": [
+      26,
+      40
+    ],
+    "attackCooldown": 1.2,
+    "armor": 8,
+    "chestChance": 1,
+    "range": 9,
+    "projectileSpeed": 9
   }
 ]

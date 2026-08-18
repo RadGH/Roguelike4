@@ -1,60 +1,248 @@
 {
   "act": 2,
   "waves": [
-    { "wave": 11, "entries": [
-      { "atSecond": 0, "defId": "soggun", "count": 6 },
-      { "atSecond": 8, "defId": "soggun", "count": 5 },
-      { "atSecond": 14, "defId": "croakswain", "count": 2 }
-    ]},
-    { "wave": 12, "entries": [
-      { "atSecond": 0, "defId": "soggun", "count": 6 },
-      { "atSecond": 6, "defId": "bubblim", "count": 2 },
-      { "atSecond": 14, "defId": "croakswain", "count": 3 }
-    ]},
-    { "wave": 13, "entries": [
-      { "atSecond": 0, "defId": "bogboil", "count": 4 },
-      { "atSecond": 6, "defId": "bubblim", "count": 3 },
-      { "atSecond": 14, "defId": "soggun", "count": 6 }
-    ]},
-    { "wave": 14, "entries": [
-      { "atSecond": 0, "defId": "mudpuppy", "count": 2 },
-      { "atSecond": 5, "defId": "soggun", "count": 7 },
-      { "atSecond": 12, "defId": "drizzlecloud", "count": 1 },
-      { "atSecond": 16, "defId": "croakswain", "count": 3 }
-    ]},
-    { "wave": 15, "entries": [
-      { "atSecond": 0, "defId": "soggun", "count": 8, "elite": true },
-      { "atSecond": 8, "defId": "bubblim", "count": 3 },
-      { "atSecond": 15, "defId": "mudpuppy", "count": 2 }
-    ]},
-    { "wave": 16, "entries": [
-      { "atSecond": 0, "defId": "bogboil", "count": 5 },
-      { "atSecond": 6, "defId": "drizzlecloud", "count": 2 },
-      { "atSecond": 12, "defId": "croakswain", "count": 4 },
-      { "atSecond": 18, "defId": "soggun", "count": 6 }
-    ]},
-    { "wave": 17, "entries": [
-      { "atSecond": 0, "defId": "mudpuppy", "count": 3, "elite": true },
-      { "atSecond": 8, "defId": "bubblim", "count": 4 },
-      { "atSecond": 16, "defId": "soggun", "count": 8 }
-    ]},
-    { "wave": 18, "entries": [
-      { "atSecond": 0, "defId": "croakswain", "count": 5, "elite": true },
-      { "atSecond": 7, "defId": "bogboil", "count": 5 },
-      { "atSecond": 14, "defId": "drizzlecloud", "count": 2 },
-      { "atSecond": 20, "defId": "mudpuppy", "count": 2 }
-    ]},
-    { "wave": 19, "entries": [
-      { "atSecond": 0, "defId": "soggun", "count": 10 },
-      { "atSecond": 6, "defId": "bubblim", "count": 4 },
-      { "atSecond": 12, "defId": "bogboil", "count": 5 },
-      { "atSecond": 18, "defId": "croakswain", "count": 4 },
-      { "atSecond": 24, "defId": "mudpuppy", "count": 3 }
-    ]},
-    { "wave": 20, "entries": [
-      { "atSecond": 0, "defId": "ribbert", "count": 1 },
-      { "atSecond": 25, "defId": "soggun", "count": 6 },
-      { "atSecond": 45, "defId": "croakswain", "count": 3 }
-    ]}
+    {
+      "wave": 11,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "soggun",
+          "count": 6
+        },
+        {
+          "atSecond": 8,
+          "defId": "soggun",
+          "count": 5
+        },
+        {
+          "atSecond": 14,
+          "defId": "croakswain",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "wave": 12,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "soggun",
+          "count": 6
+        },
+        {
+          "atSecond": 6,
+          "defId": "bubblim",
+          "count": 2
+        },
+        {
+          "atSecond": 14,
+          "defId": "croakswain",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "wave": 13,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "bogboil",
+          "count": 4
+        },
+        {
+          "atSecond": 6,
+          "defId": "bubblim",
+          "count": 3
+        },
+        {
+          "atSecond": 14,
+          "defId": "soggun",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "wave": 14,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "mudpuppy",
+          "count": 2
+        },
+        {
+          "atSecond": 5,
+          "defId": "soggun",
+          "count": 7
+        },
+        {
+          "atSecond": 12,
+          "defId": "drizzlecloud",
+          "count": 1
+        },
+        {
+          "atSecond": 16,
+          "defId": "croakswain",
+          "count": 3
+        },
+        {
+          "atSecond": 10,
+          "defId": "the-damp",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 15,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "soggun",
+          "count": 8,
+          "elite": true
+        },
+        {
+          "atSecond": 8,
+          "defId": "bubblim",
+          "count": 3
+        },
+        {
+          "atSecond": 15,
+          "defId": "mudpuppy",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "wave": 16,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "bogboil",
+          "count": 5
+        },
+        {
+          "atSecond": 6,
+          "defId": "drizzlecloud",
+          "count": 2
+        },
+        {
+          "atSecond": 12,
+          "defId": "croakswain",
+          "count": 4
+        },
+        {
+          "atSecond": 18,
+          "defId": "soggun",
+          "count": 6
+        },
+        {
+          "atSecond": 14,
+          "defId": "possessed-chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 17,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "mudpuppy",
+          "count": 3,
+          "elite": true
+        },
+        {
+          "atSecond": 8,
+          "defId": "bubblim",
+          "count": 4
+        },
+        {
+          "atSecond": 16,
+          "defId": "soggun",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "wave": 18,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "croakswain",
+          "count": 5,
+          "elite": true
+        },
+        {
+          "atSecond": 7,
+          "defId": "bogboil",
+          "count": 5
+        },
+        {
+          "atSecond": 14,
+          "defId": "drizzlecloud",
+          "count": 2
+        },
+        {
+          "atSecond": 20,
+          "defId": "mudpuppy",
+          "count": 2
+        },
+        {
+          "atSecond": 14,
+          "defId": "possessed-chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 19,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "soggun",
+          "count": 10
+        },
+        {
+          "atSecond": 6,
+          "defId": "bubblim",
+          "count": 4
+        },
+        {
+          "atSecond": 12,
+          "defId": "bogboil",
+          "count": 5
+        },
+        {
+          "atSecond": 18,
+          "defId": "croakswain",
+          "count": 4
+        },
+        {
+          "atSecond": 24,
+          "defId": "mudpuppy",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "wave": 20,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "ribbert",
+          "count": 1
+        },
+        {
+          "atSecond": 25,
+          "defId": "soggun",
+          "count": 6
+        },
+        {
+          "atSecond": 45,
+          "defId": "croakswain",
+          "count": 3
+        }
+      ]
+    }
   ]
 }

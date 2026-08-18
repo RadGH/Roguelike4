@@ -5,10 +5,16 @@
     "radius": 0.5,
     "maxHp": 16,
     "damage": 5,
-    "damageTypes": ["melee", "ice"],
+    "damageTypes": [
+      "melee",
+      "ice"
+    ],
     "moveSpeed": 2.8,
     "xp": 6,
-    "gold": [2, 4],
+    "gold": [
+      2,
+      4
+    ],
     "attackCooldown": 0.8,
     "chargeWindup": 0.6,
     "chargeSpeedMult": 5,
@@ -22,10 +28,15 @@
     "radius": 0.45,
     "maxHp": 12,
     "damage": 5,
-    "damageTypes": ["ice"],
+    "damageTypes": [
+      "ice"
+    ],
     "moveSpeed": 3.0,
     "xp": 6,
-    "gold": [2, 4],
+    "gold": [
+      2,
+      4
+    ],
     "attackCooldown": 1.8,
     "range": 8,
     "projectileSpeed": 8
@@ -36,10 +47,15 @@
     "radius": 0.42,
     "maxHp": 10,
     "damage": 4,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 5.4,
     "xp": 5,
-    "gold": [1, 3],
+    "gold": [
+      1,
+      3
+    ],
     "attackCooldown": 0.7
   },
   {
@@ -48,10 +64,15 @@
     "radius": 0.55,
     "maxHp": 16,
     "damage": 2,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 2.2,
     "xp": 8,
-    "gold": [3, 5],
+    "gold": [
+      3,
+      5
+    ],
     "attackCooldown": 1.0,
     "summonId": "chatterjaw",
     "summonCount": 2,
@@ -64,10 +85,15 @@
     "radius": 0.5,
     "maxHp": 12,
     "damage": 2,
-    "damageTypes": ["ice"],
+    "damageTypes": [
+      "ice"
+    ],
     "moveSpeed": 3.2,
     "xp": 7,
-    "gold": [2, 4],
+    "gold": [
+      2,
+      4
+    ],
     "attackCooldown": 1.2,
     "auraRadius": 4,
     "auraSpeedMult": 1.3
@@ -78,10 +104,15 @@
     "radius": 0.5,
     "maxHp": 13,
     "damage": 4,
-    "damageTypes": ["ice"],
+    "damageTypes": [
+      "ice"
+    ],
     "moveSpeed": 2.2,
     "xp": 6,
-    "gold": [2, 4],
+    "gold": [
+      2,
+      4
+    ],
     "attackCooldown": 2.8,
     "range": 9,
     "projectileSpeed": 6,
@@ -96,17 +127,65 @@
     "radius": 1.4,
     "maxHp": 860,
     "damage": 10,
-    "damageTypes": ["ice"],
+    "damageTypes": [
+      "ice"
+    ],
     "moveSpeed": 2.4,
     "xp": 320,
-    "gold": [60, 80],
+    "gold": [
+      60,
+      80
+    ],
     "attackCooldown": 1.0,
     "armor": 8,
     "chestChance": 1,
     "bossPhases": [
-      { "mode": "volley", "until": 0.66, "cooldown": 2.4, "volleyRing": 8, "volleyAimed": 3 },
-      { "mode": "summon", "until": 0.33, "cooldown": 2.8, "summonId": "icicle-imp", "summonCount": 2, "summonCap": 6 },
-      { "mode": "frenzy", "until": 0, "cooldown": 1.8 }
+      {
+        "mode": "volley",
+        "until": 0.66,
+        "cooldown": 2.4,
+        "volleyRing": 8,
+        "volleyAimed": 3
+      },
+      {
+        "mode": "summon",
+        "until": 0.33,
+        "cooldown": 2.8,
+        "summonId": "icicle-imp",
+        "summonCount": 2,
+        "summonCap": 6
+      },
+      {
+        "mode": "frenzy",
+        "until": 0,
+        "cooldown": 1.8
+      }
     ]
+  },
+  {
+    "id": "avalanche-jr",
+    "name": "Avalanche Jr.",
+    "archetype": "charger",
+    "radius": 1.0,
+    "maxHp": 220,
+    "damage": 9,
+    "damageTypes": [
+      "melee",
+      "ice"
+    ],
+    "moveSpeed": 2.4,
+    "xp": 90,
+    "gold": [
+      20,
+      30
+    ],
+    "attackCooldown": 0.9,
+    "armor": 6,
+    "chestChance": 1,
+    "chargeWindup": 0.6,
+    "chargeSpeedMult": 5,
+    "chargeDuration": 0.9,
+    "chargeCooldown": 2.4,
+    "chargeTriggerRange": 8
   }
 ]

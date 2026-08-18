@@ -1,19 +1,367 @@
 [
-  { "id": "tough-wick", "name": "Tough Wick", "desc": "+3 max HP", "grants": [{ "stat": "maxHp", "flat": 3 }], "weight": 1 },
-  { "id": "sharp-edges", "name": "Sharp Edges", "desc": "+2 melee damage", "grants": [{ "stat": "meleeDamage", "flat": 2 }], "weight": 1 },
-  { "id": "steady-hands", "name": "Steady Hands", "desc": "+2 ranged damage", "grants": [{ "stat": "rangedDamage", "flat": 2 }], "weight": 1 },
-  { "id": "bright-spark", "name": "Bright Spark", "desc": "+1 magic damage (all schools)", "grants": [
-    { "stat": "fireDamage", "flat": 1 }, { "stat": "lightningDamage", "flat": 1 }, { "stat": "iceDamage", "flat": 1 },
-    { "stat": "poisonDamage", "flat": 1 }, { "stat": "arcaneDamage", "flat": 1 }
-  ], "weight": 1 },
-  { "id": "lucky-nick", "name": "Lucky Nick", "desc": "+4% crit chance", "grants": [{ "stat": "critChance", "flat": 0.04 }], "weight": 1 },
-  { "id": "heavy-swing", "name": "Heavy Swing", "desc": "+15% crit damage", "grants": [{ "stat": "critDamage", "flat": 0.15 }], "weight": 1 },
-  { "id": "thick-tallow", "name": "Thick Tallow", "desc": "+2 armor", "grants": [{ "stat": "armor", "flat": 2 }], "weight": 1 },
-  { "id": "nimble-flame", "name": "Nimble Flame", "desc": "+3% dodge", "grants": [{ "stat": "dodge", "flat": 0.03 }], "weight": 1 },
-  { "id": "quick-feet", "name": "Quick Feet", "desc": "+6% move speed", "grants": [{ "stat": "moveSpeed", "flat": 0.06 }], "weight": 1 },
-  { "id": "long-arms", "name": "Long Arms", "desc": "+10% area", "grants": [{ "stat": "area", "flat": 0.1 }], "weight": 1 },
-  { "id": "greedy-glow", "name": "Greedy Glow", "desc": "+20% pickup radius", "grants": [{ "stat": "pickupRadius", "pct": 0.2 }], "weight": 1 },
-  { "id": "swift-strikes", "name": "Swift Strikes", "desc": "+8% attack speed", "grants": [{ "stat": "cooldownRate", "flat": 0.08 }], "weight": 1 },
-  { "id": "fleet-shots", "name": "Fleet Shots", "desc": "+15% projectile speed", "grants": [{ "stat": "projectileSpeed", "flat": 0.15 }], "weight": 1 },
-  { "id": "warm-heart", "name": "Warm Heart", "desc": "+0.3 HP/s regen", "grants": [{ "stat": "hpRegen", "flat": 0.3 }], "weight": 0.8 }
+  {
+    "id": "tough-wick",
+    "name": "Tough Wick",
+    "desc": "+3 max HP",
+    "grants": [
+      {
+        "stat": "maxHp",
+        "flat": 3
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "sharp-edges",
+    "name": "Sharp Edges",
+    "desc": "+2 melee damage",
+    "grants": [
+      {
+        "stat": "meleeDamage",
+        "flat": 2
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "steady-hands",
+    "name": "Steady Hands",
+    "desc": "+2 ranged damage",
+    "grants": [
+      {
+        "stat": "rangedDamage",
+        "flat": 2
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "bright-spark",
+    "name": "Bright Spark",
+    "desc": "+1 magic damage (all schools)",
+    "grants": [
+      {
+        "stat": "fireDamage",
+        "flat": 1
+      },
+      {
+        "stat": "lightningDamage",
+        "flat": 1
+      },
+      {
+        "stat": "iceDamage",
+        "flat": 1
+      },
+      {
+        "stat": "poisonDamage",
+        "flat": 1
+      },
+      {
+        "stat": "arcaneDamage",
+        "flat": 1
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "lucky-nick",
+    "name": "Lucky Nick",
+    "desc": "+4% crit chance",
+    "grants": [
+      {
+        "stat": "critChance",
+        "flat": 0.04
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "heavy-swing",
+    "name": "Heavy Swing",
+    "desc": "+15% crit damage",
+    "grants": [
+      {
+        "stat": "critDamage",
+        "flat": 0.15
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "thick-tallow",
+    "name": "Thick Tallow",
+    "desc": "+2 armor",
+    "grants": [
+      {
+        "stat": "armor",
+        "flat": 2
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "nimble-flame",
+    "name": "Nimble Flame",
+    "desc": "+3% dodge",
+    "grants": [
+      {
+        "stat": "dodge",
+        "flat": 0.03
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "quick-feet",
+    "name": "Quick Feet",
+    "desc": "+6% move speed",
+    "grants": [
+      {
+        "stat": "moveSpeed",
+        "flat": 0.06
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "long-arms",
+    "name": "Long Arms",
+    "desc": "+10% area",
+    "grants": [
+      {
+        "stat": "area",
+        "flat": 0.1
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "greedy-glow",
+    "name": "Greedy Glow",
+    "desc": "+20% pickup radius",
+    "grants": [
+      {
+        "stat": "pickupRadius",
+        "pct": 0.2
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "swift-strikes",
+    "name": "Swift Strikes",
+    "desc": "+8% attack speed",
+    "grants": [
+      {
+        "stat": "cooldownRate",
+        "flat": 0.08
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "fleet-shots",
+    "name": "Fleet Shots",
+    "desc": "+15% projectile speed",
+    "grants": [
+      {
+        "stat": "projectileSpeed",
+        "flat": 0.15
+      }
+    ],
+    "weight": 1
+  },
+  {
+    "id": "warm-heart",
+    "name": "Warm Heart",
+    "desc": "+0.3 HP/s regen",
+    "grants": [
+      {
+        "stat": "hpRegen",
+        "flat": 0.3
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "ember-affinity",
+    "name": "Ember Affinity",
+    "desc": "+2 fire damage",
+    "grants": [
+      {
+        "stat": "fireDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "static-affinity",
+    "name": "Static Affinity",
+    "desc": "+2 lightning damage",
+    "grants": [
+      {
+        "stat": "lightningDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "frost-affinity",
+    "name": "Frost Affinity",
+    "desc": "+2 ice damage",
+    "grants": [
+      {
+        "stat": "iceDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "venom-affinity",
+    "name": "Venom Affinity",
+    "desc": "+2 poison damage",
+    "grants": [
+      {
+        "stat": "poisonDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "arcane-affinity",
+    "name": "Arcane Affinity",
+    "desc": "+2 arcane damage",
+    "grants": [
+      {
+        "stat": "arcaneDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "beast-bond",
+    "name": "Beast Bond",
+    "desc": "+3 pet damage",
+    "grants": [
+      {
+        "stat": "petDamage",
+        "flat": 3
+      }
+    ]
+  },
+  {
+    "id": "red-sip",
+    "name": "Red Sip",
+    "desc": "+3% physical lifesteal",
+    "grants": [
+      {
+        "stat": "lifestealPhys",
+        "flat": 0.03
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "violet-sip",
+    "name": "Violet Sip",
+    "desc": "+3% magical lifesteal",
+    "grants": [
+      {
+        "stat": "lifestealMagic",
+        "flat": 0.03
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "coin-nose",
+    "name": "Coin Nose",
+    "desc": "+10% gold",
+    "grants": [
+      {
+        "stat": "goldGain",
+        "flat": 0.1
+      }
+    ]
+  },
+  {
+    "id": "quick-study",
+    "name": "Quick Study",
+    "desc": "+10% XP",
+    "grants": [
+      {
+        "stat": "xpGain",
+        "flat": 0.1
+      }
+    ]
+  },
+  {
+    "id": "stone-skin",
+    "name": "Stone Skin",
+    "desc": "+1 flat damage reduction",
+    "grants": [
+      {
+        "stat": "flatReduction",
+        "flat": 1
+      }
+    ],
+    "weight": 0.7
+  },
+  {
+    "id": "warding-hum",
+    "name": "Warding Hum",
+    "desc": "+5% resistance to everything",
+    "grants": [
+      {
+        "stat": "resistAll",
+        "flat": 0.05
+      }
+    ],
+    "weight": 0.7
+  },
+  {
+    "id": "far-sight",
+    "name": "Far Sight",
+    "desc": "+15% projectile speed",
+    "grants": [
+      {
+        "stat": "projectileSpeed",
+        "flat": 0.15
+      }
+    ]
+  },
+  {
+    "id": "wide-swing",
+    "name": "Wide Swing",
+    "desc": "+12% area",
+    "grants": [
+      {
+        "stat": "area",
+        "flat": 0.12
+      }
+    ]
+  },
+  {
+    "id": "second-breakfast",
+    "name": "Second Breakfast",
+    "desc": "+4 max HP",
+    "grants": [
+      {
+        "stat": "maxHp",
+        "flat": 4
+      }
+    ]
+  },
+  {
+    "id": "featherstep",
+    "name": "Featherstep",
+    "desc": "+4% dodge",
+    "grants": [
+      {
+        "stat": "dodge",
+        "flat": 0.04
+      }
+    ],
+    "weight": 0.8
+  }
 ]

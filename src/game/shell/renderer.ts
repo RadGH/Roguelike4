@@ -11,6 +11,7 @@ import thistleArcherUrl from '../../../art/enemy-thistle-archer.svg?url';
 import mopsyUrl from '../../../art/boss-mopsy.svg?url';
 import grumbleBeetleUrl from '../../../art/enemy-grumble-beetle.svg?url';
 import dandelionPopperUrl from '../../../art/enemy-dandelion-popper.svg?url';
+import mimicUrl from '../../../art/enemy-mimic.svg?url';
 import petDogUrl from '../../../art/pet-dog.svg?url';
 import petZombieUrl from '../../../art/pet-zombie.svg?url';
 
@@ -33,6 +34,8 @@ const ENEMY_ART: Record<string, string> = {
   'grumble-beetle': grumbleBeetleUrl,
   'dandelion-popper': dandelionPopperUrl,
   'dandelion-seed': puffballUrl, // seeds are just tiny puffs — intentional
+  'possessed-chest': mimicUrl,
+  'gilded-mimic': mimicUrl,
 };
 
 // Acts 2-4 use tinted archetype placeholders until the bespoke art pass (M4).
@@ -45,6 +48,7 @@ const ARCHETYPE_FALLBACK_ART: Record<string, string> = {
   lobber: dandelionPopperUrl,
   summoner: snufflingUrl,
   buffer: puffballUrl,
+  mimic: mimicUrl,
   boss: mopsyUrl,
 };
 
@@ -55,6 +59,8 @@ const ENEMY_TINT: Record<string, number> = {
   yodeler: 0xc0d8ea, 'draft-ghast': 0xd8ecf7, 'frost-lobber': 0xb5e2f0, shiverina: 0xcfe8ff,
   pillowman: 0x8a7fb5, 'velvet-archer': 0xa07fd4, 'night-light-snatcher': 0x776a9e,
   'duvet-golem': 0x6a5f8e, hushling: 0xb59fd8, 'gloam-lobber': 0x9a86c8, 'grand-snuff': 0x5d4d85,
+  'gilded-mimic': 0xffe28a,
+  'sir-fluffington': 0xf5e9ff, 'the-damp': 0x74b0a2, 'avalanche-jr': 0xe8f4ff, 'the-understudy': 0x9a86c8,
 };
 
 export type RenderSnapshot = {
@@ -82,6 +88,7 @@ export type RenderSnapshot = {
     frozen: boolean;
     stunned: boolean;
     telegraphing: boolean;
+    asleep: boolean;
   }[];
   projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
   pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' }[];
@@ -119,6 +126,7 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
           frozen: e.status.freezeLeft > 0,
           stunned: e.status.stunLeft > 0,
           telegraphing: e.charge.phase === 'windup',
+          asleep: def?.archetype === 'mimic' && !e.mimicAwake,
         };
       }),
     projectiles: sim.state.projectiles
@@ -352,7 +360,7 @@ export class GameRenderer {
           .ellipse(0, e.radius * PX_PER_UNIT * 0.8, e.radius * PX_PER_UNIT * 1.2, e.radius * PX_PER_UNIT * 0.45)
           .stroke({ color: 0xffd97a, width: 3 });
       }
-      this.drawHpBarKeep(v, e.hpFrac, 30);
+      if (!e.asleep) this.drawHpBarKeep(v, e.hpFrac, 30);
     }
     for (const [instance, v] of this.enemyVisuals) {
       if (!seen.has(instance)) {

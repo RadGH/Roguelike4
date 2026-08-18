@@ -232,5 +232,18 @@
       }
     ],
     "glimmerBonus": 3
+  },
+  {
+    "id": "mimic-kills-13",
+    "desc": "Defeat 13 possessed chests",
+    "hint": "Some chests breathe. Watch the latch.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 13,
+    "match": {
+      "event": "mimicKill"
+    },
+    "unlocks": [],
+    "glimmerBonus": 5
   }
 ]

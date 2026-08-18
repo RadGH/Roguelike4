@@ -81,7 +81,22 @@ export const PassiveSchema = z
     grants: z.array(GrantSchema).default([]),
     triggers: z.array(TriggerSchema).default([]),
     // Non-event behavior switches the engine implements by name
-    mods: z.array(z.enum(['projectileSplit', 'projectileBounce', 'boonChoices5'])).default([]),
+    mods: z
+      .array(
+        z.enum([
+          'projectileSplit',
+          'projectileBounce',
+          'boonChoices5',
+          // Evil items: opt-in difficulty, party-wide, stack per copy
+          'evilCandle',
+          'evilHeart',
+          'evilEye',
+          'evilBellows',
+          'evilDrum',
+          'evilFist',
+        ]),
+      )
+      .default([]),
     rarity: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']).default('common'),
     unlockDeed: z.string().optional(),
   })
@@ -121,6 +136,7 @@ export const EnemySchema = z
       'lobber',
       'summoner',
       'buffer',
+      'mimic',
       'boss',
     ]),
     name: z.string().optional(), // display name (bosses/minibosses)
@@ -173,6 +189,9 @@ export const EnemySchema = z
           .strict(),
       )
       .optional(),
+    // mimic fields: disguised as a chest until approached; drop telegraphed by look
+    mimicDrop: z.enum(['chest', 'gold']).optional(),
+    mimicTriggerRange: z.number().positive().optional(),
     // drops
     chestChance: z.number().min(0).max(1).default(0),
   })
@@ -223,6 +242,7 @@ export const DeedMatchSchema = z.discriminatedUnion('event', [
   z.object({ event: z.literal('dashThrough') }).strict(),
   z.object({ event: z.literal('lifestealHealed') }).strict(),
   z.object({ event: z.literal('lowHpWaveClear') }).strict(),
+  z.object({ event: z.literal('mimicKill') }).strict(),
 ]);
 
 export const ClassSchema = z
@@ -323,6 +343,18 @@ export const BalanceSchema = z
       .strict(),
     leveling: z
       .object({ base: z.number(), perLevel: z.number() })
+      .strict(),
+    evil: z
+      .object({
+        candleSpawn: z.number(),
+        heartReward: z.number(),
+        heartStats: z.number(),
+        bellowsSpeed: z.number(),
+        bellowsGold: z.number(),
+        drumHp: z.number(),
+        drumXp: z.number(),
+        fistDmg: z.number(),
+      })
       .strict(),
     coop: z
       .object({

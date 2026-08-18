@@ -1,61 +1,253 @@
 {
   "act": 4,
   "waves": [
-    { "wave": 31, "entries": [
-      { "atSecond": 0, "defId": "night-light-snatcher", "count": 5 },
-      { "atSecond": 8, "defId": "velvet-archer", "count": 2 },
-      { "atSecond": 14, "defId": "pillowman", "count": 2 }
-    ]},
-    { "wave": 32, "entries": [
-      { "atSecond": 0, "defId": "pillowman", "count": 3 },
-      { "atSecond": 7, "defId": "gloam-lobber", "count": 2 },
-      { "atSecond": 14, "defId": "night-light-snatcher", "count": 6 }
-    ]},
-    { "wave": 33, "entries": [
-      { "atSecond": 0, "defId": "velvet-archer", "count": 3 },
-      { "atSecond": 6, "defId": "duvet-golem", "count": 1 },
-      { "atSecond": 12, "defId": "night-light-snatcher", "count": 6 }
-    ]},
-    { "wave": 34, "entries": [
-      { "atSecond": 0, "defId": "hushling", "count": 2 },
-      { "atSecond": 5, "defId": "pillowman", "count": 3 },
-      { "atSecond": 12, "defId": "gloam-lobber", "count": 3 },
-      { "atSecond": 18, "defId": "velvet-archer", "count": 3 }
-    ]},
-    { "wave": 35, "entries": [
-      { "atSecond": 0, "defId": "night-light-snatcher", "count": 8, "elite": true },
-      { "atSecond": 8, "defId": "duvet-golem", "count": 2 },
-      { "atSecond": 16, "defId": "velvet-archer", "count": 3 }
-    ]},
-    { "wave": 36, "entries": [
-      { "atSecond": 0, "defId": "pillowman", "count": 4 },
-      { "atSecond": 7, "defId": "hushling", "count": 2 },
-      { "atSecond": 13, "defId": "gloam-lobber", "count": 3 },
-      { "atSecond": 20, "defId": "night-light-snatcher", "count": 7 }
-    ]},
-    { "wave": 37, "entries": [
-      { "atSecond": 0, "defId": "duvet-golem", "count": 3, "elite": true },
-      { "atSecond": 8, "defId": "velvet-archer", "count": 4 },
-      { "atSecond": 16, "defId": "pillowman", "count": 4 }
-    ]},
-    { "wave": 38, "entries": [
-      { "atSecond": 0, "defId": "velvet-archer", "count": 5, "elite": true },
-      { "atSecond": 7, "defId": "gloam-lobber", "count": 4 },
-      { "atSecond": 14, "defId": "hushling", "count": 3 },
-      { "atSecond": 20, "defId": "duvet-golem", "count": 2 }
-    ]},
-    { "wave": 39, "entries": [
-      { "atSecond": 0, "defId": "night-light-snatcher", "count": 10 },
-      { "atSecond": 6, "defId": "pillowman", "count": 5 },
-      { "atSecond": 12, "defId": "gloam-lobber", "count": 4 },
-      { "atSecond": 18, "defId": "velvet-archer", "count": 5 },
-      { "atSecond": 24, "defId": "duvet-golem", "count": 3 }
-    ]},
-    { "wave": 40, "entries": [
-      { "atSecond": 0, "defId": "grand-snuff", "count": 1 },
-      { "atSecond": 30, "defId": "night-light-snatcher", "count": 8 },
-      { "atSecond": 55, "defId": "velvet-archer", "count": 4 },
-      { "atSecond": 80, "defId": "pillowman", "count": 4 }
-    ]}
+    {
+      "wave": 31,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "night-light-snatcher",
+          "count": 5
+        },
+        {
+          "atSecond": 8,
+          "defId": "velvet-archer",
+          "count": 2
+        },
+        {
+          "atSecond": 14,
+          "defId": "pillowman",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "wave": 32,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "pillowman",
+          "count": 3
+        },
+        {
+          "atSecond": 7,
+          "defId": "gloam-lobber",
+          "count": 2
+        },
+        {
+          "atSecond": 14,
+          "defId": "night-light-snatcher",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "wave": 33,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "velvet-archer",
+          "count": 3
+        },
+        {
+          "atSecond": 6,
+          "defId": "duvet-golem",
+          "count": 1
+        },
+        {
+          "atSecond": 12,
+          "defId": "night-light-snatcher",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "wave": 34,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "hushling",
+          "count": 2
+        },
+        {
+          "atSecond": 5,
+          "defId": "pillowman",
+          "count": 3
+        },
+        {
+          "atSecond": 12,
+          "defId": "gloam-lobber",
+          "count": 3
+        },
+        {
+          "atSecond": 18,
+          "defId": "velvet-archer",
+          "count": 3
+        },
+        {
+          "atSecond": 10,
+          "defId": "the-understudy",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 35,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "night-light-snatcher",
+          "count": 8,
+          "elite": true
+        },
+        {
+          "atSecond": 8,
+          "defId": "duvet-golem",
+          "count": 2
+        },
+        {
+          "atSecond": 16,
+          "defId": "velvet-archer",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "wave": 36,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "pillowman",
+          "count": 4
+        },
+        {
+          "atSecond": 7,
+          "defId": "hushling",
+          "count": 2
+        },
+        {
+          "atSecond": 13,
+          "defId": "gloam-lobber",
+          "count": 3
+        },
+        {
+          "atSecond": 20,
+          "defId": "night-light-snatcher",
+          "count": 7
+        },
+        {
+          "atSecond": 14,
+          "defId": "possessed-chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 37,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "duvet-golem",
+          "count": 3,
+          "elite": true
+        },
+        {
+          "atSecond": 8,
+          "defId": "velvet-archer",
+          "count": 4
+        },
+        {
+          "atSecond": 16,
+          "defId": "pillowman",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "wave": 38,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "velvet-archer",
+          "count": 5,
+          "elite": true
+        },
+        {
+          "atSecond": 7,
+          "defId": "gloam-lobber",
+          "count": 4
+        },
+        {
+          "atSecond": 14,
+          "defId": "hushling",
+          "count": 3
+        },
+        {
+          "atSecond": 20,
+          "defId": "duvet-golem",
+          "count": 2
+        },
+        {
+          "atSecond": 14,
+          "defId": "possessed-chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 39,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "night-light-snatcher",
+          "count": 10
+        },
+        {
+          "atSecond": 6,
+          "defId": "pillowman",
+          "count": 5
+        },
+        {
+          "atSecond": 12,
+          "defId": "gloam-lobber",
+          "count": 4
+        },
+        {
+          "atSecond": 18,
+          "defId": "velvet-archer",
+          "count": 5
+        },
+        {
+          "atSecond": 24,
+          "defId": "duvet-golem",
+          "count": 3
+        }
+      ]
+    },
+    {
+      "wave": 40,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "grand-snuff",
+          "count": 1
+        },
+        {
+          "atSecond": 30,
+          "defId": "night-light-snatcher",
+          "count": 8
+        },
+        {
+          "atSecond": 55,
+          "defId": "velvet-archer",
+          "count": 4
+        },
+        {
+          "atSecond": 80,
+          "defId": "pillowman",
+          "count": 4
+        }
+      ]
+    }
   ]
 }

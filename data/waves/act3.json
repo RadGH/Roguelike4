@@ -1,59 +1,243 @@
 {
   "act": 3,
   "waves": [
-    { "wave": 21, "entries": [
-      { "atSecond": 0, "defId": "chatterjaw", "count": 6 },
-      { "atSecond": 8, "defId": "icicle-imp", "count": 2 },
-      { "atSecond": 14, "defId": "snowball-with-teeth", "count": 2 }
-    ]},
-    { "wave": 22, "entries": [
-      { "atSecond": 0, "defId": "snowball-with-teeth", "count": 3 },
-      { "atSecond": 6, "defId": "chatterjaw", "count": 6 },
-      { "atSecond": 14, "defId": "frost-lobber", "count": 2 }
-    ]},
-    { "wave": 23, "entries": [
-      { "atSecond": 0, "defId": "yodeler", "count": 2 },
-      { "atSecond": 6, "defId": "icicle-imp", "count": 3 },
-      { "atSecond": 14, "defId": "chatterjaw", "count": 6 }
-    ]},
-    { "wave": 24, "entries": [
-      { "atSecond": 0, "defId": "draft-ghast", "count": 2 },
-      { "atSecond": 5, "defId": "snowball-with-teeth", "count": 4 },
-      { "atSecond": 12, "defId": "frost-lobber", "count": 3 }
-    ]},
-    { "wave": 25, "entries": [
-      { "atSecond": 0, "defId": "chatterjaw", "count": 8, "elite": true },
-      { "atSecond": 8, "defId": "yodeler", "count": 2 },
-      { "atSecond": 15, "defId": "icicle-imp", "count": 4 }
-    ]},
-    { "wave": 26, "entries": [
-      { "atSecond": 0, "defId": "snowball-with-teeth", "count": 5 },
-      { "atSecond": 7, "defId": "draft-ghast", "count": 2 },
-      { "atSecond": 13, "defId": "frost-lobber", "count": 3 },
-      { "atSecond": 19, "defId": "chatterjaw", "count": 7 }
-    ]},
-    { "wave": 27, "entries": [
-      { "atSecond": 0, "defId": "yodeler", "count": 3, "elite": true },
-      { "atSecond": 8, "defId": "icicle-imp", "count": 4 },
-      { "atSecond": 16, "defId": "snowball-with-teeth", "count": 4 }
-    ]},
-    { "wave": 28, "entries": [
-      { "atSecond": 0, "defId": "icicle-imp", "count": 5, "elite": true },
-      { "atSecond": 7, "defId": "frost-lobber", "count": 4 },
-      { "atSecond": 14, "defId": "draft-ghast", "count": 3 },
-      { "atSecond": 20, "defId": "chatterjaw", "count": 8 }
-    ]},
-    { "wave": 29, "entries": [
-      { "atSecond": 0, "defId": "chatterjaw", "count": 10 },
-      { "atSecond": 6, "defId": "snowball-with-teeth", "count": 5 },
-      { "atSecond": 12, "defId": "yodeler", "count": 3 },
-      { "atSecond": 18, "defId": "icicle-imp", "count": 5 },
-      { "atSecond": 24, "defId": "frost-lobber", "count": 4 }
-    ]},
-    { "wave": 30, "entries": [
-      { "atSecond": 0, "defId": "shiverina", "count": 1 },
-      { "atSecond": 25, "defId": "chatterjaw", "count": 8 },
-      { "atSecond": 45, "defId": "icicle-imp", "count": 4 }
-    ]}
+    {
+      "wave": 21,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "chatterjaw",
+          "count": 6
+        },
+        {
+          "atSecond": 8,
+          "defId": "icicle-imp",
+          "count": 2
+        },
+        {
+          "atSecond": 14,
+          "defId": "snowball-with-teeth",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "wave": 22,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "snowball-with-teeth",
+          "count": 3
+        },
+        {
+          "atSecond": 6,
+          "defId": "chatterjaw",
+          "count": 6
+        },
+        {
+          "atSecond": 14,
+          "defId": "frost-lobber",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "wave": 23,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "yodeler",
+          "count": 2
+        },
+        {
+          "atSecond": 6,
+          "defId": "icicle-imp",
+          "count": 3
+        },
+        {
+          "atSecond": 14,
+          "defId": "chatterjaw",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "wave": 24,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "draft-ghast",
+          "count": 2
+        },
+        {
+          "atSecond": 5,
+          "defId": "snowball-with-teeth",
+          "count": 4
+        },
+        {
+          "atSecond": 12,
+          "defId": "frost-lobber",
+          "count": 3
+        },
+        {
+          "atSecond": 10,
+          "defId": "avalanche-jr",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 25,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "chatterjaw",
+          "count": 8,
+          "elite": true
+        },
+        {
+          "atSecond": 8,
+          "defId": "yodeler",
+          "count": 2
+        },
+        {
+          "atSecond": 15,
+          "defId": "icicle-imp",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "wave": 26,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "snowball-with-teeth",
+          "count": 5
+        },
+        {
+          "atSecond": 7,
+          "defId": "draft-ghast",
+          "count": 2
+        },
+        {
+          "atSecond": 13,
+          "defId": "frost-lobber",
+          "count": 3
+        },
+        {
+          "atSecond": 19,
+          "defId": "chatterjaw",
+          "count": 7
+        },
+        {
+          "atSecond": 14,
+          "defId": "possessed-chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 27,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "yodeler",
+          "count": 3,
+          "elite": true
+        },
+        {
+          "atSecond": 8,
+          "defId": "icicle-imp",
+          "count": 4
+        },
+        {
+          "atSecond": 16,
+          "defId": "snowball-with-teeth",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "wave": 28,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "icicle-imp",
+          "count": 5,
+          "elite": true
+        },
+        {
+          "atSecond": 7,
+          "defId": "frost-lobber",
+          "count": 4
+        },
+        {
+          "atSecond": 14,
+          "defId": "draft-ghast",
+          "count": 3
+        },
+        {
+          "atSecond": 20,
+          "defId": "chatterjaw",
+          "count": 8
+        },
+        {
+          "atSecond": 14,
+          "defId": "possessed-chest",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "wave": 29,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "chatterjaw",
+          "count": 10
+        },
+        {
+          "atSecond": 6,
+          "defId": "snowball-with-teeth",
+          "count": 5
+        },
+        {
+          "atSecond": 12,
+          "defId": "yodeler",
+          "count": 3
+        },
+        {
+          "atSecond": 18,
+          "defId": "icicle-imp",
+          "count": 5
+        },
+        {
+          "atSecond": 24,
+          "defId": "frost-lobber",
+          "count": 4
+        }
+      ]
+    },
+    {
+      "wave": 30,
+      "entries": [
+        {
+          "atSecond": 0,
+          "defId": "shiverina",
+          "count": 1
+        },
+        {
+          "atSecond": 25,
+          "defId": "chatterjaw",
+          "count": 8
+        },
+        {
+          "atSecond": 45,
+          "defId": "icicle-imp",
+          "count": 4
+        }
+      ]
+    }
   ]
 }

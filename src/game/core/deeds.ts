@@ -20,6 +20,8 @@ export class DeedEngine {
     /** live view of progress; caller persists it */
     readonly progress: DeedProgress,
     readonly completed: Set<string>,
+    /** enemy ids that count as mimics (built from the registry by the caller) */
+    private mimicIds: Set<string> = new Set(),
   ) {}
 
   /** Feed one tick's events. Returns any deeds completed this tick. */
@@ -104,6 +106,18 @@ export class DeedEngine {
           break;
         case 'dashThrough':
           for (const ev of simEvents) if (ev.type === 'dashThroughEnemy') gained++;
+          break;
+        case 'mimicKill':
+          for (const ev of trackerEvents) {
+            if (
+              ev.type === 'kill' &&
+              ev.source.actor.kind !== 'enemy' &&
+              ev.target.kind === 'enemy' &&
+              this.mimicIds.has(ev.target.id)
+            ) {
+              gained++;
+            }
+          }
           break;
       }
 

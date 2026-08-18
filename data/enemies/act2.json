@@ -5,10 +5,15 @@
     "radius": 0.5,
     "maxHp": 12,
     "damage": 3,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 3.2,
     "xp": 3,
-    "gold": [1, 3],
+    "gold": [
+      1,
+      3
+    ],
     "attackCooldown": 0.8
   },
   {
@@ -17,10 +22,15 @@
     "radius": 0.45,
     "maxHp": 9,
     "damage": 3,
-    "damageTypes": ["poison"],
+    "damageTypes": [
+      "poison"
+    ],
     "moveSpeed": 2.4,
     "xp": 4,
-    "gold": [1, 3],
+    "gold": [
+      1,
+      3
+    ],
     "attackCooldown": 2.6,
     "range": 8,
     "projectileSpeed": 6,
@@ -34,10 +44,15 @@
     "radius": 0.55,
     "maxHp": 18,
     "damage": 5,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 2.4,
     "xp": 6,
-    "gold": [2, 4],
+    "gold": [
+      2,
+      4
+    ],
     "attackCooldown": 0.8,
     "chargeWindup": 0.7,
     "chargeSpeedMult": 4.2,
@@ -52,10 +67,15 @@
     "radius": 0.5,
     "maxHp": 10,
     "damage": 4,
-    "damageTypes": ["ranged"],
+    "damageTypes": [
+      "ranged"
+    ],
     "moveSpeed": 2.6,
     "xp": 5,
-    "gold": [1, 3],
+    "gold": [
+      1,
+      3
+    ],
     "attackCooldown": 2.0,
     "range": 8,
     "projectileSpeed": 8
@@ -66,10 +86,15 @@
     "radius": 0.55,
     "maxHp": 14,
     "damage": 3,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 2.6,
     "xp": 5,
-    "gold": [1, 3],
+    "gold": [
+      1,
+      3
+    ],
     "attackCooldown": 0.8,
     "splitInto": "soggun",
     "splitCount": 2
@@ -80,10 +105,15 @@
     "radius": 0.5,
     "maxHp": 8,
     "damage": 1,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 3.0,
     "xp": 6,
-    "gold": [2, 4],
+    "gold": [
+      2,
+      4
+    ],
     "attackCooldown": 1.2,
     "auraRadius": 4,
     "auraSpeedMult": 1.35
@@ -95,17 +125,63 @@
     "radius": 1.5,
     "maxHp": 560,
     "damage": 8,
-    "damageTypes": ["melee"],
+    "damageTypes": [
+      "melee"
+    ],
     "moveSpeed": 2.2,
     "xp": 200,
-    "gold": [40, 60],
+    "gold": [
+      40,
+      60
+    ],
     "attackCooldown": 1.0,
     "armor": 6,
     "chestChance": 1,
     "bossPhases": [
-      { "mode": "frenzy", "until": 0.66, "cooldown": 2.6 },
-      { "mode": "summon", "until": 0.33, "cooldown": 2.4, "summonId": "soggun", "summonCount": 3, "summonCap": 9 },
-      { "mode": "volley", "until": 0, "cooldown": 2.2, "volleyRing": 10, "volleyAimed": 3 }
+      {
+        "mode": "frenzy",
+        "until": 0.66,
+        "cooldown": 2.6
+      },
+      {
+        "mode": "summon",
+        "until": 0.33,
+        "cooldown": 2.4,
+        "summonId": "soggun",
+        "summonCount": 3,
+        "summonCap": 9
+      },
+      {
+        "mode": "volley",
+        "until": 0,
+        "cooldown": 2.2,
+        "volleyRing": 10,
+        "volleyAimed": 3
+      }
     ]
+  },
+  {
+    "id": "the-damp",
+    "name": "The Damp",
+    "archetype": "summoner",
+    "radius": 1.0,
+    "maxHp": 160,
+    "damage": 7,
+    "damageTypes": [
+      "poison"
+    ],
+    "moveSpeed": 2.0,
+    "xp": 70,
+    "gold": [
+      16,
+      24
+    ],
+    "attackCooldown": 1.0,
+    "armor": 4,
+    "chestChance": 1,
+    "summonId": "soggun",
+    "summonCount": 2,
+    "summonCap": 6,
+    "summonCooldown": 4
   }
 ]
