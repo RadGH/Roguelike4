@@ -173,9 +173,16 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                   key={c.id}
                   onClick={() => engine.chooseChestWeapon(pi, c.id)}
                   data-chest-weapon={`${pi}-${c.id}`}
-                  style={{ ...cardBtn, border: '2px solid #ffd97a', ...focusStyle(i) }}
+                  style={{
+                    ...cardBtn,
+                    border: `2px solid ${c.kind === 'passive' ? '#9be8ff' : '#ffd97a'}`,
+                    ...focusStyle(i),
+                  }}
                 >
-                  <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>
+                    {c.kind === 'passive' ? '💠 ' : ''}
+                    {c.name}
+                  </div>
                   <div style={{ fontSize: 10, opacity: 0.9 }}>{c.desc}</div>
                 </button>
               ))}

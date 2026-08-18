@@ -6,8 +6,16 @@
     "kind": "counter",
     "scope": "party",
     "target": 1,
-    "match": { "event": "killWithType", "type": "fire" },
-    "unlocks": [{ "type": "weapon", "id": "fireball" }],
+    "match": {
+      "event": "killWithType",
+      "type": "fire"
+    },
+    "unlocks": [
+      {
+        "type": "weapon",
+        "id": "fireball"
+      }
+    ],
     "glimmerBonus": 1
   },
   {
@@ -17,8 +25,15 @@
     "kind": "counter",
     "scope": "party",
     "target": 25,
-    "match": { "event": "burnKill" },
-    "unlocks": [{ "type": "weapon", "id": "flame-lash" }],
+    "match": {
+      "event": "burnKill"
+    },
+    "unlocks": [
+      {
+        "type": "weapon",
+        "id": "flame-lash"
+      }
+    ],
     "glimmerBonus": 2
   },
   {
@@ -28,8 +43,19 @@
     "kind": "single-event",
     "scope": "party",
     "target": 5,
-    "match": { "event": "explosionMultikill" },
-    "unlocks": [{ "type": "weapon", "id": "rocket-launcher" }],
+    "match": {
+      "event": "explosionMultikill"
+    },
+    "unlocks": [
+      {
+        "type": "weapon",
+        "id": "rocket-launcher"
+      },
+      {
+        "type": "passive",
+        "id": "splitter-prism"
+      }
+    ],
     "glimmerBonus": 3
   },
   {
@@ -39,10 +65,19 @@
     "kind": "counter",
     "scope": "party",
     "target": 1000,
-    "match": { "event": "damageOfType", "type": "melee" },
+    "match": {
+      "event": "damageOfType",
+      "type": "melee"
+    },
     "unlocks": [
-      { "type": "weapon", "id": "greatclub" },
-      { "type": "class", "id": "fighter" }
+      {
+        "type": "weapon",
+        "id": "greatclub"
+      },
+      {
+        "type": "class",
+        "id": "fighter"
+      }
     ],
     "glimmerBonus": 2
   },
@@ -53,11 +88,26 @@
     "kind": "counter",
     "scope": "party",
     "target": 500,
-    "match": { "event": "magicDamage" },
+    "match": {
+      "event": "magicDamage"
+    },
     "unlocks": [
-      { "type": "class", "id": "mage" },
-      { "type": "weapon", "id": "lightning-bolt" },
-      { "type": "weapon", "id": "frostbolt" }
+      {
+        "type": "class",
+        "id": "mage"
+      },
+      {
+        "type": "weapon",
+        "id": "lightning-bolt"
+      },
+      {
+        "type": "weapon",
+        "id": "frostbolt"
+      },
+      {
+        "type": "passive",
+        "id": "storm-anklet"
+      }
     ],
     "glimmerBonus": 2
   },
@@ -68,8 +118,15 @@
     "kind": "single-event",
     "scope": "party",
     "target": 1,
-    "match": { "event": "lowHpWaveClear" },
-    "unlocks": [{ "type": "class", "id": "berserker" }],
+    "match": {
+      "event": "lowHpWaveClear"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "berserker"
+      }
+    ],
     "glimmerBonus": 2
   },
   {
@@ -79,8 +136,15 @@
     "kind": "counter",
     "scope": "party",
     "target": 500,
-    "match": { "event": "lifestealHealed" },
-    "unlocks": [{ "type": "class", "id": "vampire" }],
+    "match": {
+      "event": "lifestealHealed"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "vampire"
+      }
+    ],
     "glimmerBonus": 2
   },
   {
@@ -90,8 +154,19 @@
     "kind": "run-state",
     "scope": "party",
     "target": 500,
-    "match": { "event": "goldHeld" },
-    "unlocks": [{ "type": "weapon", "id": "coin-cannon" }],
+    "match": {
+      "event": "goldHeld"
+    },
+    "unlocks": [
+      {
+        "type": "weapon",
+        "id": "coin-cannon"
+      },
+      {
+        "type": "passive",
+        "id": "coin-operated-blade"
+      }
+    ],
     "glimmerBonus": 2
   },
   {
@@ -101,10 +176,18 @@
     "kind": "counter",
     "scope": "party",
     "target": 25,
-    "match": { "event": "dashThrough" },
+    "match": {
+      "event": "dashThrough"
+    },
     "unlocks": [
-      { "type": "weapon", "id": "throwing-knives" },
-      { "type": "class", "id": "rogue" }
+      {
+        "type": "weapon",
+        "id": "throwing-knives"
+      },
+      {
+        "type": "class",
+        "id": "rogue"
+      }
     ],
     "glimmerBonus": 2
   }

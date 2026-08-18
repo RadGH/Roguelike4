@@ -33,7 +33,7 @@ import {
   minWave,
   type Registry,
 } from '../data/registry';
-import type { ClassDef, EnemyDef, WeaponDef } from '../data/schemas';
+import type { ClassDef, EnemyDef, TriggerDef, WeaponDef } from '../data/schemas';
 
 export type WeaponSlot = { itemId: string; cooldownLeft: number };
 
@@ -50,6 +50,9 @@ export type PlayerState = {
   weapons: WeaponSlot[];
   guaranteedCrit: boolean; // backspin: next hit crits
   pendingClassItems: string[][]; // queued class level-up choices (option lists)
+  passives: string[];
+  usedSecondWick: boolean; // once-per-run fatal save spent
+  coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
   gold: number;
   xp: number;
   xpIntoLevel: number;
@@ -132,6 +135,11 @@ export type ProjectileState = {
   poolRadius: number;
   poolDps: number;
   poolDuration: number;
+  // passive mods
+  splitOnHit: boolean; // splitter-prism: fork on first impact
+  isChild: boolean; // split children can't split again
+  bouncesLeft: number; // bouncy-castle-writ: wall reflections
+  damageScale: number; // child projectiles hit softer
   hitIds: Set<number>;
 };
 
@@ -143,7 +151,10 @@ export type PoolState = {
   dps: number;
   duration: number;
   tickIn: number;
-  ownerDefId: string; // enemy def for attribution + damage typing
+  ownerDefId: string; // enemy def for attribution + damage typing (hostile pools)
+  friendly: boolean; // player-owned pools damage enemies instead
+  ownerPlayer: number;
+  itemId: string | null; // attribution for friendly pools
 };
 
 export type PickupKind = 'gold' | 'xp' | 'chest';
@@ -188,6 +199,7 @@ export type SimEvent =
   | { type: 'bossPhase'; instance: number; phase: number }
   | { type: 'playerRevived'; player: number; by: number }
   | { type: 'lowHpWaveClear' }
+  | { type: 'secondWick'; player: number }
   | { type: 'runOver' };
 
 const MAX_PROJECTILES = 512;
@@ -223,6 +235,7 @@ export class Sim {
         fromPlayer: -1, itemId: null, enemyDefId: null, enemyDamage: 0, pierceLeft: 0,
         blastRadius: 0,
         poolRadius: 0, poolDps: 0, poolDuration: 0,
+        splitOnHit: false, isChild: false, bouncesLeft: 0, damageScale: 1,
         hitIds: new Set(),
       });
     }
@@ -230,7 +243,10 @@ export class Sim {
     for (let i = 0; i < MAX_PICKUPS; i++) pickups.push({ active: false, x: 0, y: 0, kind: 'gold', amount: 0 });
     const pools: PoolState[] = [];
     for (let i = 0; i < 96; i++) {
-      pools.push({ active: false, x: 0, y: 0, radius: 0, dps: 0, duration: 0, tickIn: 0, ownerDefId: '' });
+      pools.push({
+        active: false, x: 0, y: 0, radius: 0, dps: 0, duration: 0, tickIn: 0,
+        ownerDefId: '', friendly: false, ownerPlayer: -1, itemId: null,
+      });
     }
     this.state = {
       tick: 0,
@@ -267,6 +283,9 @@ export class Sim {
       classId,
       guaranteedCrit: false,
       pendingClassItems: [],
+      passives: [],
+      usedSecondWick: false,
+      coinCharge: 0,
       x: arena.width / 2 + (i - (playerCount - 1) / 2) * 2,
       y: arena.height / 2,
       facing: 0,
@@ -317,7 +336,37 @@ export class Sim {
 
   // ---- boons ----
 
-  /** Rebuild a player's stat sheet from base + class + weapons + boons. Never mutate incrementally. */
+  // ---- passives ----
+
+  hasPassive(p: PlayerState, id: string): boolean {
+    return p.passives.includes(id);
+  }
+
+  hasMod(p: PlayerState, mod: string): boolean {
+    return p.passives.some((id) => this.registry.passives.get(id)?.mods.includes(mod as never));
+  }
+
+  /** All triggers of a kind across a player's passives, with owning item ids. */
+  triggersFor(p: PlayerState, on: TriggerDef['on']): { trigger: TriggerDef; itemId: string }[] {
+    const out: { trigger: TriggerDef; itemId: string }[] = [];
+    for (const id of p.passives) {
+      const def = this.registry.passives.get(id);
+      if (!def) continue;
+      for (const t of def.triggers) if (t.on === on) out.push({ trigger: t, itemId: id });
+    }
+    return out;
+  }
+
+  addPassive(playerIndex: number, passiveId: string): void {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    if (!this.registry.passives.has(passiveId)) throw new Error(`Unknown passive "${passiveId}"`);
+    if (p.passives.includes(passiveId)) return;
+    p.passives.push(passiveId);
+    this.recomputeStats(p);
+  }
+
+  /** Rebuild a player's stat sheet from base + class + weapons + passives + boons. */
   recomputeStats(p: PlayerState): void {
     const bal = this.registry.balance;
     const cls = this.classDef(p.classId);
@@ -325,6 +374,7 @@ export class Sim {
     const grantSets = [
       cls.statMods,
       ...p.weapons.map((w) => getWeapon(this.registry, w.itemId).grants),
+      ...p.passives.map((id) => this.registry.passives.get(id)?.grants ?? []),
       ...p.boonIds.map((id) => {
         const b = this.registry.boons.get(id);
         if (!b) throw new Error(`Unknown boon "${id}"`);
@@ -562,6 +612,34 @@ export class Sim {
     p.weapons.push({ itemId: weaponId, cooldownLeft: 0 });
     this.recomputeStats(p);
     return true;
+  }
+
+  private isPassiveAvailable(id: string): boolean {
+    const def = this.registry.passives.get(id);
+    if (!def) return false;
+    return !def.unlockDeed || this.unlockedItems.has(id);
+  }
+
+  /** Chest pool: weapons AND passives, filtered per owner (class + unlocks + owned). */
+  rollChestChoices(playerIndex: number, count = 3): string[] {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    const held = new Set(p.weapons.map((w) => w.itemId));
+    const pool = [
+      ...[...this.registry.weapons.keys()].filter(
+        (id) => !held.has(id) && this.isItemAvailable(id) && this.classCanUse(p.classId, id),
+      ),
+      ...[...this.registry.passives.keys()].filter(
+        (id) => !p.passives.includes(id) && this.isPassiveAvailable(id),
+      ),
+    ];
+    const out: string[] = [];
+    for (let i = 0; i < count && pool.length > 0; i++) {
+      const idx = this.rng.drops.int(0, pool.length - 1);
+      out.push(pool[idx]!);
+      pool.splice(idx, 1);
+    }
+    return out;
   }
 
   /** Roll distinct weapon choices: unlocked, class-legal, not already held. */
@@ -826,6 +904,10 @@ export class Sim {
         proj.poolRadius = 0;
         proj.poolDps = 0;
         proj.poolDuration = 0;
+        proj.splitOnHit = this.hasMod(p, 'projectileSplit');
+        proj.isChild = false;
+        proj.bouncesLeft = this.hasMod(p, 'projectileBounce') ? 2 : 0;
+        proj.damageScale = 1;
         proj.hitIds.clear();
       }
     }
@@ -838,6 +920,7 @@ export class Sim {
     weapon: WeaponDef,
     deliveryTag: SourceChain['deliveryTag'],
     hitId: number,
+    damageScale = 1,
   ): void {
     const cls = this.classDef(p.classId);
     const attack: AttackProfile = {
@@ -860,12 +943,32 @@ export class Sim {
       p.guaranteedCrit = false;
     }
     // Redline: +1% damage per 1% missing HP
-    let damageMult = 1;
+    let damageMult = damageScale;
     if (cls.mechanic === 'redline') {
       const maxHp = stat(p.stats, 'maxHp') || 1;
-      damageMult = 1 + Math.max(0, 1 - p.hp / maxHp);
+      damageMult *= 1 + Math.max(0, 1 - p.hp / maxHp);
+    }
+    // Coin-Operated Blade: spend the charge on this hit
+    if (p.coinCharge > 0) {
+      damageMult *= 1 + p.coinCharge;
+      p.coinCharge = 0;
     }
     const dealt = this.applyDamageToEnemy(enemy, attack, p.stats, source, { forceCrit, damageMult });
+    // Storm Anklet: melee hits may arc lightning outward (self-attributing)
+    if (weapon.kind === 'attack' && weapon.damage.types.includes('melee') && dealt > 0) {
+      for (const { trigger, itemId } of this.triggersFor(p, 'meleeHit')) {
+        if (trigger.action === 'chainLightning' && this.rng.combat.chance(trigger.chance)) {
+          this.chainLightning(
+            enemy,
+            p,
+            itemId,
+            trigger.params.jumps ?? 2,
+            dealt * (trigger.params.damageFrac ?? 0.5),
+            trigger.params.radius ?? 4,
+          );
+        }
+      }
+    }
     // Lifesteal (physical for attacks, magical for spells)
     const frac = stat(p.stats, weapon.kind === 'attack' ? 'lifestealPhys' : 'lifestealMagic');
     if (frac > 0 && dealt > 0) this.healPlayer(p, dealt * frac, 'lifesteal');
@@ -875,6 +978,47 @@ export class Sim {
           applyEffect(enemy.status, eff, source, enemy.elite ? 'elite' : 'normal');
         }
       }
+    }
+  }
+
+  /** Arc lightning between nearby enemies with full item attribution. */
+  private chainLightning(
+    from: EnemyState,
+    p: PlayerState,
+    itemId: string,
+    jumps: number,
+    damage: number,
+    radius: number,
+  ): void {
+    const hit = new Set<number>([from.instance]);
+    let current = from;
+    for (let j = 0; j < jumps; j++) {
+      let next: EnemyState | null = null;
+      let bestDist = radius;
+      for (const e of this.state.enemies) {
+        if (!e.alive || hit.has(e.instance)) continue;
+        const d = Math.hypot(e.x - current.x, e.y - current.y);
+        if (d < bestDist) {
+          bestDist = d;
+          next = e;
+        }
+      }
+      if (!next) break;
+      hit.add(next.instance);
+      this.applyDamageToEnemy(
+        next,
+        { kind: 'spell', types: ['lightning'], multiplier: 0, flat: [0, 0], noCrit: true },
+        null,
+        {
+          actor: { kind: 'player', index: p.index },
+          itemId,
+          grantedBy: 'chain',
+          deliveryTag: 'chain',
+          hitId: this.tracker.newHitId(),
+        },
+        { rawOverride: Math.max(1, Math.round(damage)), noCrit: true },
+      );
+      current = next;
     }
   }
 
@@ -961,6 +1105,30 @@ export class Sim {
 
   private onEnemyKilled(enemy: EnemyState, def: EnemyDef, byPlayer: number): void {
     this.eventsThisTick.push({ type: 'enemyKilled', defId: enemy.defId, instance: enemy.instance, byPlayer });
+
+    // Kill triggers (Powder Keg Belt, ...)
+    const killer = this.state.players[byPlayer];
+    if (killer) {
+      for (const { trigger, itemId } of this.triggersFor(killer, 'kill')) {
+        if (!this.rng.combat.chance(trigger.chance)) continue;
+        if (trigger.action === 'firePool') {
+          const pool = this.state.pools.find((pl) => !pl.active);
+          if (pool) {
+            pool.active = true;
+            pool.x = enemy.x;
+            pool.y = enemy.y;
+            pool.radius = trigger.params.radius ?? 1.4;
+            pool.dps = trigger.params.dps ?? 4;
+            pool.duration = trigger.params.duration ?? 3;
+            pool.tickIn = 0.25;
+            pool.ownerDefId = '';
+            pool.friendly = true;
+            pool.ownerPlayer = killer.index;
+            pool.itemId = itemId;
+          }
+        }
+      }
+    }
     const combo = this.state.combo;
     combo.count++;
     combo.decay = this.registry.balance.combo.decaySeconds;
@@ -989,6 +1157,19 @@ export class Sim {
 
   private dropPickup(x: number, y: number, kind: PickupKind, amount: number): void {
     if (amount <= 0) return;
+    // Magpie's Eye: any player may pocket ANY gold drop instantly (reacts to all
+    // drops, per the brief — maximizing each player's items in co-op)
+    if (kind === 'gold') {
+      for (const p of this.state.players) {
+        if (!p.alive) continue;
+        for (const { trigger, itemId } of this.triggersFor(p, 'goldDrop')) {
+          if (trigger.action === 'autoCollectGold' && this.rng.drops.chance(trigger.chance)) {
+            this.collectGold(p, amount, itemId);
+            return; // pocketed before it hit the ground
+          }
+        }
+      }
+    }
     for (const pk of this.state.pickups) {
       if (pk.active) continue;
       pk.active = true;
@@ -1173,6 +1354,10 @@ export class Sim {
             proj.poolRadius = def.poolRadius ?? 1.2;
             proj.poolDps = (def.poolDps ?? 2) * (e.damage / def.damage);
             proj.poolDuration = def.poolDuration ?? 3;
+            proj.splitOnHit = false;
+            proj.isChild = false;
+            proj.bouncesLeft = 0;
+            proj.damageScale = 1;
             proj.hitIds.clear();
           }
         }
@@ -1247,6 +1432,10 @@ export class Sim {
             proj.poolRadius = 0;
             proj.poolDps = 0;
             proj.poolDuration = 0;
+            proj.splitOnHit = false;
+            proj.isChild = false;
+            proj.bouncesLeft = 0;
+            proj.damageScale = 1;
             proj.hitIds.clear();
           }
         }
@@ -1327,6 +1516,10 @@ export class Sim {
             proj.poolRadius = 0;
             proj.poolDps = 0;
             proj.poolDuration = 0;
+            proj.splitOnHit = false;
+            proj.isChild = false;
+            proj.bouncesLeft = 0;
+            proj.damageScale = 1;
             proj.hitIds.clear();
           };
           const ring = phase.volleyRing ?? 8;
@@ -1384,6 +1577,10 @@ export class Sim {
             proj.poolRadius = 0;
             proj.poolDps = 0;
             proj.poolDuration = 0;
+            proj.splitOnHit = false;
+            proj.isChild = false;
+            proj.bouncesLeft = 0;
+            proj.damageScale = 1;
             proj.hitIds.clear();
           }
           b.stage = 'recover';
@@ -1475,6 +1672,18 @@ export class Sim {
       return;
     }
     p.hp -= hit.amount;
+    // Second Wick: once per run, a fatal blow leaves a spark instead
+    if (p.hp <= 0 && !p.usedSecondWick) {
+      for (const { trigger } of this.triggersFor(p, 'fatalDamage')) {
+        if (trigger.action === 'surviveFatal') {
+          p.usedSecondWick = true;
+          p.hp = Math.max(1, Math.round(stat(p.stats, 'maxHp') * (trigger.params.hpFrac ?? 0.1)));
+          p.iframeTimer = Math.max(p.iframeTimer, 1);
+          this.eventsThisTick.push({ type: 'secondWick', player: p.index });
+          break;
+        }
+      }
+    }
     this.tracker.push({
       type: 'damage',
       tick: this.state.tick,
@@ -1523,6 +1732,15 @@ export class Sim {
       pr.y += pr.vy * dt;
       pr.traveled += step;
       const a = this.state.arena;
+      // Bouncy Castle Writ: reflect off arena walls instead of fizzling
+      if (pr.bouncesLeft > 0 && (pr.x < 0 || pr.x > a.width || pr.y < 0 || pr.y > a.height)) {
+        if (pr.x < 0 || pr.x > a.width) pr.vx = -pr.vx;
+        if (pr.y < 0 || pr.y > a.height) pr.vy = -pr.vy;
+        pr.x = Math.min(a.width, Math.max(0, pr.x));
+        pr.y = Math.min(a.height, Math.max(0, pr.y));
+        pr.bouncesLeft--;
+        pr.traveled = Math.max(0, pr.traveled - pr.range * 0.4); // bounces extend reach a bit
+      }
       if (pr.traveled >= pr.range || pr.x < 0 || pr.y < 0 || pr.x > a.width || pr.y > a.height) {
         if (pr.poolRadius > 0) this.spawnPool(pr);
         pr.active = false;
@@ -1548,12 +1766,44 @@ export class Sim {
                 if (!be || !be.alive) continue;
                 const bdef = getEnemy(this.registry, be.defId);
                 if (Math.hypot(be.x - pr.x, be.y - pr.y) > pr.blastRadius + bdef.radius) continue;
-                this.weaponHitEnemy(be, p, weapon, 'explosion', hitId);
+                this.weaponHitEnemy(be, p, weapon, 'explosion', hitId, pr.damageScale);
                 pr.hitIds.add(bc.id);
               }
             } else {
-              this.weaponHitEnemy(enemy, p, weapon, 'projectile', this.tracker.newHitId());
+              this.weaponHitEnemy(enemy, p, weapon, 'projectile', this.tracker.newHitId(), pr.damageScale);
               pr.hitIds.add(c.id);
+              // Splitter Prism: fork into two softer children on first impact
+              if (pr.splitOnHit && !pr.isChild) {
+                const baseAngle = Math.atan2(pr.vy, pr.vx);
+                const speed = Math.hypot(pr.vx, pr.vy);
+                for (const off of [-0.6, 0.6]) {
+                  const child = this.allocProjectile();
+                  if (!child) break;
+                  child.active = true;
+                  child.x = pr.x;
+                  child.y = pr.y;
+                  child.vx = Math.cos(baseAngle + off) * speed;
+                  child.vy = Math.sin(baseAngle + off) * speed;
+                  child.radius = pr.radius;
+                  child.traveled = 0;
+                  child.range = pr.range * 0.5;
+                  child.fromPlayer = pr.fromPlayer;
+                  child.itemId = pr.itemId;
+                  child.enemyDefId = null;
+                  child.enemyDamage = 0;
+                  child.pierceLeft = 0;
+                  child.blastRadius = 0;
+                  child.poolRadius = 0;
+                  child.poolDps = 0;
+                  child.poolDuration = 0;
+                  child.splitOnHit = false;
+                  child.isChild = true;
+                  child.bouncesLeft = 0;
+                  child.damageScale = pr.damageScale * 0.75;
+                  child.hitIds.clear();
+                  child.hitIds.add(c.id); // don't instantly re-hit the same enemy
+                }
+              }
             }
           }
           if (pr.pierceLeft > 0 && pr.blastRadius === 0) pr.pierceLeft--;
@@ -1587,6 +1837,9 @@ export class Sim {
     pool.duration = pr.poolDuration;
     pool.tickIn = 0.25;
     pool.ownerDefId = pr.enemyDefId ?? '';
+    pool.friendly = false;
+    pool.ownerPlayer = -1;
+    pool.itemId = null;
   }
 
   private tickPools(dt: number): void {
@@ -1600,16 +1853,63 @@ export class Sim {
       pool.tickIn -= dt;
       if (pool.tickIn <= 0) {
         pool.tickIn += 0.5;
-        const def = pool.ownerDefId ? this.registry.enemies.get(pool.ownerDefId) : null;
-        if (!def) continue;
-        for (const p of this.state.players) {
-          if (!p.alive) continue;
-          if (Math.hypot(p.x - pool.x, p.y - pool.y) <= pool.radius) {
-            this.damagePlayer(p, Math.max(1, Math.round(pool.dps * 0.5)), def, 'pool');
+        if (pool.friendly) {
+          // Player-owned fire pools burn enemies standing in them
+          const amount = Math.max(1, Math.round(pool.dps * 0.5));
+          for (const e of [...this.state.enemies]) {
+            if (!e.alive) continue;
+            const def = getEnemy(this.registry, e.defId);
+            if (Math.hypot(e.x - pool.x, e.y - pool.y) <= pool.radius + def.radius) {
+              this.applyDamageToEnemy(
+                e,
+                { kind: 'spell', types: ['fire'], multiplier: 0, flat: [0, 0], noCrit: true },
+                null,
+                {
+                  actor: { kind: 'player', index: pool.ownerPlayer },
+                  itemId: pool.itemId,
+                  grantedBy: null,
+                  deliveryTag: 'pool',
+                  hitId: this.tracker.newHitId(),
+                },
+                { rawOverride: amount, noCrit: true },
+              );
+            }
+          }
+        } else {
+          const def = pool.ownerDefId ? this.registry.enemies.get(pool.ownerDefId) : null;
+          if (!def) continue;
+          for (const p of this.state.players) {
+            if (!p.alive) continue;
+            if (Math.hypot(p.x - pool.x, p.y - pool.y) <= pool.radius) {
+              this.damagePlayer(p, Math.max(1, Math.round(pool.dps * 0.5)), def, 'pool');
+            }
           }
         }
       }
     }
+  }
+
+  /** Gold enters the party: mirrored to everyone (with personal goldGain), and the
+   *  collector's goldCollect triggers fire (Coin-Operated Blade). */
+  private collectGold(collector: PlayerState, amount: number, viaItemId: string | null): void {
+    for (const other of this.state.players) {
+      other.gold += Math.max(1, Math.round(amount * (1 + stat(other.stats, 'goldGain'))));
+    }
+    for (const { trigger } of this.triggersFor(collector, 'goldCollect')) {
+      if (trigger.action === 'coinCharge') {
+        const cap = trigger.params.cap ?? 0.5;
+        collector.coinCharge = Math.min(cap, collector.coinCharge + (trigger.params.perCoin ?? 0.01) * amount);
+      }
+    }
+    this.tracker.push({
+      type: 'pickup',
+      tick: this.state.tick,
+      wave: this.state.wave,
+      player: collector.index,
+      what: 'gold',
+      amount,
+    });
+    void viaItemId; // attribution surfaces in the meter drill-down later
   }
 
   private tickPickups(dt: number): void {
@@ -1642,25 +1942,27 @@ export class Sim {
         pk.active = false;
         if (pk.kind === 'gold') {
           // Mirrored gold: every non-retired player receives it (snuffed included)
-          for (const other of this.state.players) other.gold += pk.amount;
+          this.collectGold(p, pk.amount, null);
         } else if (pk.kind === 'xp') {
           // Equal-share XP, normalized by party size (co-op levels stay ~flat vs solo)
           const share = Math.max(1, Math.round(pk.amount / this.state.players.length));
-          for (const other of this.state.players) this.grantXp(other, share);
+          for (const other of this.state.players) {
+            this.grantXp(other, Math.max(1, Math.round(share * (1 + stat(other.stats, 'xpGain')))));
+          }
+          this.tracker.push({
+            type: 'pickup',
+            tick: this.state.tick,
+            wave: this.state.wave,
+            player: p.index,
+            what: 'xp',
+            amount: pk.amount,
+          });
         } else {
           // Chests are dealt round-robin regardless of who touched them
           const owner = this.state.players[this.state.lootRotation % this.state.players.length]!;
           owner.pendingChests += pk.amount;
           this.state.lootRotation = (this.state.lootRotation + 1) % this.state.players.length;
         }
-        this.tracker.push({
-          type: 'pickup',
-          tick: this.state.tick,
-          wave: this.state.wave,
-          player: p.index,
-          what: pk.kind === 'chest' ? 'gold' : pk.kind, // tracker chest support lands with reward flow
-          amount: pk.amount,
-        });
       }
     }
   }

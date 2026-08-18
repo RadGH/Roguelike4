@@ -15,6 +15,7 @@ import wavesAct4Json from '@data/waves/act4.json';
 import boonsJson from '@data/boons.json';
 import deedsJson from '@data/deeds.json';
 import classesJson from '@data/classes.json';
+import passivesJson from '@data/items/passives.json';
 import {
   ActWavesSchema,
   BalanceSchema,
@@ -22,6 +23,7 @@ import {
   ClassSchema,
   DeedSchema,
   EnemySchema,
+  PassiveSchema,
   WeaponSchema,
   type ActWavesDef,
   type BalanceDef,
@@ -29,6 +31,7 @@ import {
   type ClassDef,
   type DeedDef,
   type EnemyDef,
+  type PassiveDef,
   type WaveDef,
   type WeaponDef,
 } from './schemas';
@@ -66,6 +69,7 @@ export type Registry = {
   boons: Map<string, BoonDef>;
   deeds: Map<string, DeedDef>;
   classes: Map<string, ClassDef>;
+  passives: Map<string, PassiveDef>;
 };
 
 let cached: Registry | null = null;
@@ -89,7 +93,13 @@ export function loadRegistry(): Registry {
     boons: parseList(BoonSchema, boonsJson as unknown[], 'boons'),
     deeds: parseList(DeedSchema, deedsJson as unknown[], 'deeds'),
     classes: parseList(ClassSchema, classesJson as unknown[], 'classes'),
+    passives: parseList(PassiveSchema, passivesJson as unknown[], 'passives'),
   };
+  for (const [id, p] of reg.passives) {
+    if (p.unlockDeed && !reg.deeds.has(p.unlockDeed))
+      throw new Error(`passive "${id}": unknown unlockDeed "${p.unlockDeed}"`);
+    if (reg.weapons.has(id)) throw new Error(`item id collision: "${id}" is both weapon and passive`);
+  }
   // Class cross-checks: starting weapons, level-up options, unlock deeds, and the
   // reverse direction (deed class unlocks reference real classes).
   for (const [id, c] of reg.classes) {
@@ -128,6 +138,8 @@ export function loadRegistry(): Registry {
     for (const u of d.unlocks) {
       if (u.type === 'weapon' && !reg.weapons.has(u.id))
         throw new Error(`deed "${id}": unlocks unknown weapon "${u.id}"`);
+      if (u.type === 'passive' && !reg.passives.has(u.id))
+        throw new Error(`deed "${id}": unlocks unknown passive "${u.id}"`);
     }
   }
   // Cross-reference checks: every wave entry and splitter child must exist.

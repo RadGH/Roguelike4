@@ -1,0 +1,92 @@
+[
+  {
+    "id": "lodestone-charm",
+    "category": "passive",
+    "desc": "+50% pickup radius. Shiny things simply drift toward you.",
+    "grants": [{ "stat": "pickupRadius", "pct": 0.5 }],
+    "rarity": "common"
+  },
+  {
+    "id": "greedy-gauntlet",
+    "category": "passive",
+    "desc": "+30% gold, −10% XP. The hand wants what the hand wants.",
+    "grants": [
+      { "stat": "goldGain", "flat": 0.3 },
+      { "stat": "xpGain", "flat": -0.1 }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "magpies-eye",
+    "category": "passive",
+    "desc": "10% chance to instantly pocket ANY gold that drops — anyone's kills.",
+    "triggers": [{ "on": "goldDrop", "chance": 0.1, "action": "autoCollectGold" }],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "powder-keg-belt",
+    "category": "passive",
+    "desc": "Enemies you defeat have an 8% chance to leave a burning pool behind.",
+    "triggers": [
+      {
+        "on": "kill",
+        "chance": 0.08,
+        "action": "firePool",
+        "params": { "radius": 1.4, "dps": 4, "duration": 3 }
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "second-wick",
+    "category": "passive",
+    "desc": "Once per run: survive a fatal blow at 10% health. A spare flame, just in case.",
+    "triggers": [{ "on": "fatalDamage", "action": "surviveFatal", "params": { "hpFrac": 0.1 } }],
+    "rarity": "rare"
+  },
+  {
+    "id": "storm-anklet",
+    "category": "passive",
+    "desc": "Your melee hits have a 15% chance to arc lightning to 2 nearby enemies.",
+    "triggers": [
+      {
+        "on": "meleeHit",
+        "chance": 0.15,
+        "action": "chainLightning",
+        "params": { "jumps": 2, "damageFrac": 0.5, "radius": 4 }
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "magic-damage-500"
+  },
+  {
+    "id": "coin-operated-blade",
+    "category": "passive",
+    "desc": "Each coin collected charges your next hit: +1% damage per coin, up to +50%.",
+    "triggers": [{ "on": "goldCollect", "action": "coinCharge", "params": { "perCoin": 0.01, "cap": 0.5 } }],
+    "rarity": "rare",
+    "unlockDeed": "gold-hoard-500"
+  },
+  {
+    "id": "splitter-prism",
+    "category": "passive",
+    "desc": "Your projectiles split in two on first impact (each at 75% damage).",
+    "mods": ["projectileSplit"],
+    "rarity": "rare",
+    "unlockDeed": "explosion-multikill-5"
+  },
+  {
+    "id": "bouncy-castle-writ",
+    "category": "passive",
+    "desc": "An official permit allowing your projectiles to bounce off walls, twice.",
+    "mods": ["projectileBounce"],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "lucky-ribbon",
+    "category": "passive",
+    "desc": "Boon choices offer 5 options instead of 4. The ribbon knows.",
+    "mods": ["boonChoices5"],
+    "rarity": "rare"
+  }
+]

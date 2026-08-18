@@ -93,6 +93,27 @@ export function CodexPanel({ profile }: { profile: Profile }) {
 
       {tab === 'weapons' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+          {[...reg.passives.values()].map((p) => {
+            const isUnlocked = !p.unlockDeed || unlocked.has(p.id);
+            const deed = p.unlockDeed ? reg.deeds.get(p.unlockDeed) : null;
+            return (
+              <div
+                key={p.id}
+                style={{
+                  border: `2px solid ${isUnlocked ? '#9be8ff' : '#555'}`,
+                  borderRadius: 10,
+                  padding: '8px 10px',
+                  opacity: isUnlocked ? 1 : 0.65,
+                  fontSize: 12.5,
+                }}
+              >
+                <div style={{ fontWeight: 800 }}>💠 {isUnlocked ? prettify(p.id) : '???'}</div>
+                <div style={{ opacity: 0.8, fontStyle: isUnlocked ? 'normal' : 'italic' }}>
+                  {isUnlocked ? p.desc : `🔒 ${deed?.hint ?? 'A deed will reveal it.'}`}
+                </div>
+              </div>
+            );
+          })}
           {[...reg.weapons.values()].map((w) => {
             const isUnlocked = !w.unlockDeed || unlocked.has(w.id);
             const deed = w.unlockDeed ? reg.deeds.get(w.unlockDeed) : null;

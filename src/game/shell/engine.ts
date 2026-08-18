@@ -141,8 +141,10 @@ export class Engine {
       .split('-')
       .map((s) => (s ? s[0]!.toUpperCase() + s.slice(1) : s))
       .join(' ');
+    const passive = this.sim.registry.passives.get(id);
+    if (passive) return { id, name, desc: passive.desc, kind: 'passive' as const };
     const w = this.sim.registry.weapons.get(id);
-    if (!w) return { id, name, desc: '' };
+    if (!w) return { id, name, desc: '', kind: 'weapon' as const };
     const effects = w.effects.map((e) => e.kind).join(', ');
     return {
       id,
@@ -150,7 +152,13 @@ export class Engine {
       desc:
         `${w.hands}H ${w.kind} · ${Math.round(w.damage.multiplier * 100)}% ${w.damage.types.join('/')}` +
         (effects ? ` · ${effects}` : ''),
+      kind: 'weapon' as const,
     };
+  }
+
+  private boonCount(playerIndex: number): number {
+    const p = this.sim.state.players[playerIndex]!;
+    return this.sim.hasMod(p, 'boonChoices5') ? 5 : 4;
   }
 
   /** Advance one player's intermission pipeline: class items → chests → boons. */
@@ -159,14 +167,14 @@ export class Engine {
     if (p.pendingClassItems.length > 0) return; // class choice panel shows first
     if (p.pendingChests > 0) {
       if (!this.chestChoices.has(playerIndex)) {
-        this.chestChoices.set(playerIndex, this.sim.rollWeaponChoices(playerIndex, 3));
+        this.chestChoices.set(playerIndex, this.sim.rollChestChoices(playerIndex, 3));
       }
     } else {
       this.chestChoices.delete(playerIndex);
       if (!this.classEquipPending.has(playerIndex)) this.pendingEquip.delete(playerIndex);
       if (p.pendingBoons > 0) {
         if (!this.boonChoices.has(playerIndex)) {
-          this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(4));
+          this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex)));
         }
       } else {
         this.boonChoices.delete(playerIndex);
@@ -202,13 +210,16 @@ export class Engine {
     this.classEquipPending.clear();
   }
 
-  chooseChestWeapon(playerIndex: number, weaponId: string): void {
-    if (!this.intermissionActive || !this.chestChoices.get(playerIndex)?.includes(weaponId)) return;
-    // Free hands? Equip straight away — no replace friction.
-    if (this.sim.equipWeapon(playerIndex, weaponId)) {
+  chooseChestWeapon(playerIndex: number, itemId: string): void {
+    if (!this.intermissionActive || !this.chestChoices.get(playerIndex)?.includes(itemId)) return;
+    // Passives always fit; weapons equip straight away when hands are free.
+    if (this.sim.registry.passives.has(itemId)) {
+      this.sim.addPassive(playerIndex, itemId);
+      this.finishChest(playerIndex);
+    } else if (this.sim.equipWeapon(playerIndex, itemId)) {
       this.finishChest(playerIndex);
     } else {
-      this.pendingEquip.set(playerIndex, weaponId);
+      this.pendingEquip.set(playerIndex, itemId);
     }
   }
 
@@ -249,7 +260,8 @@ export class Engine {
     if (!this.intermissionActive || !this.boonChoices.get(playerIndex)?.includes(boonId)) return;
     this.sim.applyBoon(playerIndex, boonId);
     const p = this.sim.state.players[playerIndex]!;
-    if (p.pendingBoons > 0) this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(4));
+    if (p.pendingBoons > 0)
+      this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex)));
     else this.boonChoices.delete(playerIndex);
   }
 
@@ -399,6 +411,8 @@ export class Engine {
     for (const ev of events) {
       if (ev.type === 'damageNumber' && this.renderer.isReady) {
         this.renderer.spawnDamageNumber(ev.x, ev.y, ev.amount, ev.crit, ev.onPlayer);
+      } else if (ev.type === 'secondWick') {
+        this.pushToast(`🕯️ P${ev.player + 1}'s Second Wick catches! Not today, dark.`);
       } else if (ev.type === 'runOver') {
         this.runState = 'gameOver';
         this.recordRunEnd(false);

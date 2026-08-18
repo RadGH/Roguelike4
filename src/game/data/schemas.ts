@@ -54,6 +54,32 @@ export const EffectSchema = z
   })
   .strict();
 
+// Passive triggers: event hooks the sim implements. Effects self-attribute
+// (predecessor lesson: procs must show up in the meters under their item).
+export const TriggerSchema = z
+  .object({
+    on: z.enum(['kill', 'goldDrop', 'fatalDamage', 'meleeHit', 'goldCollect']),
+    chance: z.number().min(0).max(1).default(1),
+    action: z.enum(['firePool', 'autoCollectGold', 'surviveFatal', 'chainLightning', 'coinCharge']),
+    params: z.record(z.string(), z.number()).default({}),
+  })
+  .strict();
+
+export const PassiveSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    category: z.literal('passive'),
+    desc: z.string(), // shown on cards + codex
+    tags: z.array(z.string()).default([]),
+    grants: z.array(GrantSchema).default([]),
+    triggers: z.array(TriggerSchema).default([]),
+    // Non-event behavior switches the engine implements by name
+    mods: z.array(z.enum(['projectileSplit', 'projectileBounce', 'boonChoices5'])).default([]),
+    rarity: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']).default('common'),
+    unlockDeed: z.string().optional(),
+  })
+  .strict();
+
 export const WeaponSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
@@ -225,7 +251,7 @@ export const DeedSchema = z
     target: z.number().positive(),
     match: DeedMatchSchema,
     unlocks: z
-      .array(z.object({ type: z.enum(['weapon', 'class', 'feat']), id: z.string() }).strict())
+      .array(z.object({ type: z.enum(['weapon', 'passive', 'class', 'feat']), id: z.string() }).strict())
       .default([]),
     glimmerBonus: z.number().nonnegative().default(0),
   })
@@ -307,4 +333,6 @@ export type WaveDef = z.infer<typeof WaveSchema>;
 export type BoonDef = z.infer<typeof BoonSchema>;
 export type DeedDef = z.infer<typeof DeedSchema>;
 export type ClassDef = z.infer<typeof ClassSchema>;
+export type PassiveDef = z.infer<typeof PassiveSchema>;
+export type TriggerDef = z.infer<typeof TriggerSchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;
