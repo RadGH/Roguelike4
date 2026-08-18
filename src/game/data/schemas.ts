@@ -60,7 +60,14 @@ export const TriggerSchema = z
   .object({
     on: z.enum(['kill', 'goldDrop', 'fatalDamage', 'meleeHit', 'goldCollect']),
     chance: z.number().min(0).max(1).default(1),
-    action: z.enum(['firePool', 'autoCollectGold', 'surviveFatal', 'chainLightning', 'coinCharge']),
+    action: z.enum([
+      'firePool',
+      'autoCollectGold',
+      'surviveFatal',
+      'chainLightning',
+      'coinCharge',
+      'raiseZombie',
+    ]),
     params: z.record(z.string(), z.number()).default({}),
   })
   .strict();
@@ -228,7 +235,10 @@ export const ClassSchema = z
     statMods: z.array(GrantSchema).default([]),
     startingWeapons: z.array(z.string()).default([]),
     // Engine mechanic vocabulary — sim implements exactly these
-    mechanic: z.enum(['none', 'ironhide', 'backspin', 'redline', 'redthirst']).default('none'),
+    mechanic: z
+      .enum(['none', 'ironhide', 'backspin', 'redline', 'redthirst', 'riseAndShine'])
+      .default('none'),
+    startingPets: z.array(z.string()).default([]),
     levelUpItems: z
       .array(z.object({ level: z.number().int().min(2), options: z.array(z.string()).min(1) }).strict())
       .default([]),
@@ -264,6 +274,23 @@ export const BoonSchema = z
     desc: z.string(),
     grants: z.array(GrantSchema).min(1),
     weight: z.number().positive().default(1),
+  })
+  .strict();
+
+export const PetSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    name: z.string(),
+    radius: z.number().positive(),
+    moveSpeed: z.number().positive(),
+    attackCooldown: z.number().positive(),
+    // Damage scales off the OWNER's stats: multiplier × petDamage + flat roll
+    multiplier: z.number().nonnegative(),
+    flat: z.tuple([z.number(), z.number()]),
+    types: z.array(DamageTypeSchema).min(1), // e.g. ["pet","melee"]
+    lifetime: z.number().nonnegative().default(0), // 0 = permanent
+    maxPerOwner: z.number().int().positive().default(4),
+    leash: z.number().positive().default(8), // stays within this range of the owner
   })
   .strict();
 
@@ -335,4 +362,5 @@ export type DeedDef = z.infer<typeof DeedSchema>;
 export type ClassDef = z.infer<typeof ClassSchema>;
 export type PassiveDef = z.infer<typeof PassiveSchema>;
 export type TriggerDef = z.infer<typeof TriggerSchema>;
+export type PetDef = z.infer<typeof PetSchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;

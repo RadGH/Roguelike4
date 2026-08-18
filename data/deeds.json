@@ -190,5 +190,47 @@
       }
     ],
     "glimmerBonus": 2
+  },
+  {
+    "id": "ranged-kills-50",
+    "desc": "Defeat 50 enemies with ranged damage",
+    "hint": "Keep your distance. Bring string.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 50,
+    "match": {
+      "event": "killWithType",
+      "type": "ranged"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "hunter"
+      }
+    ],
+    "glimmerBonus": 2
+  },
+  {
+    "id": "pet-kills-50",
+    "desc": "Let your companions defeat 50 enemies",
+    "hint": "The Hunter's dog counts. So would anything else that fights for you.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 50,
+    "match": {
+      "event": "killWithType",
+      "type": "pet"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "necromancer"
+      },
+      {
+        "type": "passive",
+        "id": "zombie-flute"
+      }
+    ],
+    "glimmerBonus": 3
   }
 ]

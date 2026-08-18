@@ -11,6 +11,13 @@ import thistleArcherUrl from '../../../art/enemy-thistle-archer.svg?url';
 import mopsyUrl from '../../../art/boss-mopsy.svg?url';
 import grumbleBeetleUrl from '../../../art/enemy-grumble-beetle.svg?url';
 import dandelionPopperUrl from '../../../art/enemy-dandelion-popper.svg?url';
+import petDogUrl from '../../../art/pet-dog.svg?url';
+import petZombieUrl from '../../../art/pet-zombie.svg?url';
+
+const PET_ART: Record<string, string> = {
+  dog: petDogUrl,
+  zombie: petZombieUrl,
+};
 
 export const PX_PER_UNIT = 32;
 
@@ -79,6 +86,7 @@ export type RenderSnapshot = {
   projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
   pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' }[];
   pools: { x: number; y: number; radius: number }[];
+  pets: { instance: number; defId: string; owner: number; x: number; y: number; squishPhase: number }[];
 };
 
 export function takeSnapshot(sim: Sim): RenderSnapshot {
@@ -122,6 +130,14 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
     pools: sim.state.pools
       .filter((p) => p.active)
       .map((p) => ({ x: p.x, y: p.y, radius: p.radius })),
+    pets: sim.state.pets.map((pt) => ({
+      instance: pt.instance,
+      defId: pt.defId,
+      owner: pt.owner,
+      x: pt.x,
+      y: pt.y,
+      squishPhase: pt.squishPhase,
+    })),
   };
 }
 
@@ -139,6 +155,8 @@ export class GameRenderer {
   private playerVisuals: SpriteVisual[] = [];
   private enemyVisuals = new Map<number, SpriteVisual>();
   private enemyPool: SpriteVisual[] = [];
+  private petVisuals = new Map<number, SpriteVisual>();
+  private petPool: SpriteVisual[] = [];
   private projectileGfx = new Graphics();
   private pickupGfx = new Graphics();
   private poolGfx = new Graphics();
@@ -168,6 +186,7 @@ export class GameRenderer {
       load('player', playerWickUrl),
       ...Object.entries(ENEMY_ART).map(([k, u]) => load(k, u)),
       ...Object.entries(ARCHETYPE_FALLBACK_ART).map(([k, u]) => load(`arch:${k}`, u)),
+      ...Object.entries(PET_ART).map(([k, u]) => load(`pet:${k}`, u)),
     ]);
     if (this.disposed) {
       this.app.destroy(true, { children: true });
@@ -340,6 +359,40 @@ export class GameRenderer {
         v.root.visible = false;
         this.enemyVisuals.delete(instance);
         this.enemyPool.push(v);
+      }
+    }
+
+    // Pets — small companions with their owner's color ring
+    const petSeen = new Set<number>();
+    for (const pt of curr.pets) {
+      petSeen.add(pt.instance);
+      let v = this.petVisuals.get(pt.instance);
+      if (!v) {
+        const tex = this.textures.get(`pet:${pt.defId}`) ?? Texture.WHITE;
+        v = this.petPool.pop() ?? this.makeSpriteVisual(tex, 1.1);
+        v.sprite.texture = tex;
+        const h = 1.1 * PX_PER_UNIT;
+        v.sprite.height = h;
+        v.sprite.width = h * (tex.width / tex.height || 1);
+        v.baseScaleX = v.sprite.scale.x;
+        v.baseScaleY = v.sprite.scale.y;
+        v.root.visible = true;
+        this.petVisuals.set(pt.instance, v);
+      }
+      const p0 = prev.pets.find((pp) => pp.instance === pt.instance) ?? pt;
+      v.root.position.set(lerp(p0.x, pt.x) * PX_PER_UNIT, lerp(p0.y, pt.y) * PX_PER_UNIT);
+      const wob = Math.sin(lerp(p0.squishPhase, pt.squishPhase)) * 0.06;
+      v.sprite.scale.set(v.baseScaleX * (1 + wob), v.baseScaleY * (1 - wob));
+      v.hpBar.clear();
+      v.hpBar
+        .ellipse(0, 12, 10, 4.5)
+        .stroke({ color: PLAYER_COLORS[pt.owner % PLAYER_COLORS.length]!, width: 2, alpha: 0.7 });
+    }
+    for (const [instance, v] of this.petVisuals) {
+      if (!petSeen.has(instance)) {
+        v.root.visible = false;
+        this.petVisuals.delete(instance);
+        this.petPool.push(v);
       }
     }
 

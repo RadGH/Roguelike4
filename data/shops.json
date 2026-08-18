@@ -3,27 +3,87 @@
   "flick": {
     "blurb": "Deeds are the honest road. Glimmers are the shortcut. I don't judge.",
     "classes": [
-      { "id": "fighter", "price": 15 },
-      { "id": "rogue", "price": 15 },
-      { "id": "mage", "price": 15 },
-      { "id": "berserker", "price": 25 },
-      { "id": "vampire", "price": 25 }
+      {
+        "id": "fighter",
+        "price": 15
+      },
+      {
+        "id": "rogue",
+        "price": 15
+      },
+      {
+        "id": "mage",
+        "price": 15
+      },
+      {
+        "id": "berserker",
+        "price": 25
+      },
+      {
+        "id": "vampire",
+        "price": 25
+      },
+      {
+        "id": "hunter",
+        "price": 20
+      },
+      {
+        "id": "necromancer",
+        "price": 30
+      }
     ]
   },
   "cinder": {
     "blurb": "Forged once for heroes long gone. Yours now, for a few glimmers.",
     "items": [
-      { "id": "fireball", "price": 8 },
-      { "id": "lightning-bolt", "price": 10 },
-      { "id": "frostbolt", "price": 10 },
-      { "id": "greatclub", "price": 10 },
-      { "id": "throwing-knives", "price": 12 },
-      { "id": "flame-lash", "price": 15 },
-      { "id": "coin-cannon", "price": 15 },
-      { "id": "storm-anklet", "price": 15 },
-      { "id": "coin-operated-blade", "price": 15 },
-      { "id": "splitter-prism", "price": 18 },
-      { "id": "rocket-launcher", "price": 20 }
+      {
+        "id": "fireball",
+        "price": 8
+      },
+      {
+        "id": "lightning-bolt",
+        "price": 10
+      },
+      {
+        "id": "frostbolt",
+        "price": 10
+      },
+      {
+        "id": "greatclub",
+        "price": 10
+      },
+      {
+        "id": "throwing-knives",
+        "price": 12
+      },
+      {
+        "id": "flame-lash",
+        "price": 15
+      },
+      {
+        "id": "coin-cannon",
+        "price": 15
+      },
+      {
+        "id": "storm-anklet",
+        "price": 15
+      },
+      {
+        "id": "coin-operated-blade",
+        "price": 15
+      },
+      {
+        "id": "splitter-prism",
+        "price": 18
+      },
+      {
+        "id": "rocket-launcher",
+        "price": 20
+      },
+      {
+        "id": "zombie-flute",
+        "price": 18
+      }
     ]
   },
   "mayor": {

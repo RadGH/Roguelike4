@@ -16,6 +16,7 @@ import boonsJson from '@data/boons.json';
 import deedsJson from '@data/deeds.json';
 import classesJson from '@data/classes.json';
 import passivesJson from '@data/items/passives.json';
+import petsJson from '@data/pets.json';
 import {
   ActWavesSchema,
   BalanceSchema,
@@ -24,6 +25,7 @@ import {
   DeedSchema,
   EnemySchema,
   PassiveSchema,
+  PetSchema,
   WeaponSchema,
   type ActWavesDef,
   type BalanceDef,
@@ -32,6 +34,7 @@ import {
   type DeedDef,
   type EnemyDef,
   type PassiveDef,
+  type PetDef,
   type WaveDef,
   type WeaponDef,
 } from './schemas';
@@ -70,6 +73,7 @@ export type Registry = {
   deeds: Map<string, DeedDef>;
   classes: Map<string, ClassDef>;
   passives: Map<string, PassiveDef>;
+  pets: Map<string, PetDef>;
 };
 
 let cached: Registry | null = null;
@@ -94,7 +98,13 @@ export function loadRegistry(): Registry {
     deeds: parseList(DeedSchema, deedsJson as unknown[], 'deeds'),
     classes: parseList(ClassSchema, classesJson as unknown[], 'classes'),
     passives: parseList(PassiveSchema, passivesJson as unknown[], 'passives'),
+    pets: parseList(PetSchema, petsJson as unknown[], 'pets'),
   };
+  for (const [id, c] of reg.classes) {
+    for (const petId of c.startingPets) {
+      if (!reg.pets.has(petId)) throw new Error(`class "${id}": unknown starting pet "${petId}"`);
+    }
+  }
   for (const [id, p] of reg.passives) {
     if (p.unlockDeed && !reg.deeds.has(p.unlockDeed))
       throw new Error(`passive "${id}": unknown unlockDeed "${p.unlockDeed}"`);

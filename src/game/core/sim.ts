@@ -174,6 +174,18 @@ export type PoolState = {
   itemId: string | null; // attribution for friendly pools
 };
 
+export type PetState = {
+  instance: number;
+  defId: string;
+  owner: number; // player index
+  grantedBy: string; // item/class that created it (meter attribution)
+  x: number;
+  y: number;
+  attackCooldown: number;
+  lifetime: number; // seconds left; Infinity = permanent
+  squishPhase: number;
+};
+
 export type PickupKind = 'gold' | 'xp' | 'chest';
 export type PickupState = { active: boolean; x: number; y: number; kind: PickupKind; amount: number };
 
@@ -189,6 +201,7 @@ export type SimState = {
   arena: Arena;
   players: PlayerState[];
   enemies: EnemyState[];
+  pets: PetState[];
   projectiles: ProjectileState[];
   pickups: PickupState[];
   pools: PoolState[];
@@ -275,6 +288,7 @@ export class Sim {
       arena,
       players,
       enemies: [],
+      pets: [],
       projectiles,
       pickups,
       pools,
@@ -282,6 +296,12 @@ export class Sim {
       lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
     };
+    // Class starting pets (Hunter's dog, ...)
+    for (const p of this.state.players) {
+      for (const petId of this.classDef(p.classId).startingPets) {
+        this.spawnPet(petId, p.index, p.classId, p.x + 1, p.y + 1);
+      }
+    }
   }
 
   classDef(classId: string): ClassDef {
@@ -358,6 +378,111 @@ export class Sim {
   }
 
   // ---- boons ----
+
+  // ---- pets ----
+
+  private nextPetInstance = 1;
+
+  /** Spawn a pet for a player, respecting the per-owner cap for that pet type. */
+  spawnPet(defId: string, owner: number, grantedBy: string, x: number, y: number): PetState | null {
+    const def = this.registry.pets.get(defId);
+    if (!def) throw new Error(`Unknown pet "${defId}"`);
+    const owned = this.state.pets.filter((pt) => pt.owner === owner && pt.defId === defId).length;
+    if (owned >= def.maxPerOwner) return null;
+    const pet: PetState = {
+      instance: this.nextPetInstance++,
+      defId,
+      owner,
+      grantedBy,
+      x,
+      y,
+      attackCooldown: 0,
+      lifetime: def.lifetime > 0 ? def.lifetime : Infinity,
+      squishPhase: 0,
+    };
+    this.state.pets.push(pet);
+    return pet;
+  }
+
+  private tickPets(dt: number): void {
+    const s = this.state;
+    for (let i = s.pets.length - 1; i >= 0; i--) {
+      const pet = s.pets[i]!;
+      const def = this.registry.pets.get(pet.defId)!;
+      pet.lifetime -= dt;
+      const owner = s.players[pet.owner];
+      if (pet.lifetime <= 0 || !owner) {
+        s.pets[i] = s.pets[s.pets.length - 1]!;
+        s.pets.pop();
+        continue;
+      }
+      if (pet.attackCooldown > 0) pet.attackCooldown = Math.max(0, pet.attackCooldown - dt);
+
+      // Target: nearest enemy within leash of the owner; else trot back to the owner
+      let target: EnemyState | null = null;
+      let bestDist = Infinity;
+      for (const e of s.enemies) {
+        if (!e.alive) continue;
+        if (Math.hypot(e.x - owner.x, e.y - owner.y) > def.leash) continue;
+        const d = Math.hypot(e.x - pet.x, e.y - pet.y);
+        if (d < bestDist) {
+          bestDist = d;
+          target = e;
+        }
+      }
+      let moveX = 0;
+      let moveY = 0;
+      if (target) {
+        const edef = getEnemy(this.registry, target.defId);
+        const dx = target.x - pet.x;
+        const dy = target.y - pet.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const touch = def.radius + edef.radius + 0.1;
+        if (dist > touch) {
+          moveX = dx / dist;
+          moveY = dy / dist;
+        } else if (pet.attackCooldown <= 0) {
+          pet.attackCooldown = def.attackCooldown;
+          this.petBite(pet, def.multiplier, def.flat, def.types, target);
+        }
+      } else {
+        const dx = owner.x - pet.x;
+        const dy = owner.y - pet.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 1.5) {
+          moveX = dx / dist;
+          moveY = dy / dist;
+        }
+      }
+      if (moveX || moveY) {
+        pet.x += moveX * def.moveSpeed * dt;
+        pet.y += moveY * def.moveSpeed * dt;
+        pet.squishPhase = (pet.squishPhase + dt * 9) % (Math.PI * 2);
+      }
+    }
+  }
+
+  private petBite(
+    pet: PetState,
+    multiplier: number,
+    flat: [number, number],
+    types: import('../data/stats').DamageType[],
+    target: EnemyState,
+  ): void {
+    const owner = this.state.players[pet.owner]!;
+    this.applyDamageToEnemy(
+      target,
+      { kind: 'attack', types, multiplier, flat },
+      owner.stats, // pet damage scales from the OWNER's stats (petDamage et al.)
+      {
+        actor: { kind: 'pet', owner: pet.owner, id: pet.defId, instance: pet.instance },
+        itemId: pet.grantedBy,
+        grantedBy: pet.defId,
+        deliveryTag: 'pet',
+        hitId: this.tracker.newHitId(),
+      },
+    );
+  }
 
   // ---- passives ----
 
@@ -782,6 +907,7 @@ export class Sim {
     }
 
     this.tickEnemies(dt);
+    this.tickPets(dt);
     this.tickProjectiles(dt);
     this.tickPools(dt);
     this.tickPickups(dt);
@@ -1190,12 +1316,18 @@ export class Sim {
   private onEnemyKilled(enemy: EnemyState, def: EnemyDef, byPlayer: number): void {
     this.eventsThisTick.push({ type: 'enemyKilled', defId: enemy.defId, instance: enemy.instance, byPlayer });
 
-    // Kill triggers (Powder Keg Belt, ...)
+    // Kill triggers (Powder Keg Belt, Zombie Flute, ...)
     const killer = this.state.players[byPlayer];
     if (killer) {
+      // Necromancer's Rise and Shine: kills may rejoin the fight, politely
+      if (this.classDef(killer.classId).mechanic === 'riseAndShine' && this.rng.combat.chance(0.2)) {
+        this.spawnPet('zombie', killer.index, killer.classId, enemy.x, enemy.y);
+      }
       for (const { trigger, itemId } of this.triggersFor(killer, 'kill')) {
         if (!this.rng.combat.chance(trigger.chance)) continue;
-        if (trigger.action === 'firePool') {
+        if (trigger.action === 'raiseZombie') {
+          this.spawnPet('zombie', killer.index, itemId, enemy.x, enemy.y);
+        } else if (trigger.action === 'firePool') {
           const pool = this.state.pools.find((pl) => !pl.active);
           if (pool) {
             pool.active = true;

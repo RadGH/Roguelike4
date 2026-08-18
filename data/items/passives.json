@@ -3,24 +3,41 @@
     "id": "lodestone-charm",
     "category": "passive",
     "desc": "+50% pickup radius. Shiny things simply drift toward you.",
-    "grants": [{ "stat": "pickupRadius", "pct": 0.5 }],
+    "grants": [
+      {
+        "stat": "pickupRadius",
+        "pct": 0.5
+      }
+    ],
     "rarity": "common"
   },
   {
     "id": "greedy-gauntlet",
     "category": "passive",
-    "desc": "+30% gold, −10% XP. The hand wants what the hand wants.",
+    "desc": "+30% gold, \u221210% XP. The hand wants what the hand wants.",
     "grants": [
-      { "stat": "goldGain", "flat": 0.3 },
-      { "stat": "xpGain", "flat": -0.1 }
+      {
+        "stat": "goldGain",
+        "flat": 0.3
+      },
+      {
+        "stat": "xpGain",
+        "flat": -0.1
+      }
     ],
     "rarity": "uncommon"
   },
   {
     "id": "magpies-eye",
     "category": "passive",
-    "desc": "10% chance to instantly pocket ANY gold that drops — anyone's kills.",
-    "triggers": [{ "on": "goldDrop", "chance": 0.1, "action": "autoCollectGold" }],
+    "desc": "10% chance to instantly pocket ANY gold that drops \u2014 anyone's kills.",
+    "triggers": [
+      {
+        "on": "goldDrop",
+        "chance": 0.1,
+        "action": "autoCollectGold"
+      }
+    ],
     "rarity": "uncommon"
   },
   {
@@ -32,7 +49,11 @@
         "on": "kill",
         "chance": 0.08,
         "action": "firePool",
-        "params": { "radius": 1.4, "dps": 4, "duration": 3 }
+        "params": {
+          "radius": 1.4,
+          "dps": 4,
+          "duration": 3
+        }
       }
     ],
     "rarity": "uncommon"
@@ -41,7 +62,15 @@
     "id": "second-wick",
     "category": "passive",
     "desc": "Once per run: survive a fatal blow at 10% health. A spare flame, just in case.",
-    "triggers": [{ "on": "fatalDamage", "action": "surviveFatal", "params": { "hpFrac": 0.1 } }],
+    "triggers": [
+      {
+        "on": "fatalDamage",
+        "action": "surviveFatal",
+        "params": {
+          "hpFrac": 0.1
+        }
+      }
+    ],
     "rarity": "rare"
   },
   {
@@ -53,7 +82,11 @@
         "on": "meleeHit",
         "chance": 0.15,
         "action": "chainLightning",
-        "params": { "jumps": 2, "damageFrac": 0.5, "radius": 4 }
+        "params": {
+          "jumps": 2,
+          "damageFrac": 0.5,
+          "radius": 4
+        }
       }
     ],
     "rarity": "rare",
@@ -63,7 +96,16 @@
     "id": "coin-operated-blade",
     "category": "passive",
     "desc": "Each coin collected charges your next hit: +1% damage per coin, up to +50%.",
-    "triggers": [{ "on": "goldCollect", "action": "coinCharge", "params": { "perCoin": 0.01, "cap": 0.5 } }],
+    "triggers": [
+      {
+        "on": "goldCollect",
+        "action": "coinCharge",
+        "params": {
+          "perCoin": 0.01,
+          "cap": 0.5
+        }
+      }
+    ],
     "rarity": "rare",
     "unlockDeed": "gold-hoard-500"
   },
@@ -71,7 +113,9 @@
     "id": "splitter-prism",
     "category": "passive",
     "desc": "Your projectiles split in two on first impact (each at 75% damage).",
-    "mods": ["projectileSplit"],
+    "mods": [
+      "projectileSplit"
+    ],
     "rarity": "rare",
     "unlockDeed": "explosion-multikill-5"
   },
@@ -79,14 +123,35 @@
     "id": "bouncy-castle-writ",
     "category": "passive",
     "desc": "An official permit allowing your projectiles to bounce off walls, twice.",
-    "mods": ["projectileBounce"],
+    "mods": [
+      "projectileBounce"
+    ],
     "rarity": "uncommon"
   },
   {
     "id": "lucky-ribbon",
     "category": "passive",
     "desc": "Boon choices offer 5 options instead of 4. The ribbon knows.",
-    "mods": ["boonChoices5"],
+    "mods": [
+      "boonChoices5"
+    ],
     "rarity": "rare"
+  },
+  {
+    "id": "zombie-flute",
+    "category": "passive",
+    "desc": "20% of your kills rise as polite zombies for 20 seconds. They mean well.",
+    "triggers": [
+      {
+        "on": "kill",
+        "chance": 0.2,
+        "action": "raiseZombie",
+        "params": {
+          "lifetime": 20
+        }
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "pet-kills-50"
   }
 ]
