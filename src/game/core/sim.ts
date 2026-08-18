@@ -24,7 +24,15 @@ import {
   tickStatus,
   type StatusState,
 } from './status';
-import { loadRegistry, getEnemy, getWave, getWeapon, maxWave, type Registry } from '../data/registry';
+import {
+  loadRegistry,
+  getEnemy,
+  getWave,
+  getWeapon,
+  maxWave,
+  minWave,
+  type Registry,
+} from '../data/registry';
 import type { EnemyDef, WeaponDef } from '../data/schemas';
 
 export type WeaponSlot = { itemId: string; cooldownLeft: number };
@@ -373,8 +381,26 @@ export class Sim {
     const next = this.state.act + 1;
     if (!this.registry.waves.has(next)) throw new Error(`No act ${next}`);
     this.state.act = next;
-    const first = Math.min(...this.registry.waves.get(next)!.waves.map((w) => w.wave));
-    this.startWaveNumber(first);
+    this.startWaveNumber(minWave(this.registry, next));
+  }
+
+  /** Bellhop drop-off: start a run at a later act with a catch-up package. */
+  setStartingAct(act: number): void {
+    if (!this.registry.waves.has(act)) throw new Error(`No act ${act}`);
+    this.state.act = act;
+    if (act > 1) {
+      const level = 1 + (act - 1) * 4;
+      for (const p of this.state.players) {
+        p.level = level;
+        p.pendingBoons = Math.min(8, level - 1);
+        p.gold += 50 * (act - 1);
+        p.pendingChests += act - 1; // a chest per skipped act keeps loadouts on-curve
+      }
+    }
+  }
+
+  firstWaveOfCurrentAct(): number {
+    return minWave(this.registry, this.state.act);
   }
 
   /** Endless mode: remix waves synthesized from the full enemy pool, compounding. */

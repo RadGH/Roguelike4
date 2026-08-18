@@ -135,6 +135,12 @@ export function maxWave(reg: Registry, act: number): number {
   return Math.max(...aw.waves.map((w) => w.wave));
 }
 
+export function minWave(reg: Registry, act: number): number {
+  const aw = reg.waves.get(act);
+  if (!aw) return 0;
+  return Math.min(...aw.waves.map((w) => w.wave));
+}
+
 export function getWeapon(reg: Registry, id: string): WeaponDef {
   const w = reg.weapons.get(id);
   if (!w) throw new Error(`Unknown weapon id "${id}"`);

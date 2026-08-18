@@ -18,10 +18,14 @@ const CORNERS: React.CSSProperties[] = [
 export function GameView({
   seed,
   playerCount,
+  slot,
+  startAct,
   onExit,
 }: {
   seed: number;
   playerCount: number;
+  slot: number;
+  startAct: number;
   onExit: () => void;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -32,7 +36,7 @@ export function GameView({
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
-    const engine = new Engine(seed, playerCount);
+    const engine = new Engine(seed, playerCount, window.localStorage, { slot, startAct });
     engineRef.current = engine;
     let disposed = false;
     void engine.mount(el).catch((err) => {
@@ -50,7 +54,7 @@ export function GameView({
       engineRef.current = null;
       engine.dispose();
     };
-  }, [seed, playerCount]);
+  }, [seed, playerCount, slot, startAct]);
 
   return (
     <div ref={mountRef} style={{ position: 'fixed', inset: 0, overflow: 'hidden' }} data-screen="arena">

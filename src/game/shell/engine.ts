@@ -30,10 +30,16 @@ export class Engine {
   private toasts: { id: number; text: string; until: number }[] = [];
   private nextToastId = 1;
 
-  constructor(seed: number, playerCount = 1, storage: KeyValueStorage = window.localStorage) {
+  constructor(
+    seed: number,
+    playerCount = 1,
+    storage: KeyValueStorage = window.localStorage,
+    opts: { slot?: number; startAct?: number } = {},
+  ) {
     this.sim = new Sim(seed, playerCount);
+    if (opts.startAct && opts.startAct > 1) this.sim.setStartingAct(opts.startAct);
     this.profileStorage = storage;
-    this.profile = loadProfile(storage, 1);
+    this.profile = loadProfile(storage, opts.slot ?? 1);
     this.sim.unlockedItems = new Set(this.profile.unlockedItems);
     this.deedEngine = new DeedEngine(
       this.sim.registry.deeds,
@@ -110,7 +116,7 @@ export class Engine {
     this.renderer.buildArena(this.sim.state.arena.width, this.sim.state.arena.height, this.sim.state.act);
     this.input.attach(el);
     this.input.playerScreenPos = (i) => this.renderer.playerScreenPos(i, this.currSnap);
-    this.startWave(1);
+    this.startWave(this.sim.firstWaveOfCurrentAct());
     window.addEventListener('gamepadconnected', this.onPadConnected);
     window.addEventListener('gamepaddisconnected', this.onPadDisconnected);
     this.running = true;
