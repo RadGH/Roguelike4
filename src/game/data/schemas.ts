@@ -79,7 +79,17 @@ export const WeaponSchema = z
 export const EnemySchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
-    archetype: z.enum(['chaser', 'skitterer', 'shooter', 'charger', 'splitter', 'boss']),
+    archetype: z.enum([
+      'chaser',
+      'skitterer',
+      'shooter',
+      'charger',
+      'splitter',
+      'lobber',
+      'summoner',
+      'buffer',
+      'boss',
+    ]),
     name: z.string().optional(), // display name (bosses/minibosses)
     radius: z.number().positive(),
     maxHp: z.number().positive(),
@@ -101,17 +111,31 @@ export const EnemySchema = z
     // splitter fields
     splitInto: z.string().optional(),
     splitCount: z.number().int().positive().optional(),
+    // lobber fields: arcs a projectile that leaves a damaging pool
+    poolRadius: z.number().positive().optional(),
+    poolDps: z.number().positive().optional(),
+    poolDuration: z.number().positive().optional(),
+    // summoner fields
+    summonId: z.string().optional(),
+    summonCount: z.number().int().positive().optional(),
+    summonCap: z.number().int().positive().optional(),
+    summonCooldown: z.number().positive().optional(),
+    // buffer fields: haste aura for nearby enemies
+    auraRadius: z.number().positive().optional(),
+    auraSpeedMult: z.number().positive().optional(),
     // boss fields: phases activate as hpFrac drops; active = first with until < hpFrac
     bossPhases: z
       .array(
         z
           .object({
-            mode: z.enum(['hop', 'summon', 'frenzy']),
+            mode: z.enum(['hop', 'summon', 'frenzy', 'volley']),
             until: z.number().min(0).max(1), // phase active while hpFrac > until
             cooldown: z.number().positive(),
             summonId: z.string().optional(),
             summonCount: z.number().int().positive().optional(),
             summonCap: z.number().int().positive().optional(),
+            volleyRing: z.number().int().nonnegative().optional(), // projectiles in the ring
+            volleyAimed: z.number().int().nonnegative().optional(), // aimed spread shots
           })
           .strict(),
       )

@@ -15,6 +15,8 @@ export type Profile = {
   deedsCompleted: string[];
   glimmers: number;
   emberkeys: number;
+  actsCleared: number[];
+  endlessUnlocked: boolean;
   lifetime: {
     runs: number;
     wins: number;
@@ -42,6 +44,8 @@ export function freshProfile(slot = 1): Profile {
     deedsCompleted: [],
     glimmers: 0,
     emberkeys: 0,
+    actsCleared: [],
+    endlessUnlocked: false,
     lifetime: { runs: 0, wins: 0, kills: 0, deepestWave: 0 },
   };
 }

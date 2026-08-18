@@ -98,7 +98,9 @@ export function GameView({
             pointerEvents: 'none',
           }}
         >
-          <div style={{ fontSize: 20 }}>Wave {hud.wave} · 💰 {hud.gold}</div>
+          <div style={{ fontSize: 20 }}>
+            {hud.endless ? '🌒 Endless' : `Act ${hud.act}`} · Wave {hud.wave} · 💰 {hud.gold}
+          </div>
           <div style={{ fontSize: 13, opacity: 0.85 }}>
             {hud.cleared ? 'wave cleared! ✨' : `${hud.enemies} foes about`}
           </div>
@@ -192,6 +194,8 @@ export function GameView({
         <RunEndOverlay
           kind={hud.runState as 'gameOver' | 'victory'}
           engine={engineRef.current}
+          act={hud.act}
+          continueOption={hud.continueOption}
           onExit={onExit}
         />
       )}

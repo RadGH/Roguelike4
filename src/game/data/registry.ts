@@ -5,7 +5,13 @@ import { z } from 'zod';
 import balanceJson from '@data/balance.json';
 import weaponsJson from '@data/items/weapons.json';
 import enemiesAct1Json from '@data/enemies/act1.json';
+import enemiesAct2Json from '@data/enemies/act2.json';
+import enemiesAct3Json from '@data/enemies/act3.json';
+import enemiesAct4Json from '@data/enemies/act4.json';
 import wavesAct1Json from '@data/waves/act1.json';
+import wavesAct2Json from '@data/waves/act2.json';
+import wavesAct3Json from '@data/waves/act3.json';
+import wavesAct4Json from '@data/waves/act4.json';
 import boonsJson from '@data/boons.json';
 import deedsJson from '@data/deeds.json';
 import {
@@ -62,15 +68,31 @@ let cached: Registry | null = null;
 
 export function loadRegistry(): Registry {
   if (cached) return cached;
-  const act1Waves = parse(ActWavesSchema, wavesAct1Json, 'waves.act1');
+  const allEnemies = [
+    ...(enemiesAct1Json as unknown[]),
+    ...(enemiesAct2Json as unknown[]),
+    ...(enemiesAct3Json as unknown[]),
+    ...(enemiesAct4Json as unknown[]),
+  ];
+  const actWaves = [wavesAct1Json, wavesAct2Json, wavesAct3Json, wavesAct4Json].map((w, i) =>
+    parse(ActWavesSchema, w, `waves.act${i + 1}`),
+  );
   const reg: Registry = {
     balance: parse(BalanceSchema, balanceJson, 'balance'),
     weapons: parseList(WeaponSchema, weaponsJson as unknown[], 'weapons'),
-    enemies: parseList(EnemySchema, enemiesAct1Json as unknown[], 'enemies.act1'),
-    waves: new Map([[act1Waves.act, act1Waves]]),
+    enemies: parseList(EnemySchema, allEnemies, 'enemies'),
+    waves: new Map(actWaves.map((aw) => [aw.act, aw])),
     boons: parseList(BoonSchema, boonsJson as unknown[], 'boons'),
     deeds: parseList(DeedSchema, deedsJson as unknown[], 'deeds'),
   };
+  for (const [id, e] of reg.enemies) {
+    if (e.summonId && !reg.enemies.has(e.summonId))
+      throw new Error(`enemy "${id}": summonId references unknown enemy "${e.summonId}"`);
+    for (const ph of e.bossPhases ?? []) {
+      if (ph.summonId && !reg.enemies.has(ph.summonId))
+        throw new Error(`enemy "${id}": boss phase summons unknown enemy "${ph.summonId}"`);
+    }
+  }
   // Day-one audit (build-time slice): every weapon unlockDeed exists; every deed's
   // weapon unlock exists; and at least one day-one path feeds each deed's need.
   for (const [id, w] of reg.weapons) {

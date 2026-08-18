@@ -95,6 +95,7 @@ export type EnemyState = {
   charge: ChargeState;
   boss: BossState | null;
   attackCooldown: number;
+  summonTimer: number;
   targetPlayer: number;
   wanderAngle: number;
   wanderTimer: number;
@@ -116,7 +117,22 @@ export type ProjectileState = {
   enemyDamage: number; // scaled damage for enemy projectiles
   pierceLeft: number;
   blastRadius: number; // >0: explodes on impact (explosion-tagged AoE)
+  // lobber payload: leaves a pool where the projectile lands
+  poolRadius: number;
+  poolDps: number;
+  poolDuration: number;
   hitIds: Set<number>;
+};
+
+export type PoolState = {
+  active: boolean;
+  x: number;
+  y: number;
+  radius: number;
+  dps: number;
+  duration: number;
+  tickIn: number;
+  ownerDefId: string; // enemy def for attribution + damage typing
 };
 
 export type PickupKind = 'gold' | 'xp' | 'chest';
@@ -129,12 +145,14 @@ export type SimState = {
   tick: number;
   act: number;
   wave: number;
+  endless: boolean;
   phase: Phase;
   arena: Arena;
   players: PlayerState[];
   enemies: EnemyState[];
   projectiles: ProjectileState[];
   pickups: PickupState[];
+  pools: PoolState[];
   combo: { count: number; decay: number; best: number };
   lootRotation: number; // next player index to receive a chest (round-robin)
   spawning: {
@@ -185,21 +203,28 @@ export class Sim {
         active: false, x: 0, y: 0, vx: 0, vy: 0, radius: 0, traveled: 0, range: 0,
         fromPlayer: -1, itemId: null, enemyDefId: null, enemyDamage: 0, pierceLeft: 0,
         blastRadius: 0,
+        poolRadius: 0, poolDps: 0, poolDuration: 0,
         hitIds: new Set(),
       });
     }
     const pickups: PickupState[] = [];
     for (let i = 0; i < MAX_PICKUPS; i++) pickups.push({ active: false, x: 0, y: 0, kind: 'gold', amount: 0 });
+    const pools: PoolState[] = [];
+    for (let i = 0; i < 96; i++) {
+      pools.push({ active: false, x: 0, y: 0, radius: 0, dps: 0, duration: 0, tickIn: 0, ownerDefId: '' });
+    }
     this.state = {
       tick: 0,
       act: 1,
       wave: 0,
+      endless: false,
       phase: 'cleared',
       arena,
       players,
       enemies: [],
       projectiles,
       pickups,
+      pools,
       combo: { count: 0, decay: 0, best: 0 },
       lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
@@ -337,9 +362,46 @@ export class Sim {
     };
   }
 
-  /** True while the current act has a next wave. */
+  /** True while the current act has a next wave (endless always does). */
   hasNextWave(): boolean {
+    if (this.state.endless) return true;
     return this.state.wave < maxWave(this.registry, this.state.act);
+  }
+
+  /** Move to the next act's first wave (same run — act was already unlocked). */
+  advanceAct(): void {
+    const next = this.state.act + 1;
+    if (!this.registry.waves.has(next)) throw new Error(`No act ${next}`);
+    this.state.act = next;
+    const first = Math.min(...this.registry.waves.get(next)!.waves.map((w) => w.wave));
+    this.startWaveNumber(first);
+  }
+
+  /** Endless mode: remix waves synthesized from the full enemy pool, compounding. */
+  startEndlessWave(wave: number): void {
+    this.state.endless = true;
+    this.state.wave = wave;
+    this.state.phase = 'fighting';
+    const pool = [...this.registry.enemies.values()].filter((e) => e.archetype !== 'boss');
+    const groups = 3 + Math.min(3, Math.floor((wave - 40) / 5));
+    const coopMult =
+      1 + this.registry.balance.coop.spawnMultPerExtraPlayer * (this.state.players.length - 1);
+    const queue: SimState['spawning']['queue'] = [];
+    for (let g = 0; g < groups; g++) {
+      const def = this.rng.waves.pick(pool);
+      queue.push({
+        defId: def.id,
+        count: Math.round((4 + (wave - 40) * 0.6 + g) * coopMult),
+        atSecond: g * 6,
+        elite: this.rng.waves.chance(Math.min(0.5, 0.1 + (wave - 40) * 0.02)),
+      });
+    }
+    // Every 10th endless wave: a stirred (elite) boss returns
+    if (wave % 10 === 0) {
+      const bosses = [...this.registry.enemies.values()].filter((e) => e.archetype === 'boss');
+      queue.push({ defId: this.rng.waves.pick(bosses).id, count: 1, atSecond: 4, elite: true });
+    }
+    this.state.spawning = { queue, elapsed: 0, done: false };
   }
 
   /** Custom scripts (tests/sandbox). */
@@ -355,8 +417,10 @@ export class Sim {
   spawnEnemy(defId: string, x: number, y: number, elite = false): EnemyState {
     const def = getEnemy(this.registry, defId);
     const bal = this.registry.balance;
-    const waveGrowthHp = 1 + bal.waves.hpGrowthPerWave * Math.max(0, this.state.wave - 1);
-    const waveGrowthDmg = 1 + bal.waves.dmgGrowthPerWave * Math.max(0, this.state.wave - 1);
+    // Past wave 40 (endless) growth compounds — the dark eventually wins
+    const endlessMult = this.state.wave > 40 ? Math.pow(1.08, this.state.wave - 40) : 1;
+    const waveGrowthHp = (1 + bal.waves.hpGrowthPerWave * Math.max(0, this.state.wave - 1)) * endlessMult;
+    const waveGrowthDmg = (1 + bal.waves.dmgGrowthPerWave * Math.max(0, this.state.wave - 1)) * endlessMult;
     const em = bal.waves.elite;
     const e: EnemyState = {
       instance: this.nextEnemyInstance++,
@@ -373,6 +437,7 @@ export class Sim {
       elite,
       status: freshStatus(),
       charge: { phase: 'none', timer: 0, dirX: 0, dirY: 0 },
+      summonTimer: 0,
       boss:
         def.archetype === 'boss'
           ? { phaseIdx: 0, cooldown: 1.5, stage: 'idle', stageTimer: 0, targetX: x, targetY: y, fromX: x, fromY: y }
@@ -454,6 +519,7 @@ export class Sim {
 
     this.tickEnemies(dt);
     this.tickProjectiles(dt);
+    this.tickPools(dt);
     this.tickPickups(dt);
     this.tickCombo(dt);
 
@@ -645,6 +711,9 @@ export class Sim {
         proj.enemyDamage = 0;
         proj.pierceLeft = d.pierce;
         proj.blastRadius = d.blastRadius * (1 + stat(p.stats, 'area'));
+        proj.poolRadius = 0;
+        proj.poolDps = 0;
+        proj.poolDuration = 0;
         proj.hitIds.clear();
       }
     }
@@ -830,6 +899,22 @@ export class Sim {
 
   private tickEnemies(dt: number): void {
     const bal = this.registry.balance;
+    // Buffer auras: collected once, applied as a speed multiplier to nearby enemies
+    const auras: { x: number; y: number; r: number; mult: number }[] = [];
+    for (const e of this.state.enemies) {
+      if (!e.alive) continue;
+      const def = getEnemy(this.registry, e.defId);
+      if (def.archetype === 'buffer' && def.auraRadius && def.auraSpeedMult) {
+        auras.push({ x: e.x, y: e.y, r: def.auraRadius, mult: def.auraSpeedMult });
+      }
+    }
+    const auraMult = (e: EnemyState): number => {
+      let m = 1;
+      for (const a of auras) {
+        if (Math.hypot(e.x - a.x, e.y - a.y) <= a.r) m = Math.max(m, a.mult);
+      }
+      return m;
+    };
     for (const e of this.state.enemies) {
       if (!e.alive) continue;
       const def = getEnemy(this.registry, e.defId);
@@ -870,7 +955,7 @@ export class Sim {
       const dx = target.x - e.x;
       const dy = target.y - e.y;
       const dist = Math.hypot(dx, dy) || 1;
-      const statusMove = moveMult(e.status);
+      const statusMove = moveMult(e.status) * auraMult(e);
 
       // Boss state machine (phases by hp fraction)
       if (e.boss && def.bossPhases) {
@@ -921,7 +1006,68 @@ export class Sim {
 
       let moveX = dx / dist;
       let moveY = dy / dist;
-      if (def.archetype === 'skitterer') {
+      if (def.archetype === 'lobber') {
+        const range = def.range ?? 8;
+        if (dist < range * 0.55) {
+          moveX = -moveX;
+          moveY = -moveY;
+        } else if (dist < range) {
+          const px = -moveY;
+          moveY = moveX * 0.6;
+          moveX = px * 0.6;
+        }
+        if (dist <= range && e.attackCooldown <= 0) {
+          e.attackCooldown = def.attackCooldown;
+          const proj = this.allocProjectile();
+          if (proj) {
+            const speed = def.projectileSpeed ?? 6;
+            proj.active = true;
+            proj.x = e.x;
+            proj.y = e.y;
+            proj.vx = (dx / dist) * speed;
+            proj.vy = (dy / dist) * speed;
+            proj.radius = 0.3;
+            proj.traveled = 0;
+            proj.range = dist; // arcs to the target's feet, then splashes into a pool
+            proj.fromPlayer = -1;
+            proj.itemId = null;
+            proj.enemyDefId = e.defId;
+            proj.enemyDamage = e.damage;
+            proj.pierceLeft = 0;
+            proj.blastRadius = 0;
+            proj.poolRadius = def.poolRadius ?? 1.2;
+            proj.poolDps = (def.poolDps ?? 2) * (e.damage / def.damage);
+            proj.poolDuration = def.poolDuration ?? 3;
+            proj.hitIds.clear();
+          }
+        }
+      } else if (def.archetype === 'summoner') {
+        // Kite at mid range, periodically call reinforcements
+        const range = 7;
+        if (dist < range * 0.6) {
+          moveX = -moveX;
+          moveY = -moveY;
+        }
+        e.summonTimer -= dt;
+        if (e.summonTimer <= 0 && def.summonId && def.summonCount) {
+          const cap = def.summonCap ?? 6;
+          const minions = this.state.enemies.filter((x) => x.alive && x.defId === def.summonId).length;
+          if (minions < cap) {
+            for (let i = 0; i < def.summonCount; i++) {
+              const a = this.rng.waves.next() * Math.PI * 2;
+              this.spawnEnemy(def.summonId, e.x + Math.cos(a) * 1.5, e.y + Math.sin(a) * 1.5, false);
+            }
+          }
+          e.summonTimer = def.summonCooldown ?? 4;
+        }
+      } else if (def.archetype === 'buffer') {
+        // Hangs back near the fight, hasting friends (aura applied above)
+        const range = 6;
+        if (dist < range * 0.7) {
+          moveX = -moveX;
+          moveY = -moveY;
+        }
+      } else if (def.archetype === 'skitterer') {
         e.wanderTimer -= dt;
         if (e.wanderTimer <= 0) {
           e.wanderTimer = 0.6 + this.rng.combat.next() * 0.6;
@@ -962,6 +1108,10 @@ export class Sim {
             proj.enemyDefId = e.defId;
             proj.enemyDamage = e.damage;
             proj.pierceLeft = 0;
+            proj.blastRadius = 0;
+            proj.poolRadius = 0;
+            proj.poolDps = 0;
+            proj.poolDuration = 0;
             proj.hitIds.clear();
           }
         }
@@ -972,7 +1122,8 @@ export class Sim {
       this.clampEnemy(e, def);
 
       const touchDist = def.radius + bal.player.radius;
-      if (dist <= touchDist + 0.1 && e.attackCooldown <= 0 && def.archetype !== 'shooter') {
+      const noContact = def.archetype === 'shooter' || def.archetype === 'lobber';
+      if (dist <= touchDist + 0.1 && e.attackCooldown <= 0 && !noContact) {
         e.attackCooldown = def.attackCooldown;
         this.damagePlayer(target, e.damage, def, 'contact');
       }
@@ -1019,6 +1170,37 @@ export class Sim {
           b.stageTimer = 0.45;
           b.fromX = e.x;
           b.fromY = e.y;
+        } else if (phase.mode === 'volley') {
+          // Ring burst + aimed spread
+          const fire = (angle: number) => {
+            const proj = this.allocProjectile();
+            if (!proj) return;
+            proj.active = true;
+            proj.x = e.x;
+            proj.y = e.y;
+            proj.vx = Math.cos(angle) * 7;
+            proj.vy = Math.sin(angle) * 7;
+            proj.radius = 0.3;
+            proj.traveled = 0;
+            proj.range = 14;
+            proj.fromPlayer = -1;
+            proj.itemId = null;
+            proj.enemyDefId = e.defId;
+            proj.enemyDamage = e.damage * 0.6;
+            proj.pierceLeft = 0;
+            proj.blastRadius = 0;
+            proj.poolRadius = 0;
+            proj.poolDps = 0;
+            proj.poolDuration = 0;
+            proj.hitIds.clear();
+          };
+          const ring = phase.volleyRing ?? 8;
+          for (let i = 0; i < ring; i++) fire((i / ring) * Math.PI * 2);
+          const aimed = phase.volleyAimed ?? 0;
+          const at = Math.atan2(b.targetY - e.y, b.targetX - e.x);
+          for (let i = 0; i < aimed; i++) fire(at + (i - (aimed - 1) / 2) * 0.18);
+          b.stage = 'recover';
+          b.stageTimer = 0.4;
         } else {
           // frenzy charge
           b.stage = 'air';
@@ -1063,6 +1245,10 @@ export class Sim {
             proj.enemyDefId = e.defId;
             proj.enemyDamage = e.damage * 0.6;
             proj.pierceLeft = 0;
+            proj.blastRadius = 0;
+            proj.poolRadius = 0;
+            proj.poolDps = 0;
+            proj.poolDuration = 0;
             proj.hitIds.clear();
           }
           b.stage = 'recover';
@@ -1101,9 +1287,9 @@ export class Sim {
     contact();
 
     if (b.cooldown <= 0) {
-      if (phase.mode === 'hop' || phase.mode === 'frenzy') {
+      if (phase.mode === 'hop' || phase.mode === 'frenzy' || phase.mode === 'volley') {
         b.stage = 'windup';
-        b.stageTimer = phase.mode === 'hop' ? 0.9 : 0.4;
+        b.stageTimer = phase.mode === 'hop' ? 0.9 : phase.mode === 'volley' ? 0.5 : 0.4;
         b.targetX = target.x;
         b.targetY = target.y;
         this.eventsThisTick.push({ type: 'chargeTelegraph', instance: e.instance });
@@ -1203,6 +1389,7 @@ export class Sim {
       pr.traveled += step;
       const a = this.state.arena;
       if (pr.traveled >= pr.range || pr.x < 0 || pr.y < 0 || pr.x > a.width || pr.y > a.height) {
+        if (pr.poolRadius > 0) this.spawnPool(pr);
         pr.active = false;
         continue;
       }
@@ -1246,8 +1433,45 @@ export class Sim {
           if (Math.hypot(p.x - pr.x, p.y - pr.y) > bal.player.radius + pr.radius) continue;
           const def = pr.enemyDefId ? getEnemy(this.registry, pr.enemyDefId) : null;
           if (def) this.damagePlayer(p, pr.enemyDamage || def.damage, def, 'projectile');
+          if (pr.poolRadius > 0) this.spawnPool(pr);
           pr.active = false;
           break;
+        }
+      }
+    }
+  }
+
+  private spawnPool(pr: ProjectileState): void {
+    const pool = this.state.pools.find((p) => !p.active);
+    if (!pool) return;
+    pool.active = true;
+    pool.x = pr.x;
+    pool.y = pr.y;
+    pool.radius = pr.poolRadius;
+    pool.dps = pr.poolDps;
+    pool.duration = pr.poolDuration;
+    pool.tickIn = 0.25;
+    pool.ownerDefId = pr.enemyDefId ?? '';
+  }
+
+  private tickPools(dt: number): void {
+    for (const pool of this.state.pools) {
+      if (!pool.active) continue;
+      pool.duration -= dt;
+      if (pool.duration <= 0) {
+        pool.active = false;
+        continue;
+      }
+      pool.tickIn -= dt;
+      if (pool.tickIn <= 0) {
+        pool.tickIn += 0.5;
+        const def = pool.ownerDefId ? this.registry.enemies.get(pool.ownerDefId) : null;
+        if (!def) continue;
+        for (const p of this.state.players) {
+          if (!p.alive) continue;
+          if (Math.hypot(p.x - pool.x, p.y - pool.y) <= pool.radius) {
+            this.damagePlayer(p, Math.max(1, Math.round(pool.dps * 0.5)), def, 'pool');
+          }
         }
       }
     }

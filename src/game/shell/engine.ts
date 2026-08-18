@@ -107,7 +107,7 @@ export class Engine {
   async mount(el: HTMLElement): Promise<void> {
     await this.renderer.init(el);
     if (this.disposed || !this.renderer.isReady) return;
-    this.renderer.buildArena(this.sim.state.arena.width, this.sim.state.arena.height);
+    this.renderer.buildArena(this.sim.state.arena.width, this.sim.state.arena.height, this.sim.state.act);
     this.input.attach(el);
     this.input.playerScreenPos = (i) => this.renderer.playerScreenPos(i, this.currSnap);
     this.startWave(1);
@@ -258,7 +258,8 @@ export class Engine {
     const allDone = this.sim.state.players.every((p) => p.pendingBoons === 0 && p.pendingChests === 0);
     if (!allDone) return; // resolve every player's rewards first
     this.clearIntermission();
-    if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
+    if (this.sim.state.endless) this.sim.startEndlessWave(this.sim.state.wave + 1);
+    else if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
     // No next wave: runState is already 'victory' — nothing to start.
   }
 
@@ -279,8 +280,11 @@ export class Engine {
           : null,
       gold: p.gold, // mirrored — one value for the party
       wave: this.sim.state.wave,
+      act: this.sim.state.act,
+      endless: this.sim.state.endless,
       cleared: this.sim.state.phase === 'cleared',
       runState: this.runState,
+      continueOption: this.continueOption,
       paused: this.userPaused,
       disconnectedPads: [...this.disconnectedPads],
       glimmers: this.profile.glimmers,
@@ -346,7 +350,7 @@ export class Engine {
         this.recordRunEnd(false);
       } else if (ev.type === 'waveCleared' && !this.sim.hasNextWave()) {
         this.runState = 'victory';
-        this.recordRunEnd(true);
+        this.recordActClear(this.sim.state.act);
       }
     }
 
@@ -383,13 +387,54 @@ export class Engine {
     this.toasts.push({ id: this.nextToastId++, text, until: performance.now() + 4500 });
   }
 
+  /** Set when a victory screen is showing: can this run press on? */
+  continueOption: 'nextAct' | 'endless' | null = null;
+
+  private recordActClear(act: number): void {
+    const wasCleared = this.profile.actsCleared.includes(act);
+    if (!wasCleared) {
+      this.profile.actsCleared.push(act);
+      this.profile.emberkeys++;
+      this.profile.glimmers += 15; // first-clear bounty
+      this.pushToast(`🔑 Emberkey earned — Act ${act} beacon relit!`);
+      if (act === 4) {
+        this.profile.endlessUnlocked = true;
+        this.pushToast('🌒 Endless mode unlocked (from your next run onward)');
+      }
+    } else {
+      this.profile.glimmers += 8; // repeat-clear bounty
+    }
+    // Continue rules (design): first-time clears end the run; a re-cleared act lets
+    // the party press on. Endless entry likewise requires it was unlocked BEFORE.
+    if (act < 4) this.continueOption = wasCleared ? 'nextAct' : null;
+    else this.continueOption = wasCleared && this.profile.endlessUnlocked ? 'endless' : null;
+    this.persistProfile();
+  }
+
+  continueRun(): void {
+    if (this.runState !== 'victory' || !this.continueOption) return;
+    if (this.continueOption === 'nextAct') {
+      this.sim.advanceAct();
+      this.renderer.setActTheme(this.sim.state.act);
+    } else {
+      this.sim.startEndlessWave(41);
+    }
+    this.continueOption = null;
+    this.runState = 'playing';
+    this.clearIntermission();
+  }
+
   private recordRunEnd(won: boolean): void {
     this.profile.lifetime.runs++;
     if (won) this.profile.lifetime.wins++;
     this.profile.lifetime.kills += [...this.sim.tracker.killsByPlayer.values()].reduce((a, b) => a + b, 0);
     this.profile.lifetime.deepestWave = Math.max(this.profile.lifetime.deepestWave, this.sim.state.wave);
-    if (won) this.profile.glimmers += 15; // act-clear bounty (per design economy table)
     this.persistProfile();
+  }
+
+  /** Victory-screen exit: the run ends here (stats recorded once). */
+  finishRun(): void {
+    this.recordRunEnd(this.sim.state.act === 4 && this.runState === 'victory');
   }
 
   private persistProfile(): void {

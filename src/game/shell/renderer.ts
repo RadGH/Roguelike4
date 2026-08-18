@@ -28,6 +28,28 @@ const ENEMY_ART: Record<string, string> = {
   'dandelion-seed': puffballUrl, // seeds are just tiny puffs — intentional
 };
 
+// Acts 2-4 use tinted archetype placeholders until the bespoke art pass (M4).
+const ARCHETYPE_FALLBACK_ART: Record<string, string> = {
+  chaser: snufflingUrl,
+  skitterer: puffballUrl,
+  shooter: thistleArcherUrl,
+  charger: grumbleBeetleUrl,
+  splitter: dandelionPopperUrl,
+  lobber: dandelionPopperUrl,
+  summoner: snufflingUrl,
+  buffer: puffballUrl,
+  boss: mopsyUrl,
+};
+
+const ENEMY_TINT: Record<string, number> = {
+  soggun: 0x7fd4c0, bubblim: 0x9fe0a8, mudpuppy: 0x9a8f6a, croakswain: 0x86c977,
+  bogboil: 0x6fae9e, drizzlecloud: 0xb9d8e8, ribbert: 0x7fc977,
+  'snowball-with-teeth': 0xe8f4ff, 'icicle-imp': 0xa8dcf5, chatterjaw: 0xd0e8f5,
+  yodeler: 0xc0d8ea, 'draft-ghast': 0xd8ecf7, 'frost-lobber': 0xb5e2f0, shiverina: 0xcfe8ff,
+  pillowman: 0x8a7fb5, 'velvet-archer': 0xa07fd4, 'night-light-snatcher': 0x776a9e,
+  'duvet-golem': 0x6a5f8e, hushling: 0xb59fd8, 'gloam-lobber': 0x9a86c8, 'grand-snuff': 0x5d4d85,
+};
+
 export type RenderSnapshot = {
   players: {
     x: number;
@@ -43,6 +65,7 @@ export type RenderSnapshot = {
   enemies: {
     instance: number;
     defId: string;
+    archetype: string;
     x: number;
     y: number;
     radius: number;
@@ -55,6 +78,7 @@ export type RenderSnapshot = {
   }[];
   projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
   pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' }[];
+  pools: { x: number; y: number; radius: number }[];
 };
 
 export function takeSnapshot(sim: Sim): RenderSnapshot {
@@ -77,6 +101,7 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
         return {
           instance: e.instance,
           defId: e.defId,
+          archetype: def?.archetype ?? 'chaser',
           x: e.x,
           y: e.y,
           radius: def?.radius ?? 0.4,
@@ -94,6 +119,9 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
     pickups: sim.state.pickups
       .filter((p) => p.active)
       .map((p) => ({ x: p.x, y: p.y, kind: p.kind })),
+    pools: sim.state.pools
+      .filter((p) => p.active)
+      .map((p) => ({ x: p.x, y: p.y, radius: p.radius })),
   };
 }
 
@@ -113,6 +141,7 @@ export class GameRenderer {
   private enemyPool: SpriteVisual[] = [];
   private projectileGfx = new Graphics();
   private pickupGfx = new Graphics();
+  private poolGfx = new Graphics();
   private damageNumbers: { text: Text; age: number; active: boolean }[] = [];
   private textures = new Map<string, Texture>();
   private zoom = 1.4;
@@ -138,6 +167,7 @@ export class GameRenderer {
     await Promise.all([
       load('player', playerWickUrl),
       ...Object.entries(ENEMY_ART).map(([k, u]) => load(k, u)),
+      ...Object.entries(ARCHETYPE_FALLBACK_ART).map(([k, u]) => load(`arch:${k}`, u)),
     ]);
     if (this.disposed) {
       this.app.destroy(true, { children: true });
@@ -150,22 +180,46 @@ export class GameRenderer {
     return this.initialized;
   }
 
-  buildArena(width: number, height: number): void {
+  private floorGfx: Graphics | null = null;
+  private arenaSize = { width: 0, height: 0 };
+
+  /** Act palettes: bg, checker, border (design 01-world.md). */
+  private static ACT_THEMES: Record<number, { bg: string; checker: number; border: number }> = {
+    1: { bg: '#8fd06e', checker: 0x9ada78, border: 0x5f9e4a },
+    2: { bg: '#4f9e8f', checker: 0x5cab97, border: 0x2f6e62 },
+    3: { bg: '#a9cfe8', checker: 0xbcdcf2, border: 0x7aa8c8 },
+    4: { bg: '#3d3260', checker: 0x4a3d6b, border: 0xb88ae0 },
+  };
+
+  buildArena(width: number, height: number, act = 1): void {
+    this.arenaSize = { width, height };
+    this.setActTheme(act);
+    // Entity layers above the floor: pools, pickups, projectiles
+    this.world.addChild(this.poolGfx, this.pickupGfx, this.projectileGfx);
+  }
+
+  setActTheme(act: number): void {
+    const theme = GameRenderer.ACT_THEMES[act] ?? GameRenderer.ACT_THEMES[1]!;
+    this.app.renderer.background.color = theme.bg;
+    if (this.floorGfx) {
+      this.floorGfx.destroy();
+      this.floorGfx = null;
+    }
+    const { width, height } = this.arenaSize;
     const g = new Graphics();
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         if ((x + y) % 2 === 0) {
           g.rect(x * PX_PER_UNIT, y * PX_PER_UNIT, PX_PER_UNIT, PX_PER_UNIT).fill({
-            color: 0x9ada78,
+            color: theme.checker,
             alpha: 0.5,
           });
         }
       }
     }
-    g.rect(0, 0, width * PX_PER_UNIT, height * PX_PER_UNIT).stroke({ color: 0x5f9e4a, width: 6 });
+    g.rect(0, 0, width * PX_PER_UNIT, height * PX_PER_UNIT).stroke({ color: theme.border, width: 6 });
     this.world.addChildAt(g, 0);
-    // Entity layers above the floor: pickups, projectiles
-    this.world.addChild(this.pickupGfx, this.projectileGfx);
+    this.floorGfx = g;
   }
 
   private makeSpriteVisual(texture: Texture, heightUnits: number): SpriteVisual {
@@ -248,8 +302,10 @@ export class GameRenderer {
       seen.add(e.instance);
       let v = this.enemyVisuals.get(e.instance);
       if (!v) {
-        v = this.enemyPool.pop() ?? this.makeSpriteVisual(this.textures.get(e.defId) ?? Texture.WHITE, 1);
-        v.sprite.texture = this.textures.get(e.defId) ?? Texture.WHITE;
+        const tex =
+          this.textures.get(e.defId) ?? this.textures.get(`arch:${e.archetype}`) ?? Texture.WHITE;
+        v = this.enemyPool.pop() ?? this.makeSpriteVisual(tex, 1);
+        v.sprite.texture = tex;
         const h = e.radius * 2.6 * PX_PER_UNIT;
         v.sprite.height = h;
         v.sprite.width = h * (v.sprite.texture.width / v.sprite.texture.height || 1);
@@ -260,6 +316,7 @@ export class GameRenderer {
       }
       const p0 = prev.enemies.find((pe) => pe.instance === e.instance) ?? e;
       v.root.position.set(lerp(p0.x, e.x) * PX_PER_UNIT, lerp(p0.y, e.y) * PX_PER_UNIT);
+      const baseTint = this.textures.has(e.defId) ? 0xffffff : (ENEMY_TINT[e.defId] ?? 0xffffff);
       v.sprite.tint = e.telegraphing
         ? 0xff8080
         : e.hitFlash
@@ -268,7 +325,7 @@ export class GameRenderer {
             ? 0x9be8ff
             : e.stunned
               ? 0xfff2a0
-              : 0xffffff;
+              : baseTint;
       // Elite: golden ring under the sprite
       v.hpBar.clear();
       if (e.elite) {
@@ -293,6 +350,15 @@ export class GameRenderer {
         .circle(pr.x * PX_PER_UNIT, pr.y * PX_PER_UNIT, pr.radius * PX_PER_UNIT)
         .fill({ color: pr.friendly ? 0xfff3c4 : 0xb88ae0 })
         .stroke({ color: pr.friendly ? 0xe8a020 : 0x5d4d85, width: 2 });
+    }
+
+    // Ground pools (hazards)
+    this.poolGfx.clear();
+    for (const pool of curr.pools) {
+      this.poolGfx
+        .circle(pool.x * PX_PER_UNIT, pool.y * PX_PER_UNIT, pool.radius * PX_PER_UNIT)
+        .fill({ color: 0x7fbf68, alpha: 0.3 })
+        .stroke({ color: 0x5f9e4a, width: 2, alpha: 0.5 });
     }
 
     // Pickups
