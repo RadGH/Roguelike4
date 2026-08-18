@@ -3,7 +3,7 @@ import { loadProfile, saveProfile } from '@game/meta/profile';
 import { buyClass, buyItem, buyUpgrade, SHOPS, upgradeLevel, upgradePrice } from '@game/meta/shop';
 import { loadRegistry } from '@game/data/registry';
 import { listRuns, type RunRecord } from '@game/meta/history';
-import { GAME_TITLE } from '@game/branding';
+import { GAME_TITLE, SAVE_SLUG } from '@game/branding';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { cardBtnStyle, COLORS, panelStyle, screenStyle } from './theme';
 import { CodexPanel } from './CodexPanel';
@@ -39,6 +39,13 @@ export function TownScreen({
 }) {
   const [view, setView] = useState<TownView>('square');
   const [runHistory, setRunHistory] = useState<RunRecord[] | null>(null);
+  const [soundMuted, setSoundMuted] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`${SAVE_SLUG}.audio`) ?? '{}').muted === true;
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
     if (view !== 'chronicle') return;
     let alive = true;
@@ -435,10 +442,29 @@ export function TownScreen({
         {view === 'tinker' && (
           <>
             <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 10px' }}>🔧 Fizzwick's workbench</h2>
+            <div style={{ fontSize: 14, marginBottom: 12 }}>
+              <button
+                onClick={() => {
+                  const key = `${SAVE_SLUG}.audio`;
+                  let muted = false;
+                  try {
+                    muted = JSON.parse(localStorage.getItem(key) ?? '{}').muted === true;
+                  } catch {
+                    /* fresh */
+                  }
+                  localStorage.setItem(key, JSON.stringify({ muted: !muted }));
+                  setSoundMuted(!muted);
+                }}
+                data-action="toggle-sound"
+                style={{ ...cardBtnStyle(false), minWidth: 180 }}
+              >
+                {soundMuted ? '🔇 Sound: off' : '🔊 Sound: on'}
+              </button>
+            </div>
             <p style={{ fontSize: 13, opacity: 0.85 }}>
               Save tools live on the slot screen (export / import / delete).
               <br />
-              Video, audio, and control settings arrive with the polish pass.
+              All sound is synthesized live — nothing to download, only to enjoy or silence.
             </p>
             <button onClick={() => setView('square')} style={miniLink} data-action="back-to-town">
               ← back to the square

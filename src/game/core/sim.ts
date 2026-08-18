@@ -71,6 +71,7 @@ export type PlayerState = {
   guaranteedCrit: boolean; // backspin: next hit crits
   pendingClassItems: string[][]; // queued class level-up choices (option lists)
   passives: string[];
+  satchel: WeaponInstance[]; // run storage: stash now, equip or salvage any later wave
   feats: string[]; // feat inventory — item-like, never dropped (design 06)
   pendingFeats: number; // 1-of-4 feat picks owed (every 3rd level)
   stillTimer: number; // staticCharge: seconds spent motionless
@@ -361,6 +362,7 @@ export class Sim {
       guaranteedCrit: false,
       pendingClassItems: [],
       passives: [],
+      satchel: [],
       feats: [],
       pendingFeats: 0,
       stillTimer: 0,
@@ -928,6 +930,32 @@ export class Sim {
     }
     p.weapons.push({ ...inst, cooldownLeft: 0 });
     this.recomputeStats(p);
+    return true;
+  }
+
+  /** Stash a weapon in the satchel (run storage — design 05). */
+  stashWeapon(playerIndex: number, inst: WeaponInstance): void {
+    const p = this.state.players[playerIndex];
+    if (!p) return;
+    p.satchel.push(inst);
+  }
+
+  /** Equip from the satchel if capacity and class rules allow. */
+  equipFromSatchel(playerIndex: number, satchelIndex: number): boolean {
+    const p = this.state.players[playerIndex];
+    const inst = p?.satchel[satchelIndex];
+    if (!p || !inst) return false;
+    if (!this.equipWeapon(playerIndex, inst)) return false;
+    p.satchel.splice(satchelIndex, 1);
+    return true;
+  }
+
+  /** Salvage a satchel item into Bits. */
+  salvageFromSatchel(playerIndex: number, satchelIndex: number): boolean {
+    const p = this.state.players[playerIndex];
+    if (!p || !p.satchel[satchelIndex]) return false;
+    p.satchel.splice(satchelIndex, 1);
+    p.bits += 2;
     return true;
   }
 

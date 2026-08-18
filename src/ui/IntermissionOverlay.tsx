@@ -30,10 +30,12 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
       for (const c of panel.classChoice.options) out.push(() => engine.chooseClassItem(pi, c.id));
     } else if (panel.classEquip) {
       for (const w of panel.classEquip.currentWeapons) out.push(() => engine.equipReplace(pi, w.slot));
+      out.push(() => engine.stashPending(pi));
       out.push(() => engine.cancelEquip(pi));
     } else if (panel.chest) {
       if (panel.chest.pendingEquip) {
         for (const w of panel.chest.currentWeapons) out.push(() => engine.equipReplace(pi, w.slot));
+        out.push(() => engine.stashPending(pi));
         out.push(() => engine.cancelEquip(pi));
       } else {
         for (const c of panel.chest.choices) out.push(() => engine.chooseChestOffer(pi, c.idx));
@@ -121,6 +123,19 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
               </button>
             ))}
             <button
+              onClick={() => engine.stashPending(pi)}
+              data-action={`stash-${pi}`}
+              style={{
+                ...cardBtn,
+                border: '2px dashed #b88ae0',
+                background: 'transparent',
+                minWidth: 70,
+                ...focusStyle(panel.classEquip.currentWeapons.length),
+              }}
+            >
+              🎒 Stash
+            </button>
+            <button
               onClick={() => engine.cancelEquip(pi)}
               data-action={`cancel-equip-${pi}`}
               style={{
@@ -128,7 +143,7 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 border: '2px solid #666',
                 background: 'transparent',
                 minWidth: 60,
-                ...focusStyle(panel.classEquip.currentWeapons.length),
+                ...focusStyle(panel.classEquip.currentWeapons.length + 1),
               }}
             >
               ←
@@ -154,6 +169,19 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 </button>
               ))}
               <button
+                onClick={() => engine.stashPending(pi)}
+                data-action={`stash-${pi}`}
+                style={{
+                  ...cardBtn,
+                  border: '2px dashed #b88ae0',
+                  background: 'transparent',
+                  minWidth: 70,
+                  ...focusStyle(panel.chest.currentWeapons.length),
+                }}
+              >
+                🎒 Stash
+              </button>
+              <button
                 onClick={() => engine.cancelEquip(pi)}
                 data-action={`cancel-equip-${pi}`}
                 style={{
@@ -161,7 +189,7 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                   border: '2px solid #666',
                   background: 'transparent',
                   minWidth: 60,
-                  ...focusStyle(panel.chest.currentWeapons.length),
+                  ...focusStyle(panel.chest.currentWeapons.length + 1),
                 }}
               >
                 ←
@@ -299,6 +327,51 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
         </>
       ) : (
         <div style={{ fontSize: 13, opacity: 0.8, textAlign: 'center', padding: '8px 0' }}>ready ✓</div>
+      )}
+      {panel.done && panel.satchel.length > 0 && (
+        <div style={{ marginTop: 8, fontSize: 12 }}>
+          <div style={{ fontWeight: 700, opacity: 0.9 }}>🎒 Satchel</div>
+          {panel.satchel.map((it) => (
+            <div key={it.idx} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4, alignItems: 'center' }}>
+              <span style={{ opacity: 0.9 }}>{it.name}</span>
+              <span style={{ display: 'flex', gap: 4 }}>
+                <button
+                  onClick={() => engine.equipFromSatchel(pi, it.idx)}
+                  disabled={!it.equippable}
+                  data-satchel-equip={`${pi}-${it.idx}`}
+                  style={{
+                    background: it.equippable ? '#3b2f57' : 'transparent',
+                    color: it.equippable ? '#8ce68c' : '#666',
+                    border: `1px solid ${it.equippable ? '#8ce68c' : '#555'}`,
+                    borderRadius: 6,
+                    padding: '2px 8px',
+                    cursor: it.equippable ? 'pointer' : 'default',
+                    fontFamily: 'inherit',
+                    fontSize: 11,
+                  }}
+                >
+                  equip
+                </button>
+                <button
+                  onClick={() => engine.salvageFromSatchel(pi, it.idx)}
+                  data-satchel-salvage={`${pi}-${it.idx}`}
+                  style={{
+                    background: 'transparent',
+                    color: '#ffd97a',
+                    border: '1px solid #ffd97a88',
+                    borderRadius: 6,
+                    padding: '2px 8px',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontSize: 11,
+                  }}
+                >
+                  +2 🔩
+                </button>
+              </span>
+            </div>
+          ))}
+        </div>
       )}
       {panel.done && panel.tinker.some((t) => t.next) && (
         <div style={{ marginTop: 8, fontSize: 12 }}>

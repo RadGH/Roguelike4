@@ -350,6 +350,35 @@ export class Engine {
     this.sim.tinker(playerIndex, slotIndex);
   }
 
+  /** Stash the pending-equip item instead of replacing anything. */
+  stashPending(playerIndex: number): void {
+    const inst = this.pendingEquip.get(playerIndex);
+    if (!this.intermissionActive || !inst) return;
+    this.sim.stashWeapon(playerIndex, inst);
+    if (this.peddlerEquipPending.has(playerIndex)) {
+      this.peddlerEquipPending.delete(playerIndex);
+      this.pendingEquip.delete(playerIndex);
+      this.refreshIntermissionOffers(playerIndex);
+    } else if (this.classEquipPending.has(playerIndex)) {
+      this.classEquipPending.delete(playerIndex);
+      this.pendingEquip.delete(playerIndex);
+      this.sim.state.players[playerIndex]!.pendingClassItems.shift();
+      this.refreshIntermissionOffers(playerIndex);
+    } else {
+      this.finishChest(playerIndex);
+    }
+  }
+
+  equipFromSatchel(playerIndex: number, idx: number): void {
+    if (!this.intermissionActive) return;
+    this.sim.equipFromSatchel(playerIndex, idx);
+  }
+
+  salvageFromSatchel(playerIndex: number, idx: number): void {
+    if (!this.intermissionActive) return;
+    this.sim.salvageFromSatchel(playerIndex, idx);
+  }
+
   cancelEquip(playerIndex: number): void {
     // A canceled Peddler purchase is refunded — nobody pays for air
     if (this.peddlerEquipPending.has(playerIndex)) {
@@ -463,6 +492,14 @@ export class Engine {
               }
             : null,
           bits: p.bits,
+          satchel: p.satchel.map((inst, idx) => ({
+            idx,
+            ...this.instanceInfo(inst),
+            equippable:
+              this.sim.classCanUse(p.classId, inst.itemId) &&
+              this.sim.handPointsUsed(p) + (this.sim.registry.weapons.get(inst.itemId)?.hands ?? 1) <=
+                this.sim.handPointsMax(p),
+          })),
           tinker: p.weapons.map((w, slot) => {
             const next = nextQuality(w.quality);
             return {
