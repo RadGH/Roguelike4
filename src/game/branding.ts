@@ -5,3 +5,4 @@ import branding from '@data/branding.json';
 export const GAME_TITLE: string = branding.title;
 export const GAME_TAGLINE: string = branding.tagline;
 export const GAME_VERSION: string = branding.version;
+export const SAVE_SLUG: string = branding.saveSlug;

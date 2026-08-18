@@ -424,6 +424,8 @@ gear and characters just by trying things.</p>
 <tr><td>Interact / revive</td><td>E (hold)</td><td>X / left button (hold)</td></tr>
 <tr><td>Pause</td><td>Esc</td><td>Start</td></tr>
 </table></div>
+<p>All sound is made up on the spot by a tiny music box in your browser — nothing to
+download, nothing to buffer. Too much whimsy? The pause menu has a sound toggle.</p>
 <p>Weapons fire on their own while you hold the attack button — your job is aim and footwork.</p>
 
 <h2>Playing with friends (couch co-op)</h2>

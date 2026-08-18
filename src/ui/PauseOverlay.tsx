@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Engine } from '@game/shell/engine';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { useMenuNav } from './useMenuNav';
@@ -13,15 +14,18 @@ export function PauseOverlay({
   disconnectedPads: number[];
   onQuit: () => void;
 }) {
-  const items = ['Resume', 'Quit to title'];
+  const [muted, setMuted] = useState(engine.audio.muted);
+  const items = ['Resume', muted ? 'Sound: off' : 'Sound: on', 'Quit to title'];
+  const activate = (i: number) => {
+    if (i === 0) engine.togglePause();
+    else if (i === 1) setMuted(engine.audio.toggleMuted());
+    else onQuit();
+  };
   const focus = useMenuNav({
     player: 'any',
     count: items.length,
     enabled: true,
-    onConfirm: (i) => {
-      if (i === 0) engine.togglePause();
-      else onQuit();
-    },
+    onConfirm: activate,
     onBack: () => engine.togglePause(),
   });
 
@@ -61,7 +65,7 @@ export function PauseOverlay({
           {items.map((label, i) => (
             <button
               key={label}
-              onClick={() => (i === 0 ? engine.togglePause() : onQuit())}
+              onClick={() => activate(i)}
               data-pause-item={i}
               style={{
                 background: focus === i ? '#ffd97a' : '#3b2f57',

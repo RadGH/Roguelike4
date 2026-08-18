@@ -9,6 +9,7 @@ import { DeedEngine } from '@game/core/deeds';
 import { loadProfile, saveProfile, type KeyValueStorage, type Profile } from '@game/meta/profile';
 import { townBonuses } from '@game/meta/shop';
 import { GameRenderer, takeSnapshot, type RenderSnapshot } from './renderer';
+import { AudioEngine } from './audio';
 import { InputSampler } from './inputSources';
 import { createDebugApi, type DebugApi } from '../debug/harness';
 import { GAME_VERSION } from '@game/branding';
@@ -16,6 +17,7 @@ import { GAME_VERSION } from '@game/branding';
 export class Engine {
   private sim: Sim;
   private renderer = new GameRenderer();
+  readonly audio = new AudioEngine();
   private input = new InputSampler();
   private prevSnap: RenderSnapshot;
   private currSnap: RenderSnapshot;
@@ -132,6 +134,15 @@ export class Engine {
     this.startWave(this.sim.firstWaveOfCurrentAct());
     window.addEventListener('gamepadconnected', this.onPadConnected);
     window.addEventListener('gamepaddisconnected', this.onPadDisconnected);
+    // Browsers hold audio hostage until a gesture — free it on the first one
+    const unlockAudio = () => {
+      this.audio.unlock();
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+    };
+    window.addEventListener('pointerdown', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+    this.audio.setAct(this.sim.state.act);
     this.running = true;
     this.lastTime = performance.now();
     this.renderer.app.ticker.add(() => this.frame());
@@ -139,6 +150,7 @@ export class Engine {
 
   private startWave(n: number): void {
     this.sim.startWaveNumber(n);
+    this.audio.setAct(this.sim.state.act);
   }
 
   // ---- intermission (between waves) — per-player panels ----
@@ -579,14 +591,36 @@ export class Engine {
     for (const ev of events) {
       if (ev.type === 'damageNumber' && this.renderer.isReady) {
         this.renderer.spawnDamageNumber(ev.x, ev.y, ev.amount, ev.crit, ev.onPlayer);
+        this.audio.play(ev.onPlayer ? 'playerHurt' : 'enemyHit');
+      } else if (ev.type === 'enemyKilled') {
+        this.audio.play('enemyDie');
+      } else if (ev.type === 'levelUp') {
+        this.audio.play('levelUp');
+      } else if (ev.type === 'waveCleared') {
+        if (!this.sim.hasNextWave()) {
+          this.runState = 'victory';
+          this.recordActClear(this.sim.state.act);
+          this.audio.play('victory');
+        } else {
+          this.audio.play('waveClear');
+        }
+      } else if (ev.type === 'playerDown') {
+        this.audio.play('snuffed');
+      } else if (ev.type === 'blockedDamage') {
+        this.audio.play('block');
       } else if (ev.type === 'secondWick') {
         this.pushToast(`🕯️ P${ev.player + 1}'s Second Wick catches! Not today, dark.`);
       } else if (ev.type === 'runOver') {
         this.runState = 'gameOver';
         this.recordRunEnd(false);
-      } else if (ev.type === 'waveCleared' && !this.sim.hasNextWave()) {
-        this.runState = 'victory';
-        this.recordActClear(this.sim.state.act);
+      }
+    }
+    for (const tev of this.sim.tracker.events.slice(trackerStart)) {
+      if (tev.type === 'pickup') {
+        if (tev.what === 'gold') this.audio.play('gold');
+        else if (tev.what === 'xp') this.audio.play('xp');
+        else if (tev.what === 'heart') this.audio.play('heart');
+        else if (tev.what === 'chest') this.audio.play('chest');
       }
     }
 
@@ -605,6 +639,7 @@ export class Engine {
             this.profile.unlockedItems.push(u.id);
             this.sim.unlockedItems.add(u.id);
             this.pushToast(`✨ Unlocked: ${this.weaponInfo(u.id).name}!`);
+            this.audio.play('unlock');
           } else if (u.type === 'class' && !this.profile.unlockedClasses.includes(u.id)) {
             this.profile.unlockedClasses.push(u.id);
             this.pushToast(`✨ New class unlocked: ${u.id}!`);
@@ -613,6 +648,7 @@ export class Engine {
             this.sim.unlockedFeats.add(u.id);
             const featName = this.sim.registry.feats.get(u.id)?.name ?? u.id;
             this.pushToast(`⭐ New feat unlocked: ${featName}!`);
+            this.audio.play('unlock');
           }
         }
       }
@@ -744,5 +780,6 @@ export class Engine {
     window.removeEventListener('gamepaddisconnected', this.onPadDisconnected);
     this.input.dispose();
     this.renderer.dispose();
+    this.audio.dispose();
   }
 }

@@ -33,6 +33,7 @@ test('pause menu: arrow to Quit, Enter exits to title', async ({ page }) => {
   await page.waitForFunction(() => window.__debug?.snapshot().tick > 0);
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-screen="pause"]')).toBeVisible();
+  await page.keyboard.press('ArrowDown'); // focus Sound toggle
   await page.keyboard.press('ArrowDown'); // focus Quit
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-screen="title"]')).toBeVisible();
