@@ -82,10 +82,9 @@
     {
       "wave": 10,
       "entries": [
-        { "atSecond": 0, "defId": "grumble-beetle", "count": 3, "elite": true },
-        { "atSecond": 8, "defId": "snuffling", "count": 10 },
-        { "atSecond": 14, "defId": "thistle-archer", "count": 5 },
-        { "atSecond": 20, "defId": "dandelion-popper", "count": 6, "elite": true }
+        { "atSecond": 0, "defId": "mopsy", "count": 1 },
+        { "atSecond": 20, "defId": "snuffling", "count": 6 },
+        { "atSecond": 40, "defId": "puffball", "count": 5 }
       ]
     }
   ]

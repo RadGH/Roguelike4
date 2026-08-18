@@ -63,6 +63,17 @@ export type ChargeState = {
   dirY: number;
 };
 
+export type BossState = {
+  phaseIdx: number;
+  cooldown: number;
+  stage: 'idle' | 'windup' | 'air' | 'recover';
+  stageTimer: number;
+  targetX: number;
+  targetY: number;
+  fromX: number;
+  fromY: number;
+};
+
 export type EnemyState = {
   instance: number;
   defId: string;
@@ -79,6 +90,7 @@ export type EnemyState = {
   elite: boolean;
   status: StatusState;
   charge: ChargeState;
+  boss: BossState | null;
   attackCooldown: number;
   targetPlayer: number;
   wanderAngle: number;
@@ -135,7 +147,10 @@ export type SimEvent =
   | { type: 'comboTier'; count: number }
   | { type: 'levelUp'; player: number; level: number }
   | { type: 'waveCleared'; wave: number }
-  | { type: 'chargeTelegraph'; instance: number };
+  | { type: 'chargeTelegraph'; instance: number }
+  | { type: 'damageNumber'; x: number; y: number; amount: number; crit: boolean; onPlayer: boolean }
+  | { type: 'bossSpawned'; instance: number; defId: string }
+  | { type: 'bossPhase'; instance: number; phase: number };
 
 const MAX_PROJECTILES = 512;
 const MAX_PICKUPS = 1024;
@@ -318,6 +333,10 @@ export class Sim {
       elite,
       status: freshStatus(),
       charge: { phase: 'none', timer: 0, dirX: 0, dirY: 0 },
+      boss:
+        def.archetype === 'boss'
+          ? { phaseIdx: 0, cooldown: 1.5, stage: 'idle', stageTimer: 0, targetX: x, targetY: y, fromX: x, fromY: y }
+          : null,
       attackCooldown: 0,
       targetPlayer: 0,
       wanderAngle: 0,
@@ -326,7 +345,34 @@ export class Sim {
     };
     this.state.enemies.push(e);
     this.enemyByInstance.set(e.instance, e);
+    if (e.boss) this.eventsThisTick.push({ type: 'bossSpawned', instance: e.instance, defId });
     return e;
+  }
+
+  // ---- weapons (equipment management) ----
+
+  /** Roll distinct weapon choices excluding what the player already holds. */
+  rollWeaponChoices(playerIndex: number, count = 3): string[] {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    const held = new Set(p.weapons.map((w) => w.itemId));
+    const pool = [...this.registry.weapons.keys()].filter((id) => !held.has(id));
+    const out: string[] = [];
+    for (let i = 0; i < count && pool.length > 0; i++) {
+      const idx = this.rng.drops.int(0, pool.length - 1);
+      out.push(pool[idx]!);
+      pool.splice(idx, 1);
+    }
+    return out;
+  }
+
+  replaceWeapon(playerIndex: number, slotIndex: number, weaponId: string): void {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    if (!this.registry.weapons.has(weaponId)) throw new Error(`Unknown weapon "${weaponId}"`);
+    if (slotIndex < 0 || slotIndex >= p.weapons.length) throw new Error(`Bad slot ${slotIndex}`);
+    p.weapons[slotIndex] = { itemId: weaponId, cooldownLeft: 0 };
+    this.recomputeStats(p);
   }
 
   tick(inputs: readonly InputFrame[]): SimEvent[] {
@@ -566,6 +612,14 @@ export class Sim {
     const overkill = Math.max(0, hit.amount - enemy.hp);
     enemy.hp -= hit.amount;
     enemy.hitFlash = 0.12;
+    this.eventsThisTick.push({
+      type: 'damageNumber',
+      x: enemy.x,
+      y: enemy.y,
+      amount: hit.amount,
+      crit,
+      onPlayer: false,
+    });
     this.tracker.push({
       type: 'damage',
       tick: this.state.tick,
@@ -705,6 +759,12 @@ export class Sim {
       const dist = Math.hypot(dx, dy) || 1;
       const statusMove = moveMult(e.status);
 
+      // Boss state machine (phases by hp fraction)
+      if (e.boss && def.bossPhases) {
+        this.tickBoss(e, def, target, dx, dy, dist, statusMove, dt, bal);
+        continue;
+      }
+
       // Charger state machine
       if (def.archetype === 'charger') {
         const ch = e.charge;
@@ -806,6 +866,148 @@ export class Sim {
     }
   }
 
+  private tickBoss(
+    e: EnemyState,
+    def: EnemyDef,
+    target: PlayerState,
+    dx: number,
+    dy: number,
+    dist: number,
+    statusMove: number,
+    dt: number,
+    bal: Registry['balance'],
+  ): void {
+    const b = e.boss!;
+    const phases = def.bossPhases!;
+    const hpFrac = e.hp / e.maxHp;
+    const idx = Math.max(0, phases.findIndex((ph) => hpFrac > ph.until));
+    const phaseIdx = idx === -1 ? phases.length - 1 : idx;
+    if (phaseIdx !== b.phaseIdx) {
+      b.phaseIdx = phaseIdx;
+      b.stage = 'idle';
+      b.cooldown = 1.2; // breather on phase change
+      this.eventsThisTick.push({ type: 'bossPhase', instance: e.instance, phase: phaseIdx });
+    }
+    const phase = phases[b.phaseIdx]!;
+
+    const contact = () => {
+      const touch = def.radius + bal.player.radius + 0.15;
+      if (dist <= touch && e.attackCooldown <= 0) {
+        e.attackCooldown = def.attackCooldown;
+        this.damagePlayer(target, e.damage, def, 'contact');
+      }
+    };
+
+    if (b.stage === 'windup') {
+      b.stageTimer -= dt;
+      if (b.stageTimer <= 0) {
+        if (phase.mode === 'hop') {
+          b.stage = 'air';
+          b.stageTimer = 0.45;
+          b.fromX = e.x;
+          b.fromY = e.y;
+        } else {
+          // frenzy charge
+          b.stage = 'air';
+          b.stageTimer = 0.8;
+          const d = Math.hypot(b.targetX - e.x, b.targetY - e.y) || 1;
+          b.fromX = (b.targetX - e.x) / d; // reuse from* as direction for frenzy
+          b.fromY = (b.targetY - e.y) / d;
+        }
+      }
+      return; // rooted while telegraphing
+    }
+
+    if (b.stage === 'air') {
+      b.stageTimer -= dt;
+      if (phase.mode === 'hop') {
+        // Interpolate leap; land at timer end
+        const t = 1 - Math.max(0, b.stageTimer) / 0.45;
+        e.x = b.fromX + (b.targetX - b.fromX) * t;
+        e.y = b.fromY + (b.targetY - b.fromY) * t;
+        if (b.stageTimer <= 0) {
+          // Land: shockwave + radial spores
+          for (const p of this.state.players) {
+            if (!p.alive) continue;
+            if (Math.hypot(p.x - e.x, p.y - e.y) <= 3.0) {
+              this.damagePlayer(p, e.damage * 1.3, def, 'explosion');
+            }
+          }
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * Math.PI * 2;
+            const proj = this.allocProjectile();
+            if (!proj) break;
+            proj.active = true;
+            proj.x = e.x;
+            proj.y = e.y;
+            proj.vx = Math.cos(a) * 6;
+            proj.vy = Math.sin(a) * 6;
+            proj.radius = 0.28;
+            proj.traveled = 0;
+            proj.range = 6;
+            proj.fromPlayer = -1;
+            proj.itemId = null;
+            proj.enemyDefId = e.defId;
+            proj.enemyDamage = e.damage * 0.6;
+            proj.pierceLeft = 0;
+            proj.hitIds.clear();
+          }
+          b.stage = 'recover';
+          b.stageTimer = 0.5;
+        }
+      } else {
+        // frenzy: fast charge along stored direction
+        const speed = e.moveSpeed * 3.2 * statusMove;
+        e.x += b.fromX * speed * dt;
+        e.y += b.fromY * speed * dt;
+        this.clampEnemy(e, def);
+        contact();
+        if (b.stageTimer <= 0) {
+          b.stage = 'recover';
+          b.stageTimer = 0.35;
+        }
+      }
+      return;
+    }
+
+    if (b.stage === 'recover') {
+      b.stageTimer -= dt;
+      if (b.stageTimer <= 0) {
+        b.stage = 'idle';
+        b.cooldown = phase.cooldown;
+      }
+      return;
+    }
+
+    // idle: shuffle toward the player, use the phase move when ready
+    b.cooldown -= dt;
+    const speed = e.moveSpeed * statusMove * (phase.mode === 'summon' ? 0.7 : 1);
+    e.x += (dx / dist) * speed * dt;
+    e.y += (dy / dist) * speed * dt;
+    this.clampEnemy(e, def);
+    contact();
+
+    if (b.cooldown <= 0) {
+      if (phase.mode === 'hop' || phase.mode === 'frenzy') {
+        b.stage = 'windup';
+        b.stageTimer = phase.mode === 'hop' ? 0.9 : 0.4;
+        b.targetX = target.x;
+        b.targetY = target.y;
+        this.eventsThisTick.push({ type: 'chargeTelegraph', instance: e.instance });
+      } else if (phase.mode === 'summon' && phase.summonId && phase.summonCount) {
+        const cap = phase.summonCap ?? 10;
+        const minions = this.state.enemies.filter((x) => x.alive && x.defId === phase.summonId).length;
+        if (minions < cap) {
+          for (let i = 0; i < phase.summonCount; i++) {
+            const a = this.rng.waves.next() * Math.PI * 2;
+            this.spawnEnemy(phase.summonId, e.x + Math.cos(a) * 2, e.y + Math.sin(a) * 2, false);
+          }
+        }
+        b.cooldown = phase.cooldown;
+      }
+    }
+  }
+
   private clampEnemy(e: EnemyState, def: EnemyDef): void {
     const a = this.state.arena;
     e.x = Math.min(a.width - def.radius, Math.max(def.radius, e.x));
@@ -853,6 +1055,14 @@ export class Sim {
       overkill: Math.max(0, -p.hp),
     });
     this.eventsThisTick.push({ type: 'playerHit', player: p.index, amount: hit.amount });
+    this.eventsThisTick.push({
+      type: 'damageNumber',
+      x: p.x,
+      y: p.y,
+      amount: hit.amount,
+      crit: false,
+      onPlayer: true,
+    });
     if (p.hp <= 0) {
       p.alive = false;
       p.hp = 0;

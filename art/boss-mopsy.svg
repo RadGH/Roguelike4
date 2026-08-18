@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <!-- Mopsy, the Enormous Gloomp: a vast, apologetic shadow-rabbit in a soft nightcap -->
+  <ellipse cx="48" cy="88" rx="30" ry="6" fill="#00000026"/>
+  <!-- ears -->
+  <path d="M30 34 C24 12 30 4 36 6 C41 8 42 22 40 34 Z" fill="#3d3260"/>
+  <path d="M66 34 C72 12 66 4 60 6 C55 8 54 22 56 34 Z" fill="#3d3260"/>
+  <path d="M32 30 C29 16 32 9 35 10 C38 11 38 22 37 30 Z" fill="#5d4d85"/>
+  <path d="M64 30 C67 16 64 9 61 10 C58 11 58 22 59 30 Z" fill="#5d4d85"/>
+  <!-- body -->
+  <path d="M48 22 C70 22 82 40 82 58 C82 78 66 88 48 88 C30 88 14 78 14 58 C14 40 26 22 48 22 Z" fill="#4a3d6b"/>
+  <path d="M48 26 C66 26 77 41 77 56 C77 50 68 34 48 34 C28 34 19 50 19 56 C19 41 30 26 48 26 Z" fill="#5d4d85"/>
+  <!-- nightcap -->
+  <path d="M34 24 Q48 8 68 18 Q60 24 56 28 Q46 22 34 24 Z" fill="#b88ae0"/>
+  <circle cx="70" cy="17" r="4" fill="#ffd97a"/>
+  <!-- face: big apologetic eyes -->
+  <circle cx="38" cy="52" r="9" fill="#fff"/>
+  <circle cx="58" cy="52" r="9" fill="#fff"/>
+  <circle cx="39.5" cy="54" r="4" fill="#2b2140"/>
+  <circle cx="56.5" cy="54" r="4" fill="#2b2140"/>
+  <path d="M30 46 q4 -4 8 -2" stroke="#3d3260" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M66 46 q-4 -4 -8 -2" stroke="#3d3260" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- tiny worried mouth + tooth -->
+  <path d="M43 68 q5 4 10 0" stroke="#2b2140" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <rect x="46.5" y="68" width="3.5" height="5" rx="1" fill="#fff"/>
+  <!-- paws -->
+  <ellipse cx="28" cy="80" rx="7" ry="5" fill="#3d3260"/>
+  <ellipse cx="68" cy="80" rx="7" ry="5" fill="#3d3260"/>
+</svg>

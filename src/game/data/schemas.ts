@@ -79,7 +79,8 @@ export const WeaponSchema = z
 export const EnemySchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
-    archetype: z.enum(['chaser', 'skitterer', 'shooter', 'charger', 'splitter']),
+    archetype: z.enum(['chaser', 'skitterer', 'shooter', 'charger', 'splitter', 'boss']),
+    name: z.string().optional(), // display name (bosses/minibosses)
     radius: z.number().positive(),
     maxHp: z.number().positive(),
     damage: z.number().positive(), // contact or projectile damage
@@ -100,10 +101,28 @@ export const EnemySchema = z
     // splitter fields
     splitInto: z.string().optional(),
     splitCount: z.number().int().positive().optional(),
+    // boss fields: phases activate as hpFrac drops; active = first with until < hpFrac
+    bossPhases: z
+      .array(
+        z
+          .object({
+            mode: z.enum(['hop', 'summon', 'frenzy']),
+            until: z.number().min(0).max(1), // phase active while hpFrac > until
+            cooldown: z.number().positive(),
+            summonId: z.string().optional(),
+            summonCount: z.number().int().positive().optional(),
+            summonCap: z.number().int().positive().optional(),
+          })
+          .strict(),
+      )
+      .optional(),
     // drops
     chestChance: z.number().min(0).max(1).default(0),
   })
   .strict()
+  .refine((e) => e.archetype !== 'boss' || (e.bossPhases && e.bossPhases.length > 0), {
+    message: 'boss needs bossPhases',
+  })
   .refine((e) => e.archetype !== 'splitter' || (e.splitInto && e.splitCount), {
     message: 'splitter needs splitInto + splitCount',
   })

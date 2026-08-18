@@ -68,6 +68,26 @@
     "attackCooldown": 0.8
   },
   {
+    "id": "mopsy",
+    "name": "Mopsy, the Enormous Gloomp",
+    "archetype": "boss",
+    "radius": 1.6,
+    "maxHp": 320,
+    "damage": 6,
+    "damageTypes": ["melee"],
+    "moveSpeed": 2.0,
+    "xp": 120,
+    "gold": [30, 45],
+    "attackCooldown": 1.0,
+    "armor": 4,
+    "chestChance": 1,
+    "bossPhases": [
+      { "mode": "hop", "until": 0.66, "cooldown": 3.2 },
+      { "mode": "summon", "until": 0.33, "cooldown": 2.6, "summonId": "snuffling", "summonCount": 3, "summonCap": 10 },
+      { "mode": "frenzy", "until": 0, "cooldown": 1.6 }
+    ]
+  },
+  {
     "id": "thistle-archer",
     "archetype": "shooter",
     "radius": 0.45,

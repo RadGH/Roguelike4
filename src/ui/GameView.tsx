@@ -59,6 +59,43 @@ export function GameView({ seed }: { seed: number }) {
           </div>
         </div>
       )}
+      {hud?.boss && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 'min(620px, 80vw)',
+            textAlign: 'center',
+            fontFamily: 'system-ui',
+            pointerEvents: 'none',
+          }}
+          data-boss-bar
+        >
+          <div style={{ color: '#fff4d6', fontWeight: 800, textShadow: '0 1px 3px #000c', marginBottom: 4 }}>
+            {hud.boss.name}
+          </div>
+          <div style={{ position: 'relative', height: 16, background: '#2b2140cc', borderRadius: 8, border: '2px solid #b88ae0' }}>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 2,
+                width: `${hud.boss.hpFrac * 100}%`,
+                background: 'linear-gradient(90deg,#b88ae0,#8a5fc0)',
+                borderRadius: 6,
+                transition: 'width 0.2s',
+              }}
+            />
+            {hud.boss.notches.map((n) => (
+              <div
+                key={n}
+                style={{ position: 'absolute', left: `${n * 100}%`, top: 0, bottom: 0, width: 2, background: '#ffd97a' }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       {intermission && engineRef.current && (
         <IntermissionOverlay data={intermission} engine={engineRef.current} />
       )}

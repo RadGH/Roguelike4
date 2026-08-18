@@ -84,6 +84,65 @@ export class Engine {
 
   private intermissionActive = false;
   private boonChoices: string[] | null = null;
+  private chestChoices: string[] | null = null;
+  private pendingEquip: string | null = null;
+
+  private weaponInfo(id: string) {
+    const w = this.sim.registry.weapons.get(id)!;
+    const name = id
+      .split('-')
+      .map((s) => s[0]!.toUpperCase() + s.slice(1))
+      .join(' ');
+    const effects = w.effects.map((e) => e.kind).join(', ');
+    return {
+      id,
+      name,
+      desc:
+        `${w.hands}H ${w.kind} · ${Math.round(w.damage.multiplier * 100)}% ${w.damage.types.join('/')}` +
+        (effects ? ` · ${effects}` : ''),
+    };
+  }
+
+  /** Advance the intermission pipeline: chests first, then boons. */
+  private refreshIntermissionOffers(): void {
+    const p = this.sim.state.players[0]!;
+    if (p.pendingChests > 0) {
+      if (!this.chestChoices) this.chestChoices = this.sim.rollWeaponChoices(0, 3);
+    } else {
+      this.chestChoices = null;
+      this.pendingEquip = null;
+      this.boonChoices = p.pendingBoons > 0 ? (this.boonChoices ?? this.sim.rollBoonChoices(4)) : null;
+    }
+  }
+
+  chooseChestWeapon(weaponId: string): void {
+    if (!this.intermissionActive || !this.chestChoices?.includes(weaponId)) return;
+    this.pendingEquip = weaponId;
+  }
+
+  cancelEquip(): void {
+    this.pendingEquip = null;
+  }
+
+  equipReplace(slotIndex: number): void {
+    if (!this.intermissionActive || !this.pendingEquip) return;
+    this.sim.replaceWeapon(0, slotIndex, this.pendingEquip);
+    this.finishChest();
+  }
+
+  salvageChest(): void {
+    if (!this.intermissionActive || !this.chestChoices) return;
+    for (const other of this.sim.state.players) other.gold += 15; // mirrored, like gold drops
+    this.finishChest();
+  }
+
+  private finishChest(): void {
+    const p = this.sim.state.players[0]!;
+    p.pendingChests = Math.max(0, p.pendingChests - 1);
+    this.chestChoices = null;
+    this.pendingEquip = null;
+    this.refreshIntermissionOffers();
+  }
 
   intermission() {
     if (!this.intermissionActive) return null;
@@ -101,6 +160,14 @@ export class Engine {
         level: p.level,
       },
       pendingBoons: p.pendingBoons,
+      pendingChests: p.pendingChests,
+      chest: this.chestChoices
+        ? {
+            choices: this.chestChoices.map((id) => this.weaponInfo(id)),
+            pendingEquip: this.pendingEquip ? this.weaponInfo(this.pendingEquip) : null,
+            currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.weaponInfo(w.itemId) })),
+          }
+        : null,
       boonChoices:
         this.boonChoices?.map((id) => {
           const b = this.sim.registry.boons.get(id)!;
@@ -119,9 +186,11 @@ export class Engine {
   continueToNextWave(): void {
     if (!this.intermissionActive) return;
     const p = this.sim.state.players[0]!;
-    if (p.pendingBoons > 0) return; // pick your boons first
+    if (p.pendingBoons > 0 || p.pendingChests > 0) return; // resolve rewards first
     this.intermissionActive = false;
     this.boonChoices = null;
+    this.chestChoices = null;
+    this.pendingEquip = null;
     if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
     else this.startWave(1); // act loop placeholder until acts 2-4 land
   }
@@ -129,7 +198,18 @@ export class Engine {
   /** Small HUD summary for the React overlay (polled at low frequency). */
   hud() {
     const p = this.sim.state.players[0]!;
+    const bossEnemy = this.sim.state.enemies.find((e) => e.alive && e.boss);
+    const bossDef = bossEnemy ? this.sim.registry.enemies.get(bossEnemy.defId) : null;
     return {
+      boss:
+        bossEnemy && bossDef
+          ? {
+              name: bossDef.name ?? bossEnemy.defId,
+              hpFrac: Math.max(0, bossEnemy.hp) / bossEnemy.maxHp,
+              phase: bossEnemy.boss!.phaseIdx,
+              notches: (bossDef.bossPhases ?? []).map((ph) => ph.until).filter((u) => u > 0),
+            }
+          : null,
       hp: Math.ceil(p.hp),
       maxHp: Math.ceil(p.stats.maxHp ?? 10),
       gold: p.gold,
@@ -147,7 +227,12 @@ export class Engine {
 
   private stepOnce(inputs: readonly InputFrame[]): void {
     this.prevSnap = this.currSnap;
-    this.sim.tick(inputs);
+    const events = this.sim.tick(inputs);
+    for (const ev of events) {
+      if (ev.type === 'damageNumber' && this.renderer.isReady) {
+        this.renderer.spawnDamageNumber(ev.x, ev.y, ev.amount, ev.crit, ev.onPlayer);
+      }
+    }
     this.currSnap = takeSnapshot(this.sim);
   }
 
@@ -165,12 +250,11 @@ export class Engine {
         this.stepOnce(frames.length ? frames : [neutralInput()]);
         this.accumulator -= TICK_SECONDS;
       }
-      // Wave cleared → open the intermission (recap + boon picks). The sim keeps
-      // running so players can stroll and vacuum leftover pickups.
+      // Wave cleared → open the intermission (chests → boons → continue). The sim
+      // keeps running so players can stroll and vacuum leftover pickups.
       if (this.sim.state.phase === 'cleared' && !this.intermissionActive) {
         this.intermissionActive = true;
-        const p = this.sim.state.players[0]!;
-        this.boonChoices = p.pendingBoons > 0 ? this.sim.rollBoonChoices(4) : null;
+        this.refreshIntermissionOffers();
       }
     }
     const alpha = this.pausedByDebug ? 1 : this.accumulator / TICK_SECONDS;

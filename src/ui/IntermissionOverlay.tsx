@@ -51,7 +51,97 @@ export function IntermissionOverlay({
         <span>💔 {data.recap.damageTaken} taken</span>
         <span>⭐ Lv {data.recap.level}</span>
       </div>
-      {choices ? (
+      {data.chest ? (
+        data.chest.pendingEquip ? (
+          <>
+            <p style={{ margin: '4px 0 10px', fontWeight: 700 }}>
+              Equip <span style={{ color: '#ffd97a' }}>{data.chest.pendingEquip.name}</span> — replace which weapon?
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {data.chest.currentWeapons.map((w) => (
+                <button
+                  key={w.slot}
+                  onClick={() => engine.equipReplace(w.slot)}
+                  data-replace-slot={w.slot}
+                  style={{
+                    background: '#57302f',
+                    color: '#fff4d6',
+                    border: '2px solid #e8a020',
+                    borderRadius: 10,
+                    padding: '12px 14px',
+                    width: 140,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <div style={{ fontWeight: 800 }}>{w.name}</div>
+                  <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4 }}>{w.desc}</div>
+                </button>
+              ))}
+              <button
+                onClick={() => engine.cancelEquip()}
+                data-action="cancel-equip"
+                style={{
+                  background: 'transparent',
+                  color: '#fff4d6',
+                  border: '2px solid #666',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                ← Back
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ margin: '4px 0 10px', fontWeight: 700 }}>
+              🧰 A chest creaks open {data.pendingChests > 1 ? `(${data.pendingChests} chests)` : ''} — take a weapon?
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {data.chest.choices.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => engine.chooseChestWeapon(c.id)}
+                  data-chest-weapon={c.id}
+                  style={{
+                    background: '#3d3260',
+                    color: '#fff4d6',
+                    border: '2px solid #ffd97a',
+                    borderRadius: 10,
+                    padding: '12px 14px',
+                    width: 140,
+                    minHeight: 84,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <div style={{ fontWeight: 800 }}>{c.name}</div>
+                  <div style={{ fontSize: 11, opacity: 0.9, marginTop: 6 }}>{c.desc}</div>
+                </button>
+              ))}
+              <button
+                onClick={() => engine.salvageChest()}
+                data-action="salvage"
+                style={{
+                  background: 'transparent',
+                  color: '#ffd97a',
+                  border: '2px dashed #ffd97a88',
+                  borderRadius: 10,
+                  padding: '12px 14px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                Salvage
+                <div style={{ fontSize: 11, opacity: 0.8 }}>+15 gold</div>
+              </button>
+            </div>
+          </>
+        )
+      ) : choices ? (
         <>
           <p style={{ margin: '4px 0 10px', fontWeight: 700 }}>
             Choose a boon {data.pendingBoons > 1 ? `(${data.pendingBoons} picks left)` : ''}

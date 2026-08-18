@@ -2,12 +2,15 @@
 // between the previous and current tick. Rendering NEVER mutates sim state.
 // Visuals are pooled and reused — no per-frame allocation churn.
 
-import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 import type { Sim } from '@game/core/sim';
 import playerWickUrl from '../../../art/player-wick.svg?url';
 import snufflingUrl from '../../../art/enemy-snuffling.svg?url';
 import puffballUrl from '../../../art/enemy-puffball.svg?url';
 import thistleArcherUrl from '../../../art/enemy-thistle-archer.svg?url';
+import mopsyUrl from '../../../art/boss-mopsy.svg?url';
+import grumbleBeetleUrl from '../../../art/enemy-grumble-beetle.svg?url';
+import dandelionPopperUrl from '../../../art/enemy-dandelion-popper.svg?url';
 
 export const PX_PER_UNIT = 32;
 
@@ -15,6 +18,10 @@ const ENEMY_ART: Record<string, string> = {
   snuffling: snufflingUrl,
   puffball: puffballUrl,
   'thistle-archer': thistleArcherUrl,
+  mopsy: mopsyUrl,
+  'grumble-beetle': grumbleBeetleUrl,
+  'dandelion-popper': dandelionPopperUrl,
+  'dandelion-seed': puffballUrl, // seeds are just tiny puffs — intentional
 };
 
 export type RenderSnapshot = {
@@ -100,6 +107,7 @@ export class GameRenderer {
   private enemyPool: SpriteVisual[] = [];
   private projectileGfx = new Graphics();
   private pickupGfx = new Graphics();
+  private damageNumbers: { text: Text; age: number; active: boolean }[] = [];
   private textures = new Map<string, Texture>();
   private zoom = 1.4;
   private initialized = false;
@@ -286,6 +294,8 @@ export class GameRenderer {
       }
     }
 
+    this.tickDamageNumbers(this.app.ticker.deltaMS);
+
     // Camera
     const n = Math.max(1, curr.players.length);
     cx /= n;
@@ -293,6 +303,45 @@ export class GameRenderer {
     const { width, height } = this.app.renderer;
     this.world.scale.set(this.zoom);
     this.world.position.set(width / 2 - cx * this.zoom, height / 2 - cy * this.zoom);
+  }
+
+  /** Pooled floating damage numbers (cosmetic, renderer-owned). */
+  spawnDamageNumber(x: number, y: number, amount: number, crit: boolean, onPlayer: boolean): void {
+    let dn = this.damageNumbers.find((d) => !d.active);
+    if (!dn) {
+      if (this.damageNumbers.length >= 80) return; // cap — drop excess, never allocate more
+      dn = { text: new Text({ text: '' }), age: 0, active: false };
+      dn.text.anchor.set(0.5, 1);
+      this.world.addChild(dn.text);
+      this.damageNumbers.push(dn);
+    }
+    dn.active = true;
+    dn.age = 0;
+    dn.text.visible = true;
+    dn.text.text = String(amount);
+    dn.text.style = {
+      fontFamily: 'system-ui',
+      fontSize: crit ? 22 : 15,
+      fontWeight: '800',
+      fill: onPlayer ? 0xff5c5c : crit ? 0xffd97a : 0xffffff,
+      stroke: { color: 0x2b2140, width: 3 },
+    };
+    dn.text.position.set(x * PX_PER_UNIT + (Math.random() - 0.5) * 10, y * PX_PER_UNIT - 14);
+    dn.text.alpha = 1;
+  }
+
+  private tickDamageNumbers(dtMs: number): void {
+    const LIFE = 700;
+    for (const dn of this.damageNumbers) {
+      if (!dn.active) continue;
+      dn.age += dtMs;
+      dn.text.y -= (dtMs / 1000) * 55;
+      dn.text.alpha = Math.max(0, 1 - dn.age / LIFE);
+      if (dn.age >= LIFE) {
+        dn.active = false;
+        dn.text.visible = false;
+      }
+    }
   }
 
   playerScreenPos(index: number, snap: RenderSnapshot): { x: number; y: number } {
