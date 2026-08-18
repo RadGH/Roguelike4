@@ -23,5 +23,14 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        // Split the heavyweight vendors so the shell paints before Pixi arrives
+        manualChunks: {
+          pixi: ['pixi.js'],
+          react: ['react', 'react-dom'],
+        },
+      },
+    },
   },
 });
