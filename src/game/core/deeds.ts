@@ -107,6 +107,14 @@ export class DeedEngine {
         case 'dashThrough':
           for (const ev of simEvents) if (ev.type === 'dashThroughEnemy') gained++;
           break;
+        case 'statusApplied':
+          for (const ev of simEvents) {
+            if (ev.type === 'statusApplied' && ev.kind === m.kind) gained++;
+          }
+          break;
+        case 'snuffed':
+          for (const ev of simEvents) if (ev.type === 'playerDown') gained++;
+          break;
         case 'mimicKill':
           for (const ev of trackerEvents) {
             if (

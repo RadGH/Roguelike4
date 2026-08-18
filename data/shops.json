@@ -30,6 +30,30 @@
       {
         "id": "necromancer",
         "price": 30
+      },
+      {
+        "id": "pyromancer",
+        "price": 25
+      },
+      {
+        "id": "stormcaller",
+        "price": 25
+      },
+      {
+        "id": "frostwitch",
+        "price": 25
+      },
+      {
+        "id": "tycoon",
+        "price": 30
+      },
+      {
+        "id": "jester",
+        "price": 20
+      },
+      {
+        "id": "warlock",
+        "price": 35
       }
     ]
   },

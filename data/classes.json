@@ -225,5 +225,152 @@
     "startingPets": [
       "bone-chum"
     ]
+  },
+  {
+    "id": "pyromancer",
+    "name": "Pyromancer",
+    "blurb": "Eyebrows long gone. Regrets: none, also gone.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "candlestick"
+    ],
+    "denyTags": [
+      "melee2h"
+    ],
+    "statMods": [
+      {
+        "stat": "fireDamage",
+        "flat": 3
+      },
+      {
+        "stat": "maxHp",
+        "flat": 2
+      }
+    ],
+    "mechanic": "kindling",
+    "unlock": {
+      "type": "deed",
+      "deedId": "burn-kills-100"
+    }
+  },
+  {
+    "id": "stormcaller",
+    "name": "Stormcaller",
+    "blurb": "Hair permanently vertical. Opinions permanently electric.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "lightning-bolt"
+    ],
+    "denyTags": [
+      "physical"
+    ],
+    "statMods": [
+      {
+        "stat": "lightningDamage",
+        "flat": 3
+      }
+    ],
+    "mechanic": "static",
+    "unlock": {
+      "type": "deed",
+      "deedId": "stun-100"
+    }
+  },
+  {
+    "id": "frostwitch",
+    "name": "Frostwitch",
+    "blurb": "Brings her own weather. It disagrees with everyone else's.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "frostbolt"
+    ],
+    "denyTags": [
+      "physical"
+    ],
+    "statMods": [
+      {
+        "stat": "iceDamage",
+        "flat": 3
+      }
+    ],
+    "mechanic": "wintryAura",
+    "unlock": {
+      "type": "deed",
+      "deedId": "freeze-100"
+    }
+  },
+  {
+    "id": "tycoon",
+    "name": "Tycoon",
+    "blurb": "Top hat, monocle, a heart that counts in increments of fifteen.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "cane"
+    ],
+    "startingPassives": [
+      "coin-pouch"
+    ],
+    "denyTags": [
+      "melee2h",
+      "ranged2h"
+    ],
+    "statMods": [
+      {
+        "stat": "goldGain",
+        "flat": 0.15
+      },
+      {
+        "stat": "maxHp",
+        "flat": 3
+      }
+    ],
+    "mechanic": "goldStandard",
+    "unlock": {
+      "type": "deed",
+      "deedId": "gold-hoard-5000"
+    }
+  },
+  {
+    "id": "jester",
+    "name": "Jester",
+    "blurb": "Chaos with bells on. The bells are also chaotic.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "juggling-balls"
+    ],
+    "statMods": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.05
+      }
+    ],
+    "mechanic": "wheelOfWhee",
+    "unlock": {
+      "type": "deed",
+      "deedId": "snuffed-10"
+    }
+  },
+  {
+    "id": "warlock",
+    "name": "Warlock",
+    "blurb": "Signed a very reasonable contract. The fine print has fine print.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "umbral-coil"
+    ],
+    "denyTags": [
+      "physical"
+    ],
+    "statMods": [
+      {
+        "stat": "voidDamage",
+        "flat": 2
+      }
+    ],
+    "mechanic": "pact",
+    "unlock": {
+      "type": "deed",
+      "deedId": "mimic-kills-13"
+    }
   }
 ]

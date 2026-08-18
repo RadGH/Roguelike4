@@ -225,5 +225,17 @@
     "tags": [
       "evil"
     ]
+  },
+  {
+    "id": "coin-pouch",
+    "category": "passive",
+    "desc": "+10% gold. The lining whispers compound interest.",
+    "grants": [
+      {
+        "stat": "goldGain",
+        "flat": 0.1
+      }
+    ],
+    "rarity": "common"
   }
 ]

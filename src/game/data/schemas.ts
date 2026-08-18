@@ -268,6 +268,8 @@ export const DeedMatchSchema = z.discriminatedUnion('event', [
   z.object({ event: z.literal('lifestealHealed') }).strict(),
   z.object({ event: z.literal('lowHpWaveClear') }).strict(),
   z.object({ event: z.literal('mimicKill') }).strict(),
+  z.object({ event: z.literal('statusApplied'), kind: z.enum(['stun', 'freeze']) }).strict(),
+  z.object({ event: z.literal('snuffed') }).strict(),
 ]);
 
 export const ClassSchema = z
@@ -281,9 +283,23 @@ export const ClassSchema = z
     startingWeapons: z.array(z.string()).default([]),
     // Engine mechanic vocabulary — sim implements exactly these
     mechanic: z
-      .enum(['none', 'ironhide', 'backspin', 'redline', 'redthirst', 'riseAndShine'])
+      .enum([
+        'none',
+        'ironhide',
+        'backspin',
+        'redline',
+        'redthirst',
+        'riseAndShine',
+        'kindling', // pyromancer: burns tick 25% faster (same total, sooner)
+        'static', // stormcaller: every 8th hit chains to a nearby enemy
+        'wintryAura', // frostwitch: enemies within 2 units are slowed 15%
+        'goldStandard', // tycoon: +25% gold; every 15 gold collected flicks a coin
+        'wheelOfWhee', // jester: a free random boon each wave; boon picks offer 5
+        'pact', // warlock: 10% of damage echoes as void; the contract collects 1 HP per wave
+      ])
       .default('none'),
     startingPets: z.array(z.string()).default([]),
+    startingPassives: z.array(z.string()).default([]),
     levelUpItems: z
       .array(z.object({ level: z.number().int().min(2), options: z.array(z.string()).min(1) }).strict())
       .default([]),

@@ -190,6 +190,8 @@ export class Engine {
 
   private boonCount(playerIndex: number): number {
     const p = this.sim.state.players[playerIndex]!;
+    // Lucky Ribbon or a Jester's whimsy: five choices instead of four
+    if (this.sim.classDef(p.classId).mechanic === 'wheelOfWhee') return 5;
     return this.sim.hasMod(p, 'boonChoices5') ? 5 : 4;
   }
 

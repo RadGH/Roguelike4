@@ -75,6 +75,8 @@ export type PlayerState = {
   pendingFeats: number; // 1-of-4 feat picks owed (every 3rd level)
   stillTimer: number; // staticCharge: seconds spent motionless
   staticReady: boolean; // staticCharge: next hit stuns
+  staticHits: number; // stormcaller: hit counter toward the 8th-hit chain
+  coinMeter: number; // tycoon: gold collected toward the next coin toss
   usedSecondWick: boolean; // once-per-run fatal save spent
   coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
   bits: number; // salvage material — spent on Tinkering quality upgrades
@@ -229,6 +231,7 @@ export type SimEvent =
   | { type: 'dashThroughEnemy'; player: number; enemy: number }
   | { type: 'enemyKilled'; defId: string; instance: number; byPlayer: number }
   | { type: 'playerHit'; player: number; amount: number }
+  | { type: 'statusApplied'; kind: 'stun' | 'freeze'; player: number }
   | { type: 'playerDown'; player: number }
   | { type: 'comboTier'; count: number }
   | { type: 'levelUp'; player: number; level: number }
@@ -306,10 +309,16 @@ export class Sim {
       lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
     };
-    // Class starting pets (Hunter's dog, ...)
+    // Class starting pets (Hunter's dog, ...) and passives (Tycoon's coin pouch, ...)
     for (const p of this.state.players) {
       for (const petId of this.classDef(p.classId).startingPets) {
         this.spawnPet(petId, p.index, p.classId, p.x + 1, p.y + 1);
+      }
+      for (const passiveId of this.classDef(p.classId).startingPassives) {
+        if (!p.passives.includes(passiveId)) {
+          p.passives.push(passiveId);
+          this.recomputeStats(p);
+        }
       }
     }
   }
@@ -340,6 +349,8 @@ export class Sim {
       pendingFeats: 0,
       stillTimer: 0,
       staticReady: false,
+      staticHits: 0,
+      coinMeter: 0,
       usedSecondWick: false,
       coinCharge: 0,
       bits: 0,
@@ -632,6 +643,21 @@ export class Sim {
     const evilMult = 1 + bal.evil.candleSpawn * this.evilCount('evilCandle');
     this.state.wave = wave;
     this.state.phase = 'fighting';
+    for (const p of this.state.players) {
+      if (!p.alive) continue;
+      const mech = this.classDef(p.classId).mechanic;
+      // Jester's Wheel of Whee: a free random boon rides in with the bell
+      if (mech === 'wheelOfWhee') {
+        const ids = [...this.registry.boons.keys()];
+        const pick = ids[this.rng.drops.int(0, ids.length - 1)]!;
+        this.applyBoon(p.index, pick);
+      }
+      // Warlock's Pact: the contract collects, but never the last flicker
+      if (mech === 'pact' && p.hp > 1) {
+        p.hp = Math.max(1, p.hp - 1);
+        this.eventsThisTick.push({ type: 'playerHit', player: p.index, amount: 1 });
+      }
+    }
     const queue = w.entries.map((e) => ({
       defId: e.defId,
       count: Math.round(e.count * coopMult * evilMult),
@@ -1331,6 +1357,24 @@ export class Sim {
       damageMult *= 1.4;
     }
     const dealt = this.applyDamageToEnemy(enemy, attack, p.stats, source, { forceCrit, damageMult });
+    // Stormcaller's Static: every 8th hit arcs to a neighbor
+    if (cls.mechanic === 'static' && dealt > 0) {
+      p.staticHits++;
+      if (p.staticHits >= 8) {
+        p.staticHits = 0;
+        this.chainLightning(enemy, p, 'static', 1, dealt * 0.6, 4);
+      }
+    }
+    // Warlock's Pact: a tithe of every hit echoes as void
+    if (cls.mechanic === 'pact' && dealt > 0 && enemy.alive && source.itemId !== 'pact') {
+      this.applyDamageToEnemy(
+        enemy,
+        { kind: 'spell', types: ['void'], multiplier: 0, flat: [0, 0] },
+        p.stats,
+        { ...source, itemId: 'pact', grantedBy: source.itemId },
+        { rawOverride: Math.max(1, dealt * 0.1), noCrit: true },
+      );
+    }
     // Static Charge: a patiently banked stun discharges on this hit
     if (p.staticReady && enemy.alive && dealt > 0) {
       p.staticReady = false;
@@ -1341,6 +1385,7 @@ export class Sim {
         source,
         enemy.elite ? 'elite' : 'normal',
       );
+      this.eventsThisTick.push({ type: 'statusApplied', kind: 'stun', player: p.index });
     }
     // Storm Anklet: melee hits may arc lightning outward (self-attributing)
     if (weapon.kind === 'attack' && weapon.types.includes('melee') && dealt > 0) {
@@ -1382,6 +1427,13 @@ export class Sim {
             if (!enemy.alive) continue;
           }
           applyEffect(enemy.status, eff, source, enemy.elite ? 'elite' : 'normal');
+          if (eff.kind === 'stun' || eff.kind === 'freeze') {
+            this.eventsThisTick.push({ type: 'statusApplied', kind: eff.kind, player: p.index });
+          }
+          // Pyromancer's Kindling: same total burn, delivered sooner
+          if (eff.kind === 'burn' && cls.mechanic === 'kindling') {
+            enemy.status.burnRate *= 1.25;
+          }
         }
       }
     }
@@ -1690,6 +1742,14 @@ export class Sim {
       const def = getEnemy(this.registry, e.defId);
       if (e.hitFlash > 0) e.hitFlash = Math.max(0, e.hitFlash - dt);
       if (e.attackCooldown > 0) e.attackCooldown = Math.max(0, e.attackCooldown - dt);
+      // Frostwitch's Wintry Aura: the cold keeps personal space
+      for (const p of this.state.players) {
+        if (!p.alive || this.classDef(p.classId).mechanic !== 'wintryAura') continue;
+        if (Math.hypot(e.x - p.x, e.y - p.y) <= 2) {
+          e.status.slowLeft = Math.max(e.status.slowLeft, 0.3);
+          e.status.slowMag = Math.max(e.status.slowMag, 0.15);
+        }
+      }
 
       // Status DoT ticks + control
       for (const dot of tickStatus(e.status, dt)) {
@@ -2386,7 +2446,31 @@ export class Sim {
    *  collector's goldCollect triggers fire (Coin-Operated Blade). */
   private collectGold(collector: PlayerState, amount: number, viaItemId: string | null): void {
     for (const other of this.state.players) {
-      other.gold += Math.max(1, Math.round(amount * (1 + stat(other.stats, 'goldGain'))));
+      const standard = this.classDef(other.classId).mechanic === 'goldStandard' ? 1.25 : 1;
+      other.gold += Math.max(1, Math.round(amount * standard * (1 + stat(other.stats, 'goldGain'))));
+    }
+    // Tycoon's Coin Toss: every 15 gold collected flicks a coin at the nearest enemy
+    if (this.classDef(collector.classId).mechanic === 'goldStandard') {
+      collector.coinMeter += amount;
+      while (collector.coinMeter >= 15) {
+        collector.coinMeter -= 15;
+        const target = this.nearestEnemy(collector.x, collector.y, 12);
+        if (target) {
+          this.applyDamageToEnemy(
+            target,
+            { kind: 'attack', types: ['ranged'], multiplier: 0, flat: [0, 0] },
+            collector.stats,
+            {
+              actor: { kind: 'player', index: collector.index },
+              itemId: 'coin-toss',
+              grantedBy: null,
+              deliveryTag: 'projectile',
+              hitId: this.tracker.newHitId(),
+            },
+            { rawOverride: 3 + collector.gold / 60, noCrit: true },
+          );
+        }
+      }
     }
     for (const { trigger } of this.triggersFor(collector, 'goldCollect')) {
       if (trigger.action === 'coinCharge') {

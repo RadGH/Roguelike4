@@ -154,7 +154,11 @@ export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): Inpu
       const dy = e.y - p.y;
       const d = Math.hypot(dx, dy) || 1;
       const scary = e.charge.phase === 'windup' || e.charge.phase === 'charging';
-      const ring = scary ? 8 : petCommander ? 5.5 : meleeOnly ? 1.5 : 2.0;
+      // A lone melee weapon means poke-and-retreat: dart in when the swing is
+      // ready, back out while it recharges (a pair can afford to stand and trade)
+      const swingReady = p.weapons.some((w) => w.cooldownLeft <= 0.05);
+      const pokeCycle = meleeOnly && p.weapons.length === 1 && !swingReady && hpFrac < 0.7;
+      const ring = scary ? 8 : petCommander ? 5.5 : pokeCycle ? 2.8 : meleeOnly ? 1.5 : 2.0;
       const toward = d > ring ? 1.2 : d < ring * 0.6 ? -0.8 : 0;
       // A duelist commits: general crowd pressure never outweighs the approach —
       // only telegraphs and incoming shots earn a sidestep

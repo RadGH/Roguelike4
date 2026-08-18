@@ -247,7 +247,104 @@
     "match": {
       "event": "mimicKill"
     },
-    "unlocks": [],
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "warlock"
+      }
+    ],
     "glimmerBonus": 5
+  },
+  {
+    "id": "burn-kills-100",
+    "desc": "Defeat 100 enemies with burn damage",
+    "hint": "Where there's smoke, there's a career.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 100,
+    "match": {
+      "event": "burnKill"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "pyromancer"
+      }
+    ],
+    "glimmerBonus": 3
+  },
+  {
+    "id": "stun-100",
+    "desc": "Stun 100 enemies",
+    "hint": "A pause for reflection, applied generously.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 100,
+    "match": {
+      "event": "statusApplied",
+      "kind": "stun"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "stormcaller"
+      }
+    ],
+    "glimmerBonus": 3
+  },
+  {
+    "id": "freeze-100",
+    "desc": "Freeze 100 enemies",
+    "hint": "Everyone needs a moment to chill.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 100,
+    "match": {
+      "event": "statusApplied",
+      "kind": "freeze"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "frostwitch"
+      }
+    ],
+    "glimmerBonus": 3
+  },
+  {
+    "id": "gold-hoard-5000",
+    "desc": "Hold 5,000 gold in a single run",
+    "hint": "Spending it is also allowed. Apparently.",
+    "kind": "run-state",
+    "scope": "party",
+    "target": 5000,
+    "match": {
+      "event": "goldHeld"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "tycoon"
+      }
+    ],
+    "glimmerBonus": 5
+  },
+  {
+    "id": "snuffed-10",
+    "desc": "Get snuffed out 10 times",
+    "hint": "Falling down is a kind of dedication.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 10,
+    "match": {
+      "event": "snuffed"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "jester"
+      }
+    ],
+    "glimmerBonus": 2
   }
 ]

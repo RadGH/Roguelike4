@@ -170,7 +170,7 @@
     "grants": [
       {
         "stat": "xpGain",
-        "pct": 0.2
+        "flat": 0.2
       }
     ]
   },
@@ -182,7 +182,7 @@
     "grants": [
       {
         "stat": "goldGain",
-        "pct": 0.2
+        "flat": 0.2
       },
       {
         "stat": "pickupRadius",
