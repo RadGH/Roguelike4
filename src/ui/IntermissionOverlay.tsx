@@ -218,6 +218,13 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                     {c.name}
                   </div>
                   <div style={{ fontSize: 10, opacity: 0.9 }}>{c.desc}</div>
+                  {c.compare && (
+                    <div style={{ fontSize: 10, marginTop: 2, color: c.compare.delta >= 0 ? '#8ce68c' : '#ff9a9a' }}>
+                      {c.compare.vs
+                        ? `${c.compare.delta >= 0 ? '▲' : '▼'} ${Math.abs(c.compare.delta).toFixed(1)} dps vs ${c.compare.vs}`
+                        : `${c.compare.delta.toFixed(1)} dps`}
+                    </div>
+                  )}
                 </button>
               ))}
               <button
@@ -318,6 +325,13 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                   {o.name}
                 </div>
                 <div style={{ fontSize: 10, opacity: 0.9 }}>{o.desc}</div>
+                {o.compare && (
+                  <div style={{ fontSize: 10, marginTop: 2, color: o.compare.delta >= 0 ? '#8ce68c' : '#ff9a9a' }}>
+                    {o.compare.vs
+                      ? `${o.compare.delta >= 0 ? '▲' : '▼'} ${Math.abs(o.compare.delta).toFixed(1)} dps vs ${o.compare.vs}`
+                      : `${o.compare.delta.toFixed(1)} dps`}
+                  </div>
+                )}
                 <div style={{ fontSize: 11, marginTop: 4, color: '#ffd97a' }}>
                   {o.sold ? 'sold' : `${o.price} 🪙`}
                 </div>

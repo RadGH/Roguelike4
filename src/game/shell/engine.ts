@@ -188,6 +188,26 @@ export class Engine {
     };
   }
 
+  /** Equip-decision context: how a weapon offer compares to the current kit.
+   *  Design 11: an equip decision never requires memory. */
+  private compareOffer(playerIndex: number, inst: WeaponInstance) {
+    const p = this.sim.state.players[playerIndex]!;
+    const dps = (i: WeaponInstance): number => {
+      const r = resolveWeapon(this.sim.registry, i);
+      if (r.delivery.type === 'none') return 0;
+      const avg = ((r.flat[0] + r.flat[1]) / 2) * r.multiplier;
+      const count = r.delivery.type === 'projectile' ? (r.delivery.count ?? 1) : 1;
+      return (avg * count) / Math.max(0.1, r.delivery.cooldown);
+    };
+    const offerDps = dps(inst);
+    if (offerDps === 0) return null; // shields compare on defense, not dps
+    const current = p.weapons.filter((w) => resolveWeapon(this.sim.registry, w).delivery.type !== 'none');
+    if (current.length === 0) return { vs: null, delta: offerDps };
+    let weakest = current[0]!;
+    for (const w of current) if (dps(w) < dps(weakest)) weakest = w;
+    return { vs: this.instanceInfo(weakest).name, delta: offerDps - dps(weakest) };
+  }
+
   private weaponInfo(id: string) {
     const name = id
       .split('-')
@@ -484,8 +504,8 @@ export class Engine {
             ? {
                 choices: chest.map((offer, idx) =>
                   offer.kind === 'passive'
-                    ? { idx, ...this.weaponInfo(offer.id) }
-                    : { idx, ...this.instanceInfo(offer.inst) },
+                    ? { idx, ...this.weaponInfo(offer.id), compare: null }
+                    : { idx, ...this.instanceInfo(offer.inst), compare: this.compareOffer(p.index, offer.inst) },
                 ),
                 pendingEquip: equip ? this.instanceInfo(equip) : null,
                 currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.instanceInfo(w) })),
@@ -528,10 +548,10 @@ export class Engine {
               sold: !!o.sold,
               price: o.price,
               ...(o.kind === 'snack'
-                ? { id: 'wax-snack', name: 'Wax Snack', desc: 'Heals to full. Tastes like birthdays.', kind: 'snack' as const }
+                ? { id: 'wax-snack', name: 'Wax Snack', desc: 'Heals to full. Tastes like birthdays.', kind: 'snack' as const, compare: null }
                 : o.kind === 'passive'
-                  ? this.weaponInfo(o.id)
-                  : this.instanceInfo(o.inst)),
+                  ? { ...this.weaponInfo(o.id), compare: null }
+                  : { ...this.instanceInfo(o.inst), compare: this.compareOffer(p.index, o.inst) }),
             })) ?? null,
         };
       }),
