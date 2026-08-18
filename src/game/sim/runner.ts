@@ -48,13 +48,16 @@ export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): Inpu
   if (!p.alive) return frame;
   // Melee-only loadouts need a duelist's gait, not a kiter's; a weaponless
   // pet class must hold mid-range or its leashed pets never reach the fight
-  const hasMelee = p.weapons.some(
+  const armed = p.weapons.filter(
+    (w) => sim.registry.weapons.get(w.itemId)?.delivery.type !== 'none',
+  );
+  const hasMelee = armed.some(
     (w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc',
   );
   const meleeOnly =
-    p.weapons.length > 0 &&
-    p.weapons.every((w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc');
-  const petCommander = p.weapons.length === 0;
+    armed.length > 0 &&
+    armed.every((w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc');
+  const petCommander = armed.length === 0 && sim.state.pets.some((pet) => pet.owner === p.index);
 
   let fleeX = 0;
   let fleeY = 0;
@@ -157,7 +160,7 @@ export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): Inpu
       // A lone melee weapon means poke-and-retreat: dart in when the swing is
       // ready, back out while it recharges (a pair can afford to stand and trade)
       const swingReady = p.weapons.some((w) => w.cooldownLeft <= 0.05);
-      const pokeCycle = meleeOnly && p.weapons.length === 1 && !swingReady && hpFrac < 0.7;
+      const pokeCycle = meleeOnly && armed.length === 1 && !swingReady && hpFrac < 0.7;
       const ring = scary ? 8 : petCommander ? 5.5 : pokeCycle ? 2.8 : meleeOnly ? 1.5 : 2.0;
       const toward = d > ring ? 1.2 : d < ring * 0.6 ? -0.8 : 0;
       // A duelist commits: general crowd pressure never outweighs the approach —
@@ -229,6 +232,7 @@ export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): Inpu
 /** Rough single-target DPS estimate for comparing chest offers to the current kit. */
 function roughDps(sim: Sim, inst: WeaponInstance): number {
   const w = resolveWeapon(sim.registry, inst);
+  if (w.delivery.type === 'none') return 0; // shields measure worth elsewhere
   const avg = ((w.flat[0] + w.flat[1]) / 2) * w.multiplier;
   const count = w.delivery.type === 'meleeArc' ? 1 : (w.delivery.count ?? 1);
   return (avg * count) / Math.max(0.1, w.delivery.cooldown);
@@ -270,7 +274,8 @@ export function resolveRewards(sim: Sim): void {
           // never treat them as the weak link
           const cur = resolved[i]!;
           const special =
-            (cur.delivery.type !== 'meleeArc' && (cur.delivery.blastRadius ?? 0) > 0) ||
+            cur.kind === 'shield' ||
+            (cur.delivery.type === 'projectile' && (cur.delivery.blastRadius ?? 0) > 0) ||
             (cur.effects?.length ?? 0) > 0;
           if (special) continue;
           // A caster's spells feed each other through spellDamage grants —

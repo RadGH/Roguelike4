@@ -210,11 +210,16 @@ Superb → Masterwork) scale them, and rare variants do stranger things — see 
 <tr><th>Weapon</th><th>Hands</th><th>Kind</th><th>Damage</th><th>Delivery</th><th>Bonus</th></tr>`;
   for (const w of reg.weapons.values()) {
     const d = w.delivery;
-    const dmg = `${w.damage.flat[0]}–${w.damage.flat[1]}${w.damage.multiplier !== 1 ? ` ×${w.damage.multiplier}` : ''} ${w.damage.types.join('/')}`;
+    const dmg =
+      w.kind === 'shield'
+        ? '—'
+        : `${w.damage.flat[0]}–${w.damage.flat[1]}${w.damage.multiplier !== 1 ? ` ×${w.damage.multiplier}` : ''} ${w.damage.types.join('/')}`;
     const delivery =
-      d.type === 'meleeArc'
-        ? `melee arc, reach ${d.reach}, every ${d.cooldown}s`
-        : `${d.count && d.count > 1 ? `${d.count} projectiles` : 'projectile'}, range ${d.range}, every ${d.cooldown}s${d.blastRadius ? `, blast ${d.blastRadius}` : ''}`;
+      d.type === 'none'
+        ? 'held proudly'
+        : d.type === 'meleeArc'
+          ? `melee arc, reach ${d.reach}, every ${d.cooldown}s`
+          : `${d.count && d.count > 1 ? `${d.count} projectiles` : 'projectile'}, range ${d.range}, every ${d.cooldown}s${d.blastRadius ? `, blast ${d.blastRadius}` : ''}`;
     const bonus = (w.grants ?? []).map(grantLine).join('; ');
     body += `<tr><td>${esc(titleCase(w.id))}</td><td>${w.hands}</td><td>${w.kind}</td><td>${esc(dmg)}</td><td>${esc(delivery)}</td><td>${esc(bonus)}</td></tr>`;
   }

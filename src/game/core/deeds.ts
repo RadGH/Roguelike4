@@ -115,6 +115,16 @@ export class DeedEngine {
         case 'snuffed':
           for (const ev of simEvents) if (ev.type === 'playerDown') gained++;
           break;
+        case 'blockedDamage':
+          for (const ev of simEvents) {
+            if (ev.type === 'blockedDamage') gained += ev.amount;
+          }
+          break;
+        case 'damageTaken':
+          for (const ev of simEvents) {
+            if (ev.type === 'playerHit') gained += ev.amount;
+          }
+          break;
         case 'mimicKill':
           for (const ev of trackerEvents) {
             if (

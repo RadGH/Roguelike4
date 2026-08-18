@@ -46,7 +46,8 @@
     "blurb": "Grinning, pockets full of knives. Dashing through enemies sharpens the next cut.",
     "handPoints": 2,
     "denyTags": [
-      "melee2h"
+      "melee2h",
+      "shield"
     ],
     "statMods": [
       {
@@ -126,7 +127,8 @@
     "blurb": "Angry, shirtless, delighted. Hits harder the closer they are to the dark.",
     "handPoints": 4,
     "denyTags": [
-      "spell"
+      "spell",
+      "shield"
     ],
     "statMods": [
       {
@@ -464,6 +466,65 @@
     "mechanic": "spillage",
     "unlock": {
       "type": "shop"
+    }
+  },
+  {
+    "id": "paladin",
+    "name": "Paladin",
+    "blurb": "Sworn to the Everflame. Glows faintly, blocks loudly.",
+    "handPoints": 4,
+    "startingWeapons": [
+      "mace",
+      "round-shield"
+    ],
+    "denyTags": [],
+    "statMods": [
+      {
+        "stat": "maxHp",
+        "flat": 2
+      },
+      {
+        "stat": "armor",
+        "flat": 3
+      }
+    ],
+    "mechanic": "aegis",
+    "unlock": {
+      "type": "deed",
+      "deedId": "block-500"
+    }
+  },
+  {
+    "id": "snail-knight",
+    "name": "Snail Knight",
+    "blurb": "A knight. Who is a snail. Any further questions answer themselves.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "mace",
+      "round-shield"
+    ],
+    "denyTags": [
+      "ranged2h",
+      "spell"
+    ],
+    "statMods": [
+      {
+        "stat": "moveSpeed",
+        "pct": -0.35
+      },
+      {
+        "stat": "armor",
+        "flat": 10
+      },
+      {
+        "stat": "maxHp",
+        "flat": 4
+      }
+    ],
+    "mechanic": "snailTrail",
+    "unlock": {
+      "type": "deed",
+      "deedId": "damage-taken-10000"
     }
   }
 ]

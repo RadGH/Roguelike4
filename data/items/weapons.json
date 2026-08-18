@@ -897,5 +897,116 @@
       }
     ],
     "rarity": "uncommon"
+  },
+  {
+    "id": "mace",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.1,
+      "arcDeg": 100,
+      "cooldown": 0.55
+    },
+    "effects": [
+      {
+        "kind": "stun",
+        "duration": 0.4,
+        "chance": 0.1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "round-shield",
+    "category": "weapon",
+    "tags": [
+      "shield",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "shield",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1,
+      "flat": [
+        0,
+        0
+      ]
+    },
+    "delivery": {
+      "type": "none"
+    },
+    "grants": [
+      {
+        "stat": "blockPhys",
+        "flat": 2
+      },
+      {
+        "stat": "armor",
+        "flat": 1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "tower-shield",
+    "category": "weapon",
+    "tags": [
+      "shield",
+      "giantShield",
+      "physical"
+    ],
+    "hands": 2,
+    "kind": "shield",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1,
+      "flat": [
+        0,
+        0
+      ]
+    },
+    "delivery": {
+      "type": "none"
+    },
+    "grants": [
+      {
+        "stat": "blockPhys",
+        "flat": 4
+      },
+      {
+        "stat": "blockSpell",
+        "flat": 1
+      },
+      {
+        "stat": "armor",
+        "flat": 2
+      },
+      {
+        "stat": "moveSpeed",
+        "pct": -0.08
+      }
+    ],
+    "rarity": "uncommon"
   }
 ]

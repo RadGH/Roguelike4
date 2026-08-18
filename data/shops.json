@@ -70,6 +70,14 @@
       {
         "id": "alchemist",
         "price": 30
+      },
+      {
+        "id": "paladin",
+        "price": 30
+      },
+      {
+        "id": "snail-knight",
+        "price": 35
       }
     ]
   },

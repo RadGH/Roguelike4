@@ -93,7 +93,7 @@ const RELIC_EXTRAS: Grant[] = [
 
 export type ResolvedWeapon = {
   id: string;
-  kind: 'attack' | 'spell';
+  kind: 'attack' | 'spell' | 'shield';
   types: DamageType[];
   multiplier: number;
   flat: [number, number];

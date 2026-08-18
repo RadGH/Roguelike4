@@ -47,6 +47,8 @@ export const DeliverySchema = z.discriminatedUnion('type', [
       cooldown: z.number().positive(),
     })
     .strict(),
+  // Shields and other held items that never fire
+  z.object({ type: z.literal('none') }).strict(),
 ]);
 
 export const EffectSchema = z
@@ -138,7 +140,7 @@ export const WeaponSchema = z
     category: z.literal('weapon'),
     tags: z.array(z.string()),
     hands: z.number().int().min(1).max(2),
-    kind: z.enum(['attack', 'spell']),
+    kind: z.enum(['attack', 'spell', 'shield']),
     delivery: DeliverySchema,
     damage: z
       .object({
@@ -275,6 +277,8 @@ export const DeedMatchSchema = z.discriminatedUnion('event', [
   z.object({ event: z.literal('mimicKill') }).strict(),
   z.object({ event: z.literal('statusApplied'), kind: z.enum(['stun', 'freeze']) }).strict(),
   z.object({ event: z.literal('snuffed') }).strict(),
+  z.object({ event: z.literal('blockedDamage') }).strict(),
+  z.object({ event: z.literal('damageTaken') }).strict(),
 ]);
 
 export const ClassSchema = z
@@ -305,6 +309,8 @@ export const ClassSchema = z
         'miseEnPlace', // chef: hearts drop 50% more often and can overheal 25%
         'swarmAnger', // beekeeper: taking a hit angers the swarm (+25% damage 5s)
         'spillage', // alchemist: 15% of kills leave an acid pool
+        'aegis', // paladin: shields skip the off-hand limit; blocking heals nearby allies
+        'snailTrail', // snail knight: slime ribbon slows and stings; +50% block standing still
       ])
       .default('none'),
     startingPets: z.array(z.string()).default([]),

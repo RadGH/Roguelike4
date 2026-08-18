@@ -346,5 +346,41 @@
       }
     ],
     "glimmerBonus": 2
+  },
+  {
+    "id": "block-500",
+    "desc": "Block 500 damage",
+    "hint": "The best offense is a very stubborn arm.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 500,
+    "match": {
+      "event": "blockedDamage"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "paladin"
+      }
+    ],
+    "glimmerBonus": 3
+  },
+  {
+    "id": "damage-taken-10000",
+    "desc": "Take 10,000 total damage",
+    "hint": "Persistence is a body part.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 10000,
+    "match": {
+      "event": "damageTaken"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "snail-knight"
+      }
+    ],
+    "glimmerBonus": 5
   }
 ]

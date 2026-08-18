@@ -78,6 +78,8 @@ export type PlayerState = {
   staticHits: number; // stormcaller: hit counter toward the 8th-hit chain
   coinMeter: number; // tycoon: gold collected toward the next coin toss
   angerTimer: number; // beekeeper: swarm anger seconds remaining
+  aegisCooldown: number; // paladin: seconds until the next block-heal
+  trailTimer: number; // snail knight: seconds until the next slime drip
   usedSecondWick: boolean; // once-per-run fatal save spent
   coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
   bits: number; // salvage material — spent on Tinkering quality upgrades
@@ -235,6 +237,7 @@ export type SimEvent =
   | { type: 'enemyKilled'; defId: string; instance: number; byPlayer: number }
   | { type: 'playerHit'; player: number; amount: number }
   | { type: 'statusApplied'; kind: 'stun' | 'freeze'; player: number }
+  | { type: 'blockedDamage'; player: number; amount: number }
   | { type: 'playerDown'; player: number }
   | { type: 'comboTier'; count: number }
   | { type: 'levelUp'; player: number; level: number }
@@ -355,6 +358,8 @@ export class Sim {
       staticHits: 0,
       coinMeter: 0,
       angerTimer: 0,
+      aegisCooldown: 0,
+      trailTimer: 0,
       usedSecondWick: false,
       coinCharge: 0,
       bits: 0,
@@ -878,8 +883,14 @@ export class Sim {
     if (!p) throw new Error(`No player ${playerIndex}`);
     const inst = typeof weapon === 'string' ? standardInstance(weapon) : weapon;
     if (!this.classCanUse(p.classId, inst.itemId)) return false;
-    const cost = getWeapon(this.registry, inst.itemId).hands;
+    const def = getWeapon(this.registry, inst.itemId);
+    const cost = def.hands;
     if (this.handPointsUsed(p) + cost > this.handPointsMax(p)) return false;
+    // One off-hand: a single shield per candle — unless Aegis says otherwise
+    if (def.tags.includes('shield') && this.classDef(p.classId).mechanic !== 'aegis') {
+      const holding = p.weapons.some((w) => getWeapon(this.registry, w.itemId).tags.includes('shield'));
+      if (holding) return false;
+    }
     p.weapons.push({ ...inst, cooldownLeft: 0 });
     this.recomputeStats(p);
     return true;
@@ -1136,6 +1147,29 @@ export class Sim {
     if (p.iframeTimer > 0) p.iframeTimer = Math.max(0, p.iframeTimer - dt);
     if (p.contactHitCooldown > 0) p.contactHitCooldown = Math.max(0, p.contactHitCooldown - dt);
     if (p.angerTimer > 0) p.angerTimer = Math.max(0, p.angerTimer - dt);
+    if (p.aegisCooldown > 0) p.aegisCooldown = Math.max(0, p.aegisCooldown - dt);
+    // Snail Knight's Trail: the ribbon follows wherever the knight has been
+    if (this.classDef(p.classId).mechanic === 'snailTrail') {
+      p.trailTimer -= dt;
+      if (p.trailTimer <= 0) {
+        p.trailTimer = 0.45;
+        const pool = this.state.pools.find((pl) => !pl.active);
+        if (pool) {
+          pool.active = true;
+          pool.x = p.x;
+          pool.y = p.y;
+          pool.radius = 0.9;
+          pool.dps = 2;
+          pool.duration = 2;
+          pool.tickIn = 0.25;
+          pool.ownerDefId = '';
+          pool.friendly = true;
+          pool.ownerPlayer = p.index;
+          pool.itemId = 'slime-trail';
+          pool.damageType = 'poison';
+        }
+      }
+    }
     const regen = stat(p.stats, 'hpRegen');
     if (regen > 0) {
       const cls = this.classDef(p.classId);
@@ -1246,6 +1280,7 @@ export class Sim {
       if (slot.cooldownLeft > 0) slot.cooldownLeft = Math.max(0, slot.cooldownLeft - dt);
       if (slot.cooldownLeft > 0) continue;
       const weapon = resolveWeapon(this.registry, slot);
+      if (weapon.delivery.type === 'none') continue; // shields defend, they don't swing
       let dir: number | null = null;
       if (aiming) dir = Math.atan2(input.aimY, input.aimX);
       else {
@@ -1278,7 +1313,7 @@ export class Sim {
         if (angleDiff > halfArc) continue;
         this.weaponHitEnemy(enemy, p, weapon, 'melee', hitId);
       }
-    } else {
+    } else if (weapon.delivery.type === 'projectile') {
       const d = weapon.delivery;
       const spread = (d.spreadDeg * Math.PI) / 180;
       for (let i = 0; i < d.count; i++) {
@@ -1327,6 +1362,7 @@ export class Sim {
     damageScale = 1,
   ): void {
     const cls = this.classDef(p.classId);
+    if (weapon.kind === 'shield') return; // shields never land hits
     const attack: AttackProfile = {
       kind: weapon.kind,
       types: weapon.types,
@@ -2228,7 +2264,23 @@ export class Sim {
       multiplier: 0,
       flat: [baseAmount, baseAmount],
     };
-    const hit = resolveHit(baseAmount, attack, p.defense, this.state.wave, this.rng.combat, this.registry.balance);
+    // Snail Knight braces: +50% block while standing still
+    let defense = p.defense;
+    if (this.classDef(p.classId).mechanic === 'snailTrail' && p.stillTimer > 0.2) {
+      defense = { ...defense, blockPhys: defense.blockPhys * 1.5, blockSpell: defense.blockSpell * 1.5 };
+    }
+    const hit = resolveHit(baseAmount, attack, defense, this.state.wave, this.rng.combat, this.registry.balance);
+    if (hit.mitigation.blocked > 0) {
+      this.eventsThisTick.push({ type: 'blockedDamage', player: p.index, amount: hit.mitigation.blocked });
+      // Paladin's Aegis: a good block warms everyone nearby
+      if (this.classDef(p.classId).mechanic === 'aegis' && p.aegisCooldown <= 0) {
+        p.aegisCooldown = 2;
+        for (const ally of this.state.players) {
+          if (!ally.alive || ally.index === p.index) continue;
+          if (Math.hypot(ally.x - p.x, ally.y - p.y) <= 4) this.healPlayer(ally, 1, 'aegis');
+        }
+      }
+    }
     const source: SourceChain = {
       actor: { kind: 'enemy', id: def.id, instance: 0 },
       itemId: null,
@@ -2461,6 +2513,10 @@ export class Sim {
             if (!e.alive) continue;
             const def = getEnemy(this.registry, e.defId);
             if (Math.hypot(e.x - pool.x, e.y - pool.y) <= pool.radius + def.radius) {
+              if (pool.damageType === 'poison') {
+                e.status.slowLeft = Math.max(e.status.slowLeft, 0.6);
+                e.status.slowMag = Math.max(e.status.slowMag, 0.25);
+              }
               this.applyDamageToEnemy(
                 e,
                 { kind: 'spell', types: [pool.damageType], multiplier: 0, flat: [0, 0], noCrit: true },
