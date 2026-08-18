@@ -71,6 +71,10 @@ export type PlayerState = {
   guaranteedCrit: boolean; // backspin: next hit crits
   pendingClassItems: string[][]; // queued class level-up choices (option lists)
   passives: string[];
+  feats: string[]; // feat inventory — item-like, never dropped (design 06)
+  pendingFeats: number; // 1-of-4 feat picks owed (every 3rd level)
+  stillTimer: number; // staticCharge: seconds spent motionless
+  staticReady: boolean; // staticCharge: next hit stuns
   usedSecondWick: boolean; // once-per-run fatal save spent
   coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
   bits: number; // salvage material — spent on Tinkering quality upgrades
@@ -332,6 +336,10 @@ export class Sim {
       guaranteedCrit: false,
       pendingClassItems: [],
       passives: [],
+      feats: [],
+      pendingFeats: 0,
+      stillTimer: 0,
+      staticReady: false,
       usedSecondWick: false,
       coinCharge: 0,
       bits: 0,
@@ -418,6 +426,10 @@ export class Sim {
       pet.lifetime -= dt;
       const owner = s.players[pet.owner];
       if (pet.lifetime <= 0 || !owner) {
+        // Grave Dividend: zombies leave a coin behind. Politely.
+        if (owner && pet.defId === 'zombie' && this.hasMod(owner, 'graveDividend')) {
+          this.dropPickup(pet.x, pet.y, 'gold', 1);
+        }
         s.pets[i] = s.pets[s.pets.length - 1]!;
         s.pets.pop();
         continue;
@@ -497,7 +509,10 @@ export class Sim {
   }
 
   hasMod(p: PlayerState, mod: string): boolean {
-    return p.passives.some((id) => this.registry.passives.get(id)?.mods.includes(mod as never));
+    return (
+      p.passives.some((id) => this.registry.passives.get(id)?.mods.includes(mod as never)) ||
+      p.feats.some((id) => this.registry.feats.get(id)?.mods.includes(mod as never))
+    );
   }
 
   /** All triggers of a kind across a player's passives, with owning item ids. */
@@ -505,6 +520,11 @@ export class Sim {
     const out: { trigger: TriggerDef; itemId: string }[] = [];
     for (const id of p.passives) {
       const def = this.registry.passives.get(id);
+      if (!def) continue;
+      for (const t of def.triggers) if (t.on === on) out.push({ trigger: t, itemId: id });
+    }
+    for (const id of p.feats) {
+      const def = this.registry.feats.get(id);
       if (!def) continue;
       for (const t of def.triggers) if (t.on === on) out.push({ trigger: t, itemId: id });
     }
@@ -530,6 +550,7 @@ export class Sim {
       this.townGrants,
       ...p.weapons.map((w) => resolveWeapon(this.registry, w).grants),
       ...p.passives.map((id) => this.registry.passives.get(id)?.grants ?? []),
+      ...p.feats.map((id) => this.registry.feats.get(id)?.grants ?? []),
       ...p.boonIds.map((id) => {
         const b = this.registry.boons.get(id);
         if (!b) throw new Error(`Unknown boon "${id}"`);
@@ -766,6 +787,7 @@ export class Sim {
 
   /** Item ids unlocked on this save slot; weapons with an unlockDeed need to be here. */
   unlockedItems = new Set<string>();
+  unlockedFeats = new Set<string>();
 
   /** Evil item copies across the whole party (they stack). */
   evilCount(mod: string): number {
@@ -937,6 +959,40 @@ export class Sim {
     this.healPlayer(p, Math.max(0, stat(p.stats, 'maxHp') - p.hp), 'snack');
   }
 
+  /** A feat is pickable when it has no unlock deed or the account has earned it. */
+  featAvailable(id: string): boolean {
+    const f = this.registry.feats.get(id);
+    if (!f) return false;
+    return !f.unlockDeed || this.unlockedFeats.has(id);
+  }
+
+  /** 1-of-4 feat offer from the unlocked pool (design 06). */
+  rollFeatChoices(playerIndex: number, count = 4): string[] {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    const pool = [...this.registry.feats.keys()].filter(
+      (id) => !p.feats.includes(id) && this.featAvailable(id),
+    );
+    const out: string[] = [];
+    for (let i = 0; i < count && pool.length > 0; i++) {
+      const idx = this.rng.drops.int(0, pool.length - 1);
+      out.push(pool[idx]!);
+      pool.splice(idx, 1);
+    }
+    return out;
+  }
+
+  applyFeat(playerIndex: number, featId: string): void {
+    const p = this.state.players[playerIndex];
+    const def = this.registry.feats.get(featId);
+    if (!p || !def || p.feats.includes(featId) || p.pendingFeats <= 0) return;
+    p.feats.push(featId);
+    p.pendingFeats--;
+    this.recomputeStats(p);
+    // Bee Yourself: the companion arrives immediately, full of belief
+    if (def.mods.includes('beeFriend')) this.spawnPet('bee', p.index, featId, p.x, p.y);
+  }
+
   /** Roll distinct weapon choices: unlocked, class-legal, not already held. */
   rollWeaponChoices(playerIndex: number, count = 3): string[] {
     const p = this.state.players[playerIndex];
@@ -1056,6 +1112,13 @@ export class Sim {
     let mx = input.moveX;
     let my = input.moveY;
     const mag = Math.hypot(mx, my);
+    // Static Charge: patience banks a stun
+    if (mag < 0.1 && p.dashTimer <= 0) {
+      p.stillTimer += dt;
+      if (p.stillTimer >= 1 && this.hasMod(p, 'staticCharge')) p.staticReady = true;
+    } else {
+      p.stillTimer = 0;
+    }
     if (mag > 1) {
       mx /= mag;
       my /= mag;
@@ -1209,7 +1272,9 @@ export class Sim {
         proj.poolDuration = 0;
         proj.splitOnHit = this.hasMod(p, 'projectileSplit');
         proj.isChild = false;
-        proj.bouncesLeft = this.hasMod(p, 'projectileBounce') ? 2 : 0;
+        proj.bouncesLeft = this.hasMod(p, 'projectileBounce')
+          ? 2 + (this.hasMod(p, 'conductor') ? 1 : 0)
+          : 0;
         proj.damageScale = 1;
         proj.resolved = weapon;
         proj.hitIds.clear();
@@ -1257,7 +1322,26 @@ export class Sim {
       damageMult *= 1 + p.coinCharge;
       p.coinCharge = 0;
     }
+    // Point Blank: ranged deliveries hit 40% harder inside 3 units
+    if (
+      deliveryTag !== 'melee' &&
+      this.hasMod(p, 'pointBlank') &&
+      Math.hypot(enemy.x - p.x, enemy.y - p.y) < 3
+    ) {
+      damageMult *= 1.4;
+    }
     const dealt = this.applyDamageToEnemy(enemy, attack, p.stats, source, { forceCrit, damageMult });
+    // Static Charge: a patiently banked stun discharges on this hit
+    if (p.staticReady && enemy.alive && dealt > 0) {
+      p.staticReady = false;
+      p.stillTimer = 0;
+      applyEffect(
+        enemy.status,
+        { kind: 'stun', duration: 0.8, chance: 1 },
+        source,
+        enemy.elite ? 'elite' : 'normal',
+      );
+    }
     // Storm Anklet: melee hits may arc lightning outward (self-attributing)
     if (weapon.kind === 'attack' && weapon.types.includes('melee') && dealt > 0) {
       for (const { trigger, itemId } of this.triggersFor(p, 'meleeHit')) {
@@ -1266,7 +1350,7 @@ export class Sim {
             enemy,
             p,
             itemId,
-            trigger.params.jumps ?? 2,
+            (trigger.params.jumps ?? 2) + (this.hasMod(p, 'conductor') ? 1 : 0),
             dealt * (trigger.params.damageFrac ?? 0.5),
             trigger.params.radius ?? 4,
           );
@@ -1279,6 +1363,24 @@ export class Sim {
     if (enemy.alive) {
       for (const eff of weapon.effects) {
         if (this.rng.combat.chance(eff.chance)) {
+          // Frostfire: freezing a burning enemy detonates the remaining burn ×2
+          if (
+            eff.kind === 'freeze' &&
+            enemy.status.burnPool > 0 &&
+            this.hasMod(p, 'frostfire')
+          ) {
+            const boom = enemy.status.burnPool * 2;
+            enemy.status.burnPool = 0;
+            enemy.status.burnRate = 0;
+            this.applyDamageToEnemy(
+              enemy,
+              { kind: 'spell', types: ['fire'], multiplier: 0, flat: [0, 0] },
+              p.stats,
+              { ...source, deliveryTag: 'explosion', grantedBy: 'frostfire' },
+              { rawOverride: boom, noCrit: true },
+            );
+            if (!enemy.alive) continue;
+          }
           applyEffect(enemy.status, eff, source, enemy.elite ? 'elite' : 'normal');
         }
       }
@@ -1402,6 +1504,37 @@ export class Sim {
       });
       const byPlayer =
         source.actor.kind === 'player' ? source.actor.index : source.actor.kind === 'pet' ? source.actor.owner : -1;
+      const killer = this.state.players[byPlayer];
+      // Overflow: the wasted part of the killing blow finds a new home
+      if (overkill > 0 && killer && this.hasMod(killer, 'overflow') && source.itemId !== 'overflow') {
+        const next = this.nearestEnemy(enemy.x, enemy.y, 4);
+        if (next) {
+          this.applyDamageToEnemy(
+            next,
+            { kind: attack.kind, types: attack.types, multiplier: 0, flat: [0, 0] },
+            killer.stats,
+            { ...source, itemId: 'overflow', grantedBy: source.itemId, deliveryTag: 'explosion' },
+            { rawOverride: overkill, noCrit: true },
+          );
+        }
+      }
+      // Cinder: dying while burning shares the warmth with the neighborhood
+      if (enemy.status.burnPool > 0 && killer && this.hasMod(killer, 'cinder')) {
+        const boom = enemy.status.burnPool * 0.6;
+        enemy.status.burnPool = 0;
+        const hitId = this.tracker.newHitId();
+        for (const other of this.state.enemies) {
+          if (!other.alive || other === enemy) continue;
+          if (Math.hypot(other.x - enemy.x, other.y - enemy.y) > 2.5) continue;
+          this.applyDamageToEnemy(
+            other,
+            { kind: 'spell', types: ['fire'], multiplier: 0, flat: [0, 0] },
+            killer.stats,
+            { actor: { kind: 'player', index: killer.index }, itemId: 'cinder', grantedBy: source.itemId, deliveryTag: 'explosion', hitId },
+            { rawOverride: boom, noCrit: true },
+          );
+        }
+      }
       this.onEnemyKilled(enemy, def, byPlayer);
     }
     return hit.amount;
@@ -2068,6 +2201,24 @@ export class Sim {
     const bal = this.registry.balance;
     for (const pr of this.state.projectiles) {
       if (!pr.active) continue;
+      // Homing Instinct: player shots curve gently toward the nearest enemy
+      if (pr.fromPlayer >= 0) {
+        const owner = this.state.players[pr.fromPlayer];
+        if (owner && this.hasMod(owner, 'homing')) {
+          const targetE = this.nearestEnemy(pr.x, pr.y, 6);
+          if (targetE) {
+            const speed = Math.hypot(pr.vx, pr.vy) || 1;
+            const want = Math.atan2(targetE.y - pr.y, targetE.x - pr.x);
+            const cur = Math.atan2(pr.vy, pr.vx);
+            let diff = want - cur;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            const turn = Math.max(-3 * dt, Math.min(3 * dt, diff)); // rad/s cap
+            pr.vx = Math.cos(cur + turn) * speed;
+            pr.vy = Math.sin(cur + turn) * speed;
+          }
+        }
+      }
       const step = Math.hypot(pr.vx, pr.vy) * dt;
       pr.x += pr.vx * dt;
       pr.y += pr.vy * dt;
@@ -2287,7 +2438,8 @@ export class Sim {
           this.collectGold(p, pk.amount, null);
         } else if (pk.kind === 'heart') {
           // Hearts keep pace with deep-run health pools: flat early, % later
-          const scaled = Math.max(pk.amount, stat(p.stats, 'maxHp') * 0.15);
+          let scaled = Math.max(pk.amount, stat(p.stats, 'maxHp') * 0.15);
+          if (this.hasMod(p, 'secondCourse')) scaled *= 1.25;
           this.healPlayer(p, scaled, 'heart');
         } else if (pk.kind === 'xp') {
           // Equal-share XP, normalized by party size (co-op levels stay ~flat vs solo)
@@ -2328,6 +2480,7 @@ export class Sim {
       p.xpIntoLevel -= threshold;
       p.level++;
       p.pendingBoons++;
+      if (p.level % 3 === 0) p.pendingFeats++; // feats arrive every 3rd level
       // Class-granted item choices at scripted levels (bypass account locks)
       const cls = this.classDef(p.classId);
       for (const lu of cls.levelUpItems) {

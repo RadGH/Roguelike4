@@ -49,6 +49,7 @@ const NAV: [string, string][] = [
   ['weapons.html', 'Weapons'],
   ['passives.html', 'Passive Items'],
   ['boons.html', 'Boons'],
+  ['feats.html', 'Feats'],
   ['pets.html', 'Companions'],
   ['enemies.html', 'Bestiary'],
   ['deeds.html', 'Deeds'],
@@ -260,6 +261,20 @@ build wants — a dead build deals no damage.</p>
   return page('boons.html', 'Boons', body);
 }
 
+// ---------- Feats ----------
+
+function featsPage(): string {
+  let body = `<h1>Feats</h1>
+<p>Every third level, the run offers a feat — a keepsake with a real mechanic, kept for the
+whole run. Choose one of four. Most are available from your first run; a few must be earned.</p>`;
+  for (const f of reg.feats.values()) {
+    const locked = !!f.unlockDeed;
+    const card = `<div class="card"><h3>${esc(f.name)}</h3><p>${esc(f.desc)}</p></div>`;
+    body += locked ? spoiler(`${f.name} — earned, not given`, card) : card;
+  }
+  return page('feats.html', 'Feats', body);
+}
+
 // ---------- Pets ----------
 
 function petsPage(): string {
@@ -354,7 +369,7 @@ ${unlocks ? spoiler('What it unlocks', `<p>${esc(unlocks)}</p>`) : ''}
 // ---------- Manual index ----------
 
 function indexPage(): string {
-  const counts = `${reg.classes.size} classes · ${reg.weapons.size} weapons · ${reg.passives.size} passive items · ${reg.boons.size} boons · ${reg.enemies.size} creatures · ${reg.deeds.size} deeds`;
+  const counts = `${reg.classes.size} classes · ${reg.weapons.size} weapons · ${reg.passives.size} passive items · ${reg.boons.size} boons · ${reg.feats.size} feats · ${reg.enemies.size} creatures · ${reg.deeds.size} deeds`;
   const body = `<h1>${esc(branding.title)} — Manual</h1>
 <p class="blurb">${esc(branding.tagline)}</p>
 <p>This manual is generated straight from the game's data files, so every number here is the
@@ -479,6 +494,7 @@ writeFileSync(join(OUT_MANUAL, 'classes.html'), classesPage());
 writeFileSync(join(OUT_MANUAL, 'weapons.html'), weaponsPage());
 writeFileSync(join(OUT_MANUAL, 'passives.html'), passivesPage());
 writeFileSync(join(OUT_MANUAL, 'boons.html'), boonsPage());
+writeFileSync(join(OUT_MANUAL, 'feats.html'), featsPage());
 writeFileSync(join(OUT_MANUAL, 'pets.html'), petsPage());
 writeFileSync(join(OUT_MANUAL, 'enemies.html'), enemiesPage());
 writeFileSync(join(OUT_MANUAL, 'deeds.html'), deedsPage());

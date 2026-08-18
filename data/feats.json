@@ -1,0 +1,205 @@
+[
+  {
+    "id": "glass-cannon",
+    "category": "feat",
+    "name": "Glass Cannon",
+    "desc": "+30% damage of every kind, -25% max HP. Shine brighter, briefly.",
+    "grants": [
+      {
+        "stat": "meleeDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "rangedDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "fireDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "iceDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "lightningDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "poisonDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "arcaneDamage",
+        "pct": 0.3
+      },
+      {
+        "stat": "maxHp",
+        "pct": -0.25
+      }
+    ]
+  },
+  {
+    "id": "point-blank",
+    "category": "feat",
+    "name": "Point Blank",
+    "desc": "+40% ranged damage against enemies within arm's reach of regret.",
+    "mods": [
+      "pointBlank"
+    ]
+  },
+  {
+    "id": "cinder",
+    "category": "feat",
+    "name": "Cinder",
+    "desc": "Enemies that die while burning explode, sharing the warmth.",
+    "mods": [
+      "cinder"
+    ],
+    "unlockDeed": "burn-kills-25"
+  },
+  {
+    "id": "frostfire",
+    "category": "feat",
+    "name": "Frostfire",
+    "desc": "Freezing a burning enemy detonates all remaining burn at double strength.",
+    "mods": [
+      "frostfire"
+    ]
+  },
+  {
+    "id": "homing-instinct",
+    "category": "feat",
+    "name": "Homing Instinct",
+    "desc": "Your projectiles curve gently toward enemies. They mean well.",
+    "mods": [
+      "homing"
+    ]
+  },
+  {
+    "id": "overflow",
+    "category": "feat",
+    "name": "Overflow",
+    "desc": "Overkill damage on a kill splashes to the nearest enemy. Waste not.",
+    "mods": [
+      "overflow"
+    ]
+  },
+  {
+    "id": "conductor",
+    "category": "feat",
+    "name": "Conductor",
+    "desc": "Your chains and bounces jump one extra time. Encore!",
+    "mods": [
+      "conductor"
+    ]
+  },
+  {
+    "id": "grave-dividend",
+    "category": "feat",
+    "name": "Grave Dividend",
+    "desc": "Your zombies drop 1 gold when they expire. Politely.",
+    "mods": [
+      "graveDividend"
+    ]
+  },
+  {
+    "id": "bee-yourself",
+    "category": "feat",
+    "name": "Bee Yourself",
+    "desc": "Gain a tiny bee. It's not much. It believes in you.",
+    "mods": [
+      "beeFriend"
+    ]
+  },
+  {
+    "id": "second-course",
+    "category": "feat",
+    "name": "Second Course",
+    "desc": "Hearts and snacks heal 25% more. Always room for seconds.",
+    "mods": [
+      "secondCourse"
+    ]
+  },
+  {
+    "id": "static-charge",
+    "category": "feat",
+    "name": "Static Charge",
+    "desc": "Stand still for a second and your next hit stuns. Patience crackles.",
+    "mods": [
+      "staticCharge"
+    ]
+  },
+  {
+    "id": "thick-wax",
+    "category": "feat",
+    "name": "Thick Wax",
+    "desc": "+15% max HP and +1 armor. Sturdy is a lifestyle.",
+    "grants": [
+      {
+        "stat": "maxHp",
+        "pct": 0.15
+      },
+      {
+        "stat": "armor",
+        "flat": 1
+      }
+    ]
+  },
+  {
+    "id": "fleet-wick",
+    "category": "feat",
+    "name": "Fleet Wick",
+    "desc": "+8% move speed and +4% dodge. Somewhere to be, apparently.",
+    "grants": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.08
+      },
+      {
+        "stat": "dodge",
+        "flat": 0.04
+      }
+    ]
+  },
+  {
+    "id": "night-scholar",
+    "category": "feat",
+    "name": "Night Scholar",
+    "desc": "+20% experience. The midnight oil burns you.",
+    "grants": [
+      {
+        "stat": "xpGain",
+        "pct": 0.2
+      }
+    ]
+  },
+  {
+    "id": "magpie-eye",
+    "category": "feat",
+    "name": "Magpie Eye",
+    "desc": "+20% gold and +25% pickup radius. Shiny things know your name.",
+    "grants": [
+      {
+        "stat": "goldGain",
+        "pct": 0.2
+      },
+      {
+        "stat": "pickupRadius",
+        "pct": 0.25
+      }
+    ]
+  },
+  {
+    "id": "steady-flame",
+    "category": "feat",
+    "name": "Steady Flame",
+    "desc": "+1 HP regeneration per second. Slow and stubborn wins.",
+    "grants": [
+      {
+        "stat": "hpRegen",
+        "flat": 1
+      }
+    ]
+  }
+]

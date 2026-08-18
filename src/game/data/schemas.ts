@@ -72,6 +72,31 @@ export const TriggerSchema = z
   })
   .strict();
 
+// Non-event behavior switches the engine implements by name (shared by passives + feats)
+const ModEnum = z.enum([
+  'projectileSplit',
+  'projectileBounce',
+  'boonChoices5',
+  // Evil items: opt-in difficulty, party-wide, stack per copy
+  'evilCandle',
+  'evilHeart',
+  'evilEye',
+  'evilBellows',
+  'evilDrum',
+  'evilFist',
+  // Feat mechanics
+  'pointBlank', // +40% ranged damage within 3m
+  'cinder', // enemies dying while burning explode (fire AoE)
+  'frostfire', // freezing a burning enemy detonates remaining burn ×2
+  'homing', // projectiles curve gently toward enemies
+  'overflow', // overkill damage splashes to the nearest enemy
+  'conductor', // chains and bounces jump one extra time
+  'graveDividend', // expiring zombies drop 1 gold
+  'beeFriend', // a tiny bee companion (granted on acquire)
+  'secondCourse', // hearts and snacks heal 25% more
+  'staticCharge', // standing still 1s: next hit stuns
+]);
+
 export const PassiveSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
@@ -80,24 +105,24 @@ export const PassiveSchema = z
     tags: z.array(z.string()).default([]),
     grants: z.array(GrantSchema).default([]),
     triggers: z.array(TriggerSchema).default([]),
-    // Non-event behavior switches the engine implements by name
-    mods: z
-      .array(
-        z.enum([
-          'projectileSplit',
-          'projectileBounce',
-          'boonChoices5',
-          // Evil items: opt-in difficulty, party-wide, stack per copy
-          'evilCandle',
-          'evilHeart',
-          'evilEye',
-          'evilBellows',
-          'evilDrum',
-          'evilFist',
-        ]),
-      )
-      .default([]),
+    mods: z.array(ModEnum).default([]),
     rarity: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']).default('common'),
+    unlockDeed: z.string().optional(),
+  })
+  .strict();
+
+// Feats ARE items (design 06): passive-shaped, but live in a dedicated inventory,
+// picked 1-of-4 every 3rd level, never dropped or salvaged.
+export const FeatSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    category: z.literal('feat'),
+    name: z.string(),
+    desc: z.string(),
+    tags: z.array(z.string()).default([]),
+    grants: z.array(GrantSchema).default([]),
+    triggers: z.array(TriggerSchema).default([]),
+    mods: z.array(ModEnum).default([]),
     unlockDeed: z.string().optional(),
   })
   .strict();
@@ -408,6 +433,7 @@ export type BoonDef = z.infer<typeof BoonSchema>;
 export type DeedDef = z.infer<typeof DeedSchema>;
 export type ClassDef = z.infer<typeof ClassSchema>;
 export type PassiveDef = z.infer<typeof PassiveSchema>;
+export type FeatDef = z.infer<typeof FeatSchema>;
 export type TriggerDef = z.infer<typeof TriggerSchema>;
 export type PetDef = z.infer<typeof PetSchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;

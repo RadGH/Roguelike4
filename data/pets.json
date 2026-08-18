@@ -55,5 +55,24 @@
     "lifetime": 0,
     "maxPerOwner": 1,
     "leash": 9
+  },
+  {
+    "id": "bee",
+    "name": "Tiny Bee",
+    "radius": 0.2,
+    "moveSpeed": 6.0,
+    "attackCooldown": 0.7,
+    "multiplier": 0.25,
+    "flat": [
+      1,
+      1
+    ],
+    "types": [
+      "pet",
+      "melee"
+    ],
+    "lifetime": 0,
+    "maxPerOwner": 1,
+    "leash": 7
   }
 ]

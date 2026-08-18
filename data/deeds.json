@@ -32,6 +32,10 @@
       {
         "type": "weapon",
         "id": "flame-lash"
+      },
+      {
+        "type": "feat",
+        "id": "cinder"
       }
     ],
     "glimmerBonus": 2

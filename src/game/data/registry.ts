@@ -17,6 +17,7 @@ import deedsJson from '@data/deeds.json';
 import classesJson from '@data/classes.json';
 import passivesJson from '@data/items/passives.json';
 import petsJson from '@data/pets.json';
+import featsJson from '@data/feats.json';
 import {
   ActWavesSchema,
   BalanceSchema,
@@ -24,6 +25,7 @@ import {
   ClassSchema,
   DeedSchema,
   EnemySchema,
+  FeatSchema,
   PassiveSchema,
   PetSchema,
   WeaponSchema,
@@ -33,6 +35,7 @@ import {
   type ClassDef,
   type DeedDef,
   type EnemyDef,
+  type FeatDef,
   type PassiveDef,
   type PetDef,
   type WaveDef,
@@ -74,6 +77,7 @@ export type Registry = {
   classes: Map<string, ClassDef>;
   passives: Map<string, PassiveDef>;
   pets: Map<string, PetDef>;
+  feats: Map<string, FeatDef>;
 };
 
 let cached: Registry | null = null;
@@ -99,6 +103,7 @@ export function loadRegistry(): Registry {
     classes: parseList(ClassSchema, classesJson as unknown[], 'classes'),
     passives: parseList(PassiveSchema, passivesJson as unknown[], 'passives'),
     pets: parseList(PetSchema, petsJson as unknown[], 'pets'),
+    feats: parseList(FeatSchema, featsJson as unknown[], 'feats'),
   };
   for (const [id, c] of reg.classes) {
     for (const petId of c.startingPets) {
@@ -108,6 +113,10 @@ export function loadRegistry(): Registry {
   for (const [id, p] of reg.passives) {
     if (p.unlockDeed && !reg.deeds.has(p.unlockDeed))
       throw new Error(`passive "${id}": unknown unlockDeed "${p.unlockDeed}"`);
+  }
+  for (const [id, f] of reg.feats) {
+    if (f.unlockDeed && !reg.deeds.has(f.unlockDeed))
+      throw new Error(`feat "${id}": unknown unlockDeed "${f.unlockDeed}"`);
     if (reg.weapons.has(id)) throw new Error(`item id collision: "${id}" is both weapon and passive`);
   }
   // Class cross-checks: starting weapons, level-up options, unlock deeds, and the

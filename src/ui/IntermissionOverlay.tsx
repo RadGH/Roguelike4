@@ -41,6 +41,8 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
         // engine guards affordability — indices must mirror the rendered buttons
         out.push(() => engine.rerollChest(pi));
       }
+    } else if (panel.featChoices) {
+      for (const c of panel.featChoices) out.push(() => engine.chooseFeat(pi, c.id));
     } else if (panel.boonChoices) {
       for (const c of panel.boonChoices) out.push(() => engine.chooseBoon(pi, c.id));
     } else if (panel.done && panel.peddler) {
@@ -224,6 +226,25 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
             </div>
           </>
         )
+      ) : panel.featChoices ? (
+        <>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+            ⭐ Choose a feat — a keepsake for the whole run
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {panel.featChoices.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => engine.chooseFeat(pi, c.id)}
+                data-feat={`${pi}-${c.id}`}
+                style={{ ...cardBtn, border: '2px solid #ffb0c8', ...focusStyle(i) }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
+                <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>{c.desc}</div>
+              </button>
+            ))}
+          </div>
+        </>
       ) : panel.boonChoices ? (
         <>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>

@@ -295,6 +295,15 @@ export function resolveRewards(sim: Sim): void {
       }
     }
     guard = 0;
+    while (p.pendingFeats > 0 && guard++ < 20) {
+      const feats = sim.rollFeatChoices(p.index, 4);
+      if (feats.length === 0) {
+        p.pendingFeats = 0;
+        break;
+      }
+      sim.applyFeat(p.index, feats[0]!);
+    }
+    guard = 0;
     while (p.pendingBoons > 0 && guard++ < 50) {
       const choices = sim.rollBoonChoices(4);
       // Humans buy survivability as the waves deepen: keep maxHp ≈ 10 + 2.2×wave,
@@ -323,6 +332,7 @@ export function runHeadless(opts: HeadlessOptions): HeadlessResult {
   if (opts.allUnlocked) {
     for (const id of sim.registry.weapons.keys()) sim.unlockedItems.add(id);
     for (const id of sim.registry.passives.keys()) sim.unlockedItems.add(id);
+    for (const id of sim.registry.feats.keys()) sim.unlockedFeats.add(id);
   }
   if (opts.act && opts.act > 1) sim.setStartingAct(opts.act);
   const firstWave = sim.firstWaveOfCurrentAct();

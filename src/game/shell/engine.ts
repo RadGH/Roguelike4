@@ -43,6 +43,7 @@ export class Engine {
     this.profileStorage = storage;
     this.profile = loadProfile(storage, opts.slot ?? 1);
     this.sim.unlockedItems = new Set(this.profile.unlockedItems);
+    this.sim.unlockedFeats = new Set(this.profile.unlockedFeats);
     const bonuses = townBonuses(this.profile);
     this.sim.setTownBonuses(bonuses.grants, bonuses.startBits);
     this.deedEngine = new DeedEngine(
@@ -144,6 +145,7 @@ export class Engine {
 
   private intermissionActive = false;
   private boonChoices = new Map<number, string[]>();
+  private featChoices = new Map<number, string[]>();
   private chestChoices = new Map<number, ChestOffer[]>();
   private pendingEquip = new Map<number, WeaponInstance>();
   private classEquipPending = new Set<number>();
@@ -202,11 +204,17 @@ export class Engine {
     } else {
       this.chestChoices.delete(playerIndex);
       if (!this.classEquipPending.has(playerIndex)) this.pendingEquip.delete(playerIndex);
-      if (p.pendingBoons > 0) {
+      if (p.pendingFeats > 0) {
+        if (!this.featChoices.has(playerIndex)) {
+          this.featChoices.set(playerIndex, this.sim.rollFeatChoices(playerIndex, 4));
+        }
+      } else if (p.pendingBoons > 0) {
+        this.featChoices.delete(playerIndex);
         if (!this.boonChoices.has(playerIndex)) {
           this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex)));
         }
       } else {
+        this.featChoices.delete(playerIndex);
         this.boonChoices.delete(playerIndex);
       }
     }
@@ -246,6 +254,7 @@ export class Engine {
   private clearIntermission(): void {
     this.intermissionActive = false;
     this.boonChoices.clear();
+    this.featChoices.clear();
     this.chestChoices.clear();
     this.pendingEquip.clear();
     this.classEquipPending.clear();
@@ -358,6 +367,13 @@ export class Engine {
     this.refreshIntermissionOffers(playerIndex);
   }
 
+  chooseFeat(playerIndex: number, featId: string): void {
+    if (!this.intermissionActive || !this.featChoices.get(playerIndex)?.includes(featId)) return;
+    this.sim.applyFeat(playerIndex, featId);
+    this.featChoices.delete(playerIndex);
+    this.refreshIntermissionOffers(playerIndex);
+  }
+
   chooseBoon(playerIndex: number, boonId: string): void {
     if (!this.intermissionActive || !this.boonChoices.get(playerIndex)?.includes(boonId)) return;
     this.sim.applyBoon(playerIndex, boonId);
@@ -375,7 +391,11 @@ export class Engine {
       lastWaveOfAct: !this.sim.hasNextWave(),
       gold: shared.gold, // mirrored — same for everyone
       allDone: this.sim.state.players.every(
-        (p) => p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
+        (p) =>
+          p.pendingBoons === 0 &&
+          p.pendingChests === 0 &&
+          p.pendingFeats === 0 &&
+          p.pendingClassItems.length === 0,
       ),
       panels: this.sim.state.players.map((p) => {
         const chest = this.chestChoices.get(p.index);
@@ -401,7 +421,11 @@ export class Engine {
           damageTaken: Math.round(this.sim.tracker.damageTakenByPlayer.get(p.index) ?? 0),
           pendingBoons: p.pendingBoons,
           pendingChests: p.pendingChests,
-          done: p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
+          done:
+            p.pendingBoons === 0 &&
+            p.pendingChests === 0 &&
+            p.pendingFeats === 0 &&
+            p.pendingClassItems.length === 0,
           chest: chest
             ? {
                 choices: chest.map((offer, idx) =>
@@ -424,6 +448,11 @@ export class Engine {
               affordable: next ? p.bits >= TINKER_COST[w.quality] : false,
             };
           }),
+          featChoices:
+            this.featChoices.get(p.index)?.map((id) => {
+              const f = this.sim.registry.feats.get(id)!;
+              return { id, name: f.name, desc: f.desc };
+            }) ?? null,
           boonChoices:
             boons?.map((id) => {
               const b = this.sim.registry.boons.get(id)!;
@@ -450,7 +479,11 @@ export class Engine {
   continueToNextWave(): void {
     if (!this.intermissionActive) return;
     const allDone = this.sim.state.players.every(
-      (p) => p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
+      (p) =>
+        p.pendingBoons === 0 &&
+        p.pendingChests === 0 &&
+        p.pendingFeats === 0 &&
+        p.pendingClassItems.length === 0,
     );
     if (!allDone) return; // resolve every player's rewards first
     this.clearIntermission();
@@ -572,7 +605,9 @@ export class Engine {
             this.pushToast(`✨ New class unlocked: ${u.id}!`);
           } else if (u.type === 'feat' && !this.profile.unlockedFeats.includes(u.id)) {
             this.profile.unlockedFeats.push(u.id);
-            this.pushToast(`✨ New feat unlocked: ${u.id}!`);
+            this.sim.unlockedFeats.add(u.id);
+            const featName = this.sim.registry.feats.get(u.id)?.name ?? u.id;
+            this.pushToast(`⭐ New feat unlocked: ${featName}!`);
           }
         }
       }
