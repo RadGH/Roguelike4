@@ -12,14 +12,22 @@ function argOf(name: string, fallback: string): string {
 
 const runs = Number(argOf('runs', '30'));
 const only = argOf('class', '');
-const untilWave = Number(argOf('waves', '10'));
+const wavesArg = argOf('waves', '');
 const policy = argOf('policy', 'kite') as 'kite' | 'brawl';
 const seedBase = Number(argOf('seed', '1000'));
+const players = Number(argOf('players', '1'));
+const act = Number(argOf('act', '1'));
+const campaign = args.includes('--campaign');
+// --waves is absolute; without it the runner sweeps the chosen act's 10 waves
+// (or all 40 with --campaign)
+const untilWave = wavesArg ? Number(wavesArg) : undefined;
 
 const reg = loadRegistry();
 const classIds = only ? [only] : [...reg.classes.keys()];
 
-console.log(`Sweep: ${runs} runs/class · waves 1-${untilWave} · policy=${policy} · seedBase=${seedBase}\n`);
+console.log(
+  `Sweep: ${runs} runs/class · act ${act} · ${players}p · waves ${untilWave ?? 'act'} · policy=${policy} · seedBase=${seedBase}\n`,
+);
 console.log(
   'class'.padEnd(14) +
     'clear%'.padStart(8) +
@@ -31,11 +39,12 @@ console.log(
 );
 
 const GUARDRAIL = 0.6; // post-calibration target (human-representative pilots)
-const V0_WAVE_TARGET = 6.5; // v0 bot pilots: depth benchmark until human calibration
+// v0 bot pilots: depth benchmark until human calibration (relative to the act's first wave)
+const V0_WAVE_TARGET = (act - 1) * 10 + 6.5;
 let failures = 0;
 let v0failures = 0;
 for (const classId of classIds) {
-  const r = runBatch(classId, runs, seedBase, { untilWave, policy });
+  const r = runBatch(classId, runs, seedBase, { untilWave, policy, players, act, campaign });
   const flag = r.clearRate < GUARDRAIL ? '  ⚠️' : '';
   console.log(
     classId.padEnd(14) +

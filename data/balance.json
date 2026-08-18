@@ -48,8 +48,8 @@
     "reviveRange": 1.8
   },
   "waves": {
-    "hpGrowthPerWave": 0.1,
-    "dmgGrowthPerWave": 0.08,
+    "hpGrowthPerWave": 0.07,
+    "dmgGrowthPerWave": 0.05,
     "elite": {
       "hpMult": 1.5,
       "dmgMult": 1.25,

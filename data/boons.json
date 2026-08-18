@@ -2,11 +2,15 @@
   {
     "id": "tough-wick",
     "name": "Tough Wick",
-    "desc": "+3 max HP",
+    "desc": "+3 max HP and +6% max HP",
     "grants": [
       {
         "stat": "maxHp",
         "flat": 3
+      },
+      {
+        "stat": "maxHp",
+        "pct": 0.06
       }
     ],
     "weight": 1
@@ -14,11 +18,12 @@
   {
     "id": "sharp-edges",
     "name": "Sharp Edges",
-    "desc": "+2 melee damage",
+    "desc": "+2 melee damage (+12% each)",
     "grants": [
       {
         "stat": "meleeDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ],
     "weight": 1
@@ -26,11 +31,12 @@
   {
     "id": "steady-hands",
     "name": "Steady Hands",
-    "desc": "+2 ranged damage",
+    "desc": "+2 ranged damage (+12% each)",
     "grants": [
       {
         "stat": "rangedDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ],
     "weight": 1
@@ -38,27 +44,32 @@
   {
     "id": "bright-spark",
     "name": "Bright Spark",
-    "desc": "+1 magic damage (all schools)",
+    "desc": "+1 magic damage (all schools) (+12% each)",
     "grants": [
       {
         "stat": "fireDamage",
-        "flat": 1
+        "flat": 1,
+        "pct": 0.12
       },
       {
         "stat": "lightningDamage",
-        "flat": 1
+        "flat": 1,
+        "pct": 0.12
       },
       {
         "stat": "iceDamage",
-        "flat": 1
+        "flat": 1,
+        "pct": 0.12
       },
       {
         "stat": "poisonDamage",
-        "flat": 1
+        "flat": 1,
+        "pct": 0.12
       },
       {
         "stat": "arcaneDamage",
-        "flat": 1
+        "flat": 1,
+        "pct": 0.12
       }
     ],
     "weight": 1
@@ -186,66 +197,72 @@
   {
     "id": "ember-affinity",
     "name": "Ember Affinity",
-    "desc": "+2 fire damage",
+    "desc": "+2 fire damage (+12% each)",
     "grants": [
       {
         "stat": "fireDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ]
   },
   {
     "id": "static-affinity",
     "name": "Static Affinity",
-    "desc": "+2 lightning damage",
+    "desc": "+2 lightning damage (+12% each)",
     "grants": [
       {
         "stat": "lightningDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ]
   },
   {
     "id": "frost-affinity",
     "name": "Frost Affinity",
-    "desc": "+2 ice damage",
+    "desc": "+2 ice damage (+12% each)",
     "grants": [
       {
         "stat": "iceDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ]
   },
   {
     "id": "venom-affinity",
     "name": "Venom Affinity",
-    "desc": "+2 poison damage",
+    "desc": "+2 poison damage (+12% each)",
     "grants": [
       {
         "stat": "poisonDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ]
   },
   {
     "id": "arcane-affinity",
     "name": "Arcane Affinity",
-    "desc": "+2 arcane damage",
+    "desc": "+2 arcane damage (+12% each)",
     "grants": [
       {
         "stat": "arcaneDamage",
-        "flat": 2
+        "flat": 2,
+        "pct": 0.12
       }
     ]
   },
   {
     "id": "beast-bond",
     "name": "Beast Bond",
-    "desc": "+3 pet damage",
+    "desc": "+3 pet damage (+12% each)",
     "grants": [
       {
         "stat": "petDamage",
-        "flat": 3
+        "flat": 3,
+        "pct": 0.12
       }
     ]
   },

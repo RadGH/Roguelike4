@@ -20,6 +20,8 @@ export type HeadlessOptions = {
   policy?: BotPolicy;
   /** stop after clearing this wave (defaults to the act's last wave) */
   untilWave?: number;
+  /** cross act boundaries and play through wave 40 (the full campaign) */
+  campaign?: boolean;
   /** unlock everything so chest pools are rich (guardrails assume mid-progress saves) */
   allUnlocked?: boolean;
   /** safety valve: a wave taking longer than this many seconds counts as a stall */
@@ -228,7 +230,7 @@ function roughDps(sim: Sim, inst: WeaponInstance): number {
   return (avg * count) / Math.max(0.1, w.delivery.cooldown);
 }
 
-function resolveRewards(sim: Sim): void {
+export function resolveRewards(sim: Sim): void {
   for (const p of sim.state.players) {
     let guard = 0;
     while (p.pendingClassItems.length > 0 && guard++ < 20) {
@@ -295,9 +297,9 @@ function resolveRewards(sim: Sim): void {
     guard = 0;
     while (p.pendingBoons > 0 && guard++ < 50) {
       const choices = sim.rollBoonChoices(4);
-      // Humans buy survivability as the waves deepen: keep maxHp ≈ 10 + 1.5×wave,
+      // Humans buy survivability as the waves deepen: keep maxHp ≈ 10 + 2.2×wave,
       // then push damage. Defense (armor/regen/dodge) counts toward "survival".
-      const wantSurvival = (stat(p.stats, 'maxHp') || 10) < 10 + sim.state.wave * 1.5;
+      const wantSurvival = (stat(p.stats, 'maxHp') || 10) < 10 + sim.state.wave * 2.2;
       const survivalPick = choices.find((id) => {
         const b = sim.registry.boons.get(id)!;
         return b.grants.some((g) =>
@@ -324,9 +326,11 @@ export function runHeadless(opts: HeadlessOptions): HeadlessResult {
   }
   if (opts.act && opts.act > 1) sim.setStartingAct(opts.act);
   const firstWave = sim.firstWaveOfCurrentAct();
-  const untilWave = opts.untilWave ?? firstWave + 9;
+  const untilWave = opts.untilWave ?? (opts.campaign ? 40 : firstWave + 9);
   const waveLimitTicks = (opts.waveTimeLimit ?? 150) * TICK_RATE;
 
+  // Spend act catch-up packages (boons/chests/class items) before the first bell
+  resolveRewards(sim);
   sim.startWaveNumber(firstWave);
   let ticks = 0;
   let stalled = false;
@@ -349,7 +353,8 @@ export function runHeadless(opts: HeadlessOptions): HeadlessResult {
       resolveRewards(sim);
       waveTicks = 0;
       if (sim.state.wave >= untilWave) break; // victory condition reached
-      sim.startWaveNumber(sim.state.wave + 1);
+      if (opts.campaign && !sim.hasNextWave()) sim.advanceAct();
+      else sim.startWaveNumber(sim.state.wave + 1);
     }
     if (waveTicks > waveLimitTicks) {
       stalled = true;

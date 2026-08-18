@@ -649,12 +649,17 @@ export class Sim {
     if (!this.registry.waves.has(act)) throw new Error(`No act ${act}`);
     this.state.act = act;
     if (act > 1) {
-      const level = 1 + (act - 1) * 4;
+      // Catch-up mirrors what a continuing run would have banked: a player who
+      // cleared act N arrives around level 8N with a full boon spread and loot
+      const level = 1 + (act - 1) * 8;
+      // Quality odds and boon math key off the wave counter — point it at the
+      // act door so catch-up chests roll act-appropriate gear, not rusty scraps
+      this.state.wave = minWave(this.registry, act) - 1;
       for (const p of this.state.players) {
         p.level = level;
-        p.pendingBoons = Math.min(8, level - 1);
-        p.gold += 50 * (act - 1);
-        p.pendingChests += act - 1; // a chest per skipped act keeps loadouts on-curve
+        p.pendingBoons = level - 1;
+        p.gold += 75 * (act - 1);
+        p.pendingChests += 2 * (act - 1); // chests per skipped act keep loadouts on-curve
       }
     }
   }
@@ -2243,7 +2248,9 @@ export class Sim {
           // Mirrored gold: every non-retired player receives it (snuffed included)
           this.collectGold(p, pk.amount, null);
         } else if (pk.kind === 'heart') {
-          this.healPlayer(p, pk.amount, 'heart');
+          // Hearts keep pace with deep-run health pools: flat early, % later
+          const scaled = Math.max(pk.amount, stat(p.stats, 'maxHp') * 0.15);
+          this.healPlayer(p, scaled, 'heart');
         } else if (pk.kind === 'xp') {
           // Equal-share XP, normalized by party size (co-op levels stay ~flat vs solo)
           const share = Math.max(1, Math.round(pk.amount / this.state.players.length));
