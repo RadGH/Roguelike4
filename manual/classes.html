@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classes — Roguelike 4 Manual</title>
+<link rel="stylesheet" href="manual.css">
+<link rel="icon" href="../favicon.svg">
+</head>
+<body>
+<header>
+  <div class="brand"><a href="../">Roguelike 4</a> <span class="tag">Keep the little lights burning.</span></div>
+  <nav><a href="index.html">Overview</a><a href="classes.html" class="active">Classes</a><a href="weapons.html">Weapons</a><a href="passives.html">Passive Items</a><a href="boons.html">Boons</a><a href="feats.html">Feats</a><a href="pets.html">Companions</a><a href="enemies.html">Bestiary</a><a href="deeds.html">Deeds</a></nav>
+</header>
+<main>
+<h1>Classes</h1>
+<p>Every class carries a different number of weapon slots and a different bad idea. Every
+weapon takes exactly one slot. Some classes refuse whole categories of gear — that refusal
+is usually where their power hides.</p><div class="card">
+<h3>Hero</h3>
+<p class="blurb">The everyperson with a bedroll and big dreams. No tricks, no limits.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Shortsword, Sling</p>
+
+
+<p class="statline"><b>Signature:</b> None</p>
+
+</div><div class="card">
+<h3>Fighter</h3>
+<p class="blurb">Proud wall of muscle. Four hands' worth of weaponry, zero spellbooks.</p>
+<p class="statline"><b>Slots:</b> 4 · <b>Starts with:</b> Shortsword, Hatchet</p>
+<p class="statline"><b>Talents:</b> +4 Max Hp · +2 Melee Damage</p>
+<p class="statline"><span class="pill">no spell</span></p>
+<p class="statline"><b>Signature:</b> Ironhide — shrugs off a portion of every physical hit.</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Deal 1,000 total melee damage</p></details>
+</div><div class="card">
+<h3>Rogue</h3>
+<p class="blurb">Grinning, pockets full of knives. Dashing through enemies sharpens the next cut.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Dagger, Dagger</p>
+<p class="statline"><b>Talents:</b> +0.1 Dodge · +0.1 Crit Chance</p>
+<p class="statline"><span class="pill">no melee2h</span><span class="pill">no shield</span></p>
+<p class="statline"><b>Signature:</b> Backspin — dashing through an enemy guarantees the next strike lands critically.</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Dash through 25 enemies</p></details>
+</div><div class="card">
+<h3>Mage</h3>
+<p class="blurb">Bookish, flammable. Chooses a signature spell at level 2.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Wand</p>
+<p class="statline"><b>Talents:</b> -2 Max Hp · +2 Fire Damage · +2 Lightning Damage · +2 Ice Damage · +2 Poison Damage · +2 Arcane Damage</p>
+<p class="statline"><span class="pill">no physical</span></p>
+<p class="statline"><b>Signature:</b> None</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Deal 500 total magic damage</p></details>
+</div><div class="card">
+<h3>Berserker</h3>
+<p class="blurb">Angry, shirtless, delighted. Hits harder the closer they are to the dark.</p>
+<p class="statline"><b>Slots:</b> 4 · <b>Starts with:</b> Hatchet, Hatchet</p>
+<p class="statline"><b>Talents:</b> +2 Melee Damage</p>
+<p class="statline"><span class="pill">no spell</span><span class="pill">no shield</span></p>
+<p class="statline"><b>Signature:</b> Redline — hits harder as health runs low.</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Clear a wave while someone is below 25% health</p></details>
+</div><div class="card">
+<h3>Vampire</h3>
+<p class="blurb">Velvet cape, sunscreen everywhere. Every wound they deal feeds them.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Dagger, Wand</p>
+<p class="statline"><b>Talents:</b> +0.16 Lifesteal</p>
+<p class="statline"><span class="pill">no ranged2h</span></p>
+<p class="statline"><b>Signature:</b> Redthirst — feeds on damage dealt, restoring health.</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Drink back 500 health through lifesteal</p></details>
+</div><div class="card">
+<h3>Hunter</h3>
+<p class="blurb">Practical, smells like wet dog. The dog is a very good dog.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Shortbow · <b>Companion:</b> Dog</p>
+<p class="statline"><b>Talents:</b> +2 Ranged Damage · +2 Pet Damage</p>
+<p class="statline"><span class="pill">no spell</span></p>
+<p class="statline"><b>Signature:</b> None</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Defeat 50 enemies with ranged damage</p></details>
+</div><div class="card">
+<h3>Necromancer</h3>
+<p class="blurb">Sweet old soul, terrible hobbies. Bone Chum starts the engine; the fallen keep it running.</p>
+<p class="statline"><b>Slots:</b> 0 · <b>Starts with:</b> None (yes, really) · <b>Companion:</b> Bone Chum</p>
+<p class="statline"><b>Talents:</b> +4 Pet Damage · +4 Max Hp</p>
+
+<p class="statline"><b>Signature:</b> Rise and Shine — the defeated may rise again to fight at their side.</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Let your companions defeat 50 enemies</p></details>
+</div><div class="card">
+<h3>Pyromancer</h3>
+<p class="blurb">Eyebrows long gone. Regrets: none, also gone.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Candlestick</p>
+<p class="statline"><b>Talents:</b> +3 Fire Damage · +2 Max Hp</p>
+<p class="statline"><span class="pill">no melee2h</span></p>
+<p class="statline"><b>Signature:</b> Kindling</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Defeat 100 enemies with burn damage</p></details>
+</div><div class="card">
+<h3>Stormcaller</h3>
+<p class="blurb">Hair permanently vertical. Opinions permanently electric.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Lightning Bolt</p>
+<p class="statline"><b>Talents:</b> +3 Lightning Damage</p>
+<p class="statline"><span class="pill">no physical</span></p>
+<p class="statline"><b>Signature:</b> Static</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Stun 100 enemies</p></details>
+</div><div class="card">
+<h3>Frostwitch</h3>
+<p class="blurb">Brings her own weather. It disagrees with everyone else's.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Frostbolt</p>
+<p class="statline"><b>Talents:</b> +3 Ice Damage</p>
+<p class="statline"><span class="pill">no physical</span></p>
+<p class="statline"><b>Signature:</b> WintryAura</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Freeze 100 enemies</p></details>
+</div><div class="card">
+<h3>Tycoon</h3>
+<p class="blurb">Top hat, monocle, a heart that counts in increments of fifteen.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Cane</p>
+<p class="statline"><b>Talents:</b> +0.15 Gold Gain · +3 Max Hp</p>
+<p class="statline"><span class="pill">no melee2h</span><span class="pill">no ranged2h</span></p>
+<p class="statline"><b>Signature:</b> GoldStandard</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Hold 5,000 gold in a single run</p></details>
+</div><div class="card">
+<h3>Jester</h3>
+<p class="blurb">Chaos with bells on. The bells are also chaotic.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Juggling Balls</p>
+<p class="statline"><b>Talents:</b> +5% Move Speed · +1 Luck</p>
+
+<p class="statline"><b>Signature:</b> WheelOfWhee</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Get snuffed out 10 times</p></details>
+</div><div class="card">
+<h3>Warlock</h3>
+<p class="blurb">Signed a very reasonable contract. The fine print has fine print.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Umbral Coil</p>
+<p class="statline"><b>Talents:</b> +2 Void Damage</p>
+<p class="statline"><span class="pill">no physical</span></p>
+<p class="statline"><b>Signature:</b> Pact</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Defeat 13 possessed chests</p></details>
+</div><div class="card">
+<h3>Oracle</h3>
+<p class="blurb">Sees next Tuesday clearly, today only dimly.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Crystal Ball</p>
+<p class="statline"><b>Talents:</b> +3 Arcane Damage</p>
+<p class="statline"><span class="pill">no physical</span></p>
+<p class="statline"><b>Signature:</b> Foresight</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div><div class="card">
+<h3>Chef</h3>
+<p class="blurb">The pan is both weapon and instrument.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Frying Pan</p>
+<p class="statline"><b>Talents:</b> +2 Max Hp</p>
+<p class="statline"><span class="pill">no spell</span></p>
+<p class="statline"><b>Signature:</b> MiseEnPlace</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div><div class="card">
+<h3>Beekeeper</h3>
+<p class="blurb">Calm in a way that unsettles the bees' enemies.</p>
+<p class="statline"><b>Slots:</b> 1 · <b>Starts with:</b> Smoker · <b>Companion:</b> Bee</p>
+<p class="statline"><b>Talents:</b> +3 Pet Damage</p>
+<p class="statline"><span class="pill">no melee2h</span><span class="pill">no ranged2h</span></p>
+<p class="statline"><b>Signature:</b> SwarmAnger</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div><div class="card">
+<h3>Alchemist</h3>
+<p class="blurb">Licensed in three counties, banned in two.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Acid Flask</p>
+<p class="statline"><b>Talents:</b> +3 Poison Damage</p>
+<p class="statline"><span class="pill">no melee2h</span><span class="pill">no ranged2h</span></p>
+<p class="statline"><b>Signature:</b> Spillage</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div><div class="card">
+<h3>Paladin</h3>
+<p class="blurb">Sworn to the Everflame. Glows faintly, blocks loudly.</p>
+<p class="statline"><b>Slots:</b> 4 · <b>Starts with:</b> Mace, Round Shield</p>
+<p class="statline"><b>Talents:</b> +2 Max Hp · +3 Armor</p>
+
+<p class="statline"><b>Signature:</b> Aegis</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Block 500 damage</p></details>
+</div><div class="card">
+<h3>Snail Knight</h3>
+<p class="blurb">A knight. Who is a snail. Any further questions answer themselves.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Mace, Round Shield</p>
+<p class="statline"><b>Talents:</b> -35% Move Speed · +10 Armor · +4 Max Hp</p>
+<p class="statline"><span class="pill">no ranged2h</span><span class="pill">no spell</span></p>
+<p class="statline"><b>Signature:</b> SnailTrail</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Take 10,000 total damage</p></details>
+</div><div class="card">
+<h3>Engineer</h3>
+<p class="blurb">Safety goggles, zero safety.</p>
+<p class="statline"><b>Slots:</b> 2 · <b>Starts with:</b> Engineer Hammer · <b>Companion:</b> Turret</p>
+<p class="statline"><b>Talents:</b> +1 Ranged Damage · +2 Pet Damage</p>
+<p class="statline"><span class="pill">no spell</span></p>
+<p class="statline"><b>Signature:</b> Tinkerer</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div><div class="card">
+<h3>Monk</h3>
+<p class="blurb">Owns one robe. Needs nothing. Especially not your weapons.</p>
+<p class="statline"><b>Slots:</b> 0 · <b>Starts with:</b> None (yes, really)</p>
+<p class="statline"><b>Talents:</b> +2 Max Hp · +10% Move Speed</p>
+
+<p class="statline"><b>Signature:</b> HundredPalms</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div><div class="card">
+<h3>Ninja</h3>
+<p class="blurb">You never saw them unlock.</p>
+<p class="statline"><b>Slots:</b> 3 · <b>Starts with:</b> Dagger, Throwing Knives</p>
+<p class="statline"><b>Talents:</b> +10% Move Speed · +0.05 Dodge · -2 Max Hp</p>
+<p class="statline"><span class="pill">no melee2h</span><span class="pill">no ranged2h</span><span class="pill">no giantShield</span></p>
+<p class="statline"><b>Signature:</b> Afterimage</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Clear a wave without taking any damage</p></details>
+</div><div class="card">
+<h3>Bard</h3>
+<p class="blurb">Armed with three chords and confidence.</p>
+<p class="statline"><b>Slots:</b> 1 · <b>Starts with:</b> Lute</p>
+<p class="statline"><b>Talents:</b> +1 Max Hp</p>
+
+<p class="statline"><b>Signature:</b> Anthem</p>
+<details class="spoiler"><summary>How to unlock</summary><p>Sold in town by a certain vendor of shortcuts.</p></details>
+</div>
+</main>
+<footer>
+  <p>Generated from the game's live data files · v0.2.0 · <a href="../guide/index.html">New? Read the Player Guide</a></p>
+</footer>
+</body>
+</html>
