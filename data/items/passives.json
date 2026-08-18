@@ -237,5 +237,17 @@
       }
     ],
     "rarity": "common"
+  },
+  {
+    "id": "prayer-beads",
+    "category": "passive",
+    "desc": "+0.6 HP regeneration per second. Mostly they just help you breathe.",
+    "grants": [
+      {
+        "stat": "hpRegen",
+        "flat": 0.6
+      }
+    ],
+    "rarity": "common"
   }
 ]

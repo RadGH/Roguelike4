@@ -80,6 +80,10 @@ export type PlayerState = {
   angerTimer: number; // beekeeper: swarm anger seconds remaining
   aegisCooldown: number; // paladin: seconds until the next block-heal
   trailTimer: number; // snail knight: seconds until the next slime drip
+  decoyCooldown: number; // ninja: seconds until the next afterimage
+  songTimer: number; // bard: seconds into the current song
+  songIdx: number; // bard: 0 damage · 1 tempo · 2 mending
+  damageTakenThisWave: number; // flawless-wave deed bookkeeping
   usedSecondWick: boolean; // once-per-run fatal save spent
   coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
   bits: number; // salvage material — spent on Tinkering quality upgrades
@@ -222,6 +226,7 @@ export type SimState = {
   projectiles: ProjectileState[];
   pickups: PickupState[];
   pools: PoolState[];
+  decoys: { x: number; y: number; ttl: number }[];
   combo: { count: number; decay: number; best: number };
   lootRotation: number; // next player index to receive a chest (round-robin)
   spawning: {
@@ -248,6 +253,7 @@ export type SimEvent =
   | { type: 'bossPhase'; instance: number; phase: number }
   | { type: 'playerRevived'; player: number; by: number }
   | { type: 'lowHpWaveClear' }
+  | { type: 'flawlessWave' }
   | { type: 'secondWick'; player: number }
   | { type: 'runOver' };
 
@@ -311,6 +317,7 @@ export class Sim {
       projectiles,
       pickups,
       pools,
+      decoys: [],
       combo: { count: 0, decay: 0, best: 0 },
       lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
@@ -360,6 +367,10 @@ export class Sim {
       angerTimer: 0,
       aegisCooldown: 0,
       trailTimer: 0,
+      decoyCooldown: 0,
+      songTimer: 0,
+      songIdx: 0,
+      damageTakenThisWave: 0,
       usedSecondWick: false,
       coinCharge: 0,
       bits: 0,
@@ -475,15 +486,15 @@ export class Sim {
         const dx = target.x - pet.x;
         const dy = target.y - pet.y;
         const dist = Math.hypot(dx, dy) || 1;
-        const touch = def.radius + edef.radius + 0.1;
-        if (dist > touch) {
+        const reach = def.attackRange ?? def.radius + edef.radius + 0.1;
+        if (dist > reach && !def.stationary) {
           moveX = dx / dist;
           moveY = dy / dist;
-        } else if (pet.attackCooldown <= 0) {
+        } else if (dist <= reach && pet.attackCooldown <= 0) {
           pet.attackCooldown = def.attackCooldown;
           this.petBite(pet, def.multiplier, def.flat, def.types, target);
         }
-      } else {
+      } else if (!def.stationary) {
         const dx = owner.x - pet.x;
         const dy = owner.y - pet.y;
         const dist = Math.hypot(dx, dy);
@@ -656,6 +667,7 @@ export class Sim {
     this.state.wave = wave;
     this.state.phase = 'fighting';
     for (const p of this.state.players) {
+      p.damageTakenThisWave = 0;
       if (!p.alive) continue;
       const mech = this.classDef(p.classId).mechanic;
       // Jester's Wheel of Whee: a free random boon rides in with the bell
@@ -1098,6 +1110,11 @@ export class Sim {
     this.tickPets(dt);
     this.tickProjectiles(dt);
     this.tickPools(dt);
+    for (let i = this.state.decoys.length - 1; i >= 0; i--) {
+      const d = this.state.decoys[i]!;
+      d.ttl -= dt;
+      if (d.ttl <= 0) this.state.decoys.splice(i, 1);
+    }
     this.tickPickups(dt);
     this.tickCombo(dt);
 
@@ -1117,6 +1134,10 @@ export class Sim {
       // Deed hook: someone finished the wave dangerously low (checked pre-revive)
       if (s.players.some((p) => p.alive && p.hp / (stat(p.stats, 'maxHp') || 1) < 0.25)) {
         this.eventsThisTick.push({ type: 'lowHpWaveClear' });
+      }
+      // Deed hook: someone danced through the whole wave untouched
+      if (s.players.some((p) => p.alive && p.damageTakenThisWave === 0)) {
+        this.eventsThisTick.push({ type: 'flawlessWave' });
       }
       // A breather heart per player at every wave end
       for (const p of s.players) {
@@ -1148,6 +1169,22 @@ export class Sim {
     if (p.contactHitCooldown > 0) p.contactHitCooldown = Math.max(0, p.contactHitCooldown - dt);
     if (p.angerTimer > 0) p.angerTimer = Math.max(0, p.angerTimer - dt);
     if (p.aegisCooldown > 0) p.aegisCooldown = Math.max(0, p.aegisCooldown - dt);
+    if (p.decoyCooldown > 0) p.decoyCooldown = Math.max(0, p.decoyCooldown - dt);
+    // Bard's Anthem: the setlist rotates on its own
+    if (this.classDef(p.classId).mechanic === 'anthem') {
+      p.songTimer += dt;
+      if (p.songTimer >= 6) {
+        p.songTimer = 0;
+        p.songIdx = (p.songIdx + 1) % 3;
+      }
+      // Mending song: a slow warmth for everyone standing near the music
+      if (p.songIdx === 2) {
+        for (const ally of this.state.players) {
+          if (!ally.alive || Math.hypot(ally.x - p.x, ally.y - p.y) > 6) continue;
+          this.healPlayer(ally, 0.6 * dt, 'anthem');
+        }
+      }
+    }
     // Snail Knight's Trail: the ribbon follows wherever the knight has been
     if (this.classDef(p.classId).mechanic === 'snailTrail') {
       p.trailTimer -= dt;
@@ -1201,6 +1238,11 @@ export class Sim {
       p.dashTimer = bal.dashDuration;
       p.dashCooldown = bal.dashCooldown;
       p.iframeTimer = bal.dashIframes;
+      // Ninja's Afterimage: the dash leaves someone very convincing behind
+      if (this.classDef(p.classId).mechanic === 'afterimage' && p.decoyCooldown <= 0) {
+        p.decoyCooldown = 4;
+        this.state.decoys.push({ x: p.x, y: p.y, ttl: 2.5 });
+      }
       if (p.moving) {
         p.dashDirX = mx / (mag || 1);
         p.dashDirY = my / (mag || 1);
@@ -1219,7 +1261,16 @@ export class Sim {
       vx = p.dashDirX * bal.dashSpeed;
       vy = p.dashDirY * bal.dashSpeed;
     } else {
-      const speed = bal.moveUnitsPerSec * (1 + stat(p.stats, 'moveSpeed'));
+      let tempo = 1;
+      for (const bard of this.state.players) {
+        if (!bard.alive || bard.songIdx !== 1) continue;
+        if (this.classDef(bard.classId).mechanic !== 'anthem') continue;
+        if (Math.hypot(bard.x - p.x, bard.y - p.y) <= 6) {
+          tempo = 1.1; // the tempo song hurries everyone along
+          break;
+        }
+      }
+      const speed = bal.moveUnitsPerSec * (1 + stat(p.stats, 'moveSpeed')) * tempo;
       vx = mx * speed;
       vy = my * speed;
     }
@@ -1239,6 +1290,10 @@ export class Sim {
           p.dashTouched.add(e.instance);
           p.guaranteedCrit = true; // backspin fuel (only the mechanic consumes it)
           this.eventsThisTick.push({ type: 'dashThroughEnemy', player: p.index, enemy: e.instance });
+          // Monk's dash is itself a strike — palms find everyone passed
+          if (this.classDef(p.classId).mechanic === 'hundredPalms') {
+            this.weaponHitEnemy(e, p, this.monkFists(p), 'melee', this.tracker.newHitId());
+          }
         }
       }
     }
@@ -1274,8 +1329,47 @@ export class Sim {
     }
   }
 
+  private monkFists(p: PlayerState): ResolvedWeapon {
+    const grow = Math.floor(p.level / 3); // Hundred Palms: fists grow every 3 levels
+    return {
+      id: 'fists',
+      kind: 'attack',
+      types: ['melee'],
+      multiplier: 1,
+      flat: [2 + grow, 3 + grow],
+      grants: [],
+      effects: [],
+      delivery: { type: 'meleeArc', reach: 1.7, arcDeg: 130, cooldown: 0.32 },
+      hands: 0,
+      tags: ['melee1h', 'physical'],
+      label: '',
+    };
+  }
+
+  private fistCooldown = new Map<number, number>();
+
   private tickWeapons(p: PlayerState, input: InputFrame, dt: number): void {
     const aiming = Math.hypot(input.aimX, input.aimY) > 0.25;
+    // Monk's Hundred Palms: empty hands are never unarmed
+    if (p.weapons.length === 0 && this.classDef(p.classId).mechanic === 'hundredPalms') {
+      const cd = this.fistCooldown.get(p.index) ?? 0;
+      const left = Math.max(0, cd - dt);
+      this.fistCooldown.set(p.index, left);
+      if (left <= 0) {
+        let dir: number | null = null;
+        if (aiming) dir = Math.atan2(input.aimY, input.aimX);
+        else {
+          const nearest = this.nearestEnemy(p.x, p.y, 12);
+          if (nearest) dir = Math.atan2(nearest.y - p.y, nearest.x - p.x);
+        }
+        if (dir !== null) {
+          const fists = this.monkFists(p);
+          const rate = 1 + stat(p.stats, 'cooldownRate');
+          this.fistCooldown.set(p.index, 0.32 / Math.max(0.1, rate));
+          this.fireWeapon(p, fists, dir);
+        }
+      }
+    }
     for (const slot of p.weapons) {
       if (slot.cooldownLeft > 0) slot.cooldownLeft = Math.max(0, slot.cooldownLeft - dt);
       if (slot.cooldownLeft > 0) continue;
@@ -1390,6 +1484,15 @@ export class Sim {
     }
     // Beekeeper's swarm fights angrier after its keeper is hurt
     if (p.angerTimer > 0) damageMult *= 1.25;
+    // Bard's battle song lifts every blade in earshot
+    for (const bard of this.state.players) {
+      if (!bard.alive || bard.songIdx !== 0) continue;
+      if (this.classDef(bard.classId).mechanic !== 'anthem') continue;
+      if (Math.hypot(bard.x - p.x, bard.y - p.y) <= 6) {
+        damageMult *= 1.15;
+        break;
+      }
+    }
     // Coin-Operated Blade: spend the charge on this hit
     if (p.coinCharge > 0) {
       damageMult *= 1 + p.coinCharge;
@@ -1853,8 +1956,19 @@ export class Sim {
       }
       if (!target) continue;
       e.targetPlayer = target.index;
-      const dx = target.x - e.x;
-      const dy = target.y - e.y;
+      // Afterimage decoys: enemies chase the nearest convincing shape
+      let tx = target.x;
+      let ty = target.y;
+      for (const dcy of this.state.decoys) {
+        const dd = Math.hypot(dcy.x - e.x, dcy.y - e.y);
+        if (dd < bestDist) {
+          bestDist = dd;
+          tx = dcy.x;
+          ty = dcy.y;
+        }
+      }
+      const dx = tx - e.x;
+      const dy = ty - e.y;
       const dist = Math.hypot(dx, dy) || 1;
       const statusMove = moveMult(e.status) * auraMult(e);
 
@@ -2322,6 +2436,7 @@ export class Sim {
     // Post-hit invulnerability: damage arrives in beats, never as an instant melt
     p.iframeTimer = Math.max(p.iframeTimer, this.registry.balance.player.hitIframes);
     this.eventsThisTick.push({ type: 'playerHit', player: p.index, amount: hit.amount });
+    p.damageTakenThisWave += hit.amount;
     if (this.classDef(p.classId).mechanic === 'swarmAnger') p.angerTimer = 5;
     this.eventsThisTick.push({
       type: 'damageNumber',

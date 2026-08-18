@@ -54,10 +54,14 @@ export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): Inpu
   const hasMelee = armed.some(
     (w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc',
   );
+  // Monks are armed with themselves — bare fists fight like a melee kit
+  const fists = sim.registry.classes.get(p.classId)?.mechanic === 'hundredPalms' && armed.length === 0;
   const meleeOnly =
-    armed.length > 0 &&
-    armed.every((w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc');
-  const petCommander = armed.length === 0 && sim.state.pets.some((pet) => pet.owner === p.index);
+    fists ||
+    (armed.length > 0 &&
+      armed.every((w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc'));
+  const petCommander =
+    !fists && armed.length === 0 && sim.state.pets.some((pet) => pet.owner === p.index);
 
   let fleeX = 0;
   let fleeY = 0;

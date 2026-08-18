@@ -279,6 +279,7 @@ export const DeedMatchSchema = z.discriminatedUnion('event', [
   z.object({ event: z.literal('snuffed') }).strict(),
   z.object({ event: z.literal('blockedDamage') }).strict(),
   z.object({ event: z.literal('damageTaken') }).strict(),
+  z.object({ event: z.literal('flawlessWave') }).strict(),
 ]);
 
 export const ClassSchema = z
@@ -311,6 +312,10 @@ export const ClassSchema = z
         'spillage', // alchemist: 15% of kills leave an acid pool
         'aegis', // paladin: shields skip the off-hand limit; blocking heals nearby allies
         'snailTrail', // snail knight: slime ribbon slows and stings; +50% block standing still
+        'tinkerer', // engineer: salvage grants +1 extra Bit
+        'hundredPalms', // monk: bare fists are a scaling weapon; dashes strike enemies passed
+        'afterimage', // ninja: dashing leaves a taunting decoy (4s cooldown)
+        'anthem', // bard: auto-cycling songs buff nearby allies
       ])
       .default('none'),
     startingPets: z.array(z.string()).default([]),
@@ -369,6 +374,8 @@ export const PetSchema = z
     lifetime: z.number().nonnegative().default(0), // 0 = permanent
     maxPerOwner: z.number().int().positive().default(4),
     leash: z.number().positive().default(8), // stays within this range of the owner
+    stationary: z.boolean().default(false), // turrets hold their ground
+    attackRange: z.number().positive().optional(), // ranged pets strike from afar
   })
   .strict();
 

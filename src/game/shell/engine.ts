@@ -320,7 +320,8 @@ export class Engine {
   salvageForBits(playerIndex: number): void {
     if (!this.intermissionActive || !this.chestChoices.has(playerIndex)) return;
     const p = this.sim.state.players[playerIndex]!;
-    p.bits += 2;
+    // Engineer's eye: nothing scrapped is ever wasted
+    p.bits += this.sim.classDef(p.classId).mechanic === 'tinkerer' ? 3 : 2;
     this.finishChest(playerIndex);
   }
 

@@ -1008,5 +1008,71 @@
       }
     ],
     "rarity": "uncommon"
+  },
+  {
+    "id": "engineer-hammer",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.0,
+      "arcDeg": 100,
+      "cooldown": 0.5
+    },
+    "grants": [
+      {
+        "stat": "petDamage",
+        "flat": 3
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "lute",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 0.9,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.2,
+      "arcDeg": 120,
+      "cooldown": 0.5
+    },
+    "grants": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.03
+      }
+    ],
+    "rarity": "common"
   }
 ]

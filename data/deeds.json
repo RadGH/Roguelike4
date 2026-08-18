@@ -382,5 +382,23 @@
       }
     ],
     "glimmerBonus": 5
+  },
+  {
+    "id": "flawless-wave",
+    "desc": "Clear a wave without taking any damage",
+    "hint": "Untouchable is a choice made one sidestep at a time.",
+    "kind": "single-event",
+    "scope": "party",
+    "target": 1,
+    "match": {
+      "event": "flawlessWave"
+    },
+    "unlocks": [
+      {
+        "type": "class",
+        "id": "ninja"
+      }
+    ],
+    "glimmerBonus": 4
   }
 ]

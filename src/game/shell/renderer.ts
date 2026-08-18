@@ -16,6 +16,7 @@ import petDogUrl from '../../../art/pet-dog.svg?url';
 import petZombieUrl from '../../../art/pet-zombie.svg?url';
 import petBeeUrl from '../../../art/pet-bee.svg?url';
 import petBoneChumUrl from '../../../art/pet-bone-chum.svg?url';
+import petTurretUrl from '../../../art/pet-turret.svg?url';
 // Act 2 — Sogbottom Marsh
 import soggunUrl from '../../../art/enemy-soggun.svg?url';
 import bubblimUrl from '../../../art/enemy-bubblim.svg?url';
@@ -51,6 +52,7 @@ const PET_ART: Record<string, string> = {
   zombie: petZombieUrl,
   bee: petBeeUrl,
   'bone-chum': petBoneChumUrl,
+  turret: petTurretUrl,
 };
 
 export const PX_PER_UNIT = 32;

@@ -78,6 +78,22 @@
       {
         "id": "snail-knight",
         "price": 35
+      },
+      {
+        "id": "engineer",
+        "price": 30
+      },
+      {
+        "id": "monk",
+        "price": 25
+      },
+      {
+        "id": "ninja",
+        "price": 35
+      },
+      {
+        "id": "bard",
+        "price": 30
       }
     ]
   },

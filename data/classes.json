@@ -526,5 +526,111 @@
       "type": "deed",
       "deedId": "damage-taken-10000"
     }
+  },
+  {
+    "id": "engineer",
+    "name": "Engineer",
+    "blurb": "Safety goggles, zero safety.",
+    "handPoints": 2,
+    "startingWeapons": [
+      "engineer-hammer"
+    ],
+    "startingPets": [
+      "turret"
+    ],
+    "denyTags": [
+      "spell"
+    ],
+    "statMods": [
+      {
+        "stat": "rangedDamage",
+        "flat": 1
+      },
+      {
+        "stat": "petDamage",
+        "flat": 2
+      }
+    ],
+    "mechanic": "tinkerer",
+    "unlock": {
+      "type": "shop"
+    }
+  },
+  {
+    "id": "monk",
+    "name": "Monk",
+    "blurb": "Owns one robe. Needs nothing. Especially not your weapons.",
+    "handPoints": 0,
+    "startingWeapons": [],
+    "startingPassives": [
+      "prayer-beads"
+    ],
+    "statMods": [
+      {
+        "stat": "maxHp",
+        "flat": 2
+      },
+      {
+        "stat": "moveSpeed",
+        "pct": 0.1
+      }
+    ],
+    "mechanic": "hundredPalms",
+    "unlock": {
+      "type": "shop"
+    }
+  },
+  {
+    "id": "ninja",
+    "name": "Ninja",
+    "blurb": "You never saw them unlock.",
+    "handPoints": 3,
+    "startingWeapons": [
+      "dagger",
+      "throwing-knives"
+    ],
+    "denyTags": [
+      "melee2h",
+      "ranged2h",
+      "giantShield"
+    ],
+    "statMods": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.1
+      },
+      {
+        "stat": "dodge",
+        "flat": 0.05
+      },
+      {
+        "stat": "maxHp",
+        "flat": -2
+      }
+    ],
+    "mechanic": "afterimage",
+    "unlock": {
+      "type": "deed",
+      "deedId": "flawless-wave"
+    }
+  },
+  {
+    "id": "bard",
+    "name": "Bard",
+    "blurb": "Armed with three chords and confidence.",
+    "handPoints": 1,
+    "startingWeapons": [
+      "lute"
+    ],
+    "statMods": [
+      {
+        "stat": "maxHp",
+        "flat": 1
+      }
+    ],
+    "mechanic": "anthem",
+    "unlock": {
+      "type": "shop"
+    }
   }
 ]
