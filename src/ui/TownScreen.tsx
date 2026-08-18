@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { loadProfile } from '@game/meta/profile';
+import { loadProfile, saveProfile } from '@game/meta/profile';
+import { buyClass, buyItem, buyUpgrade, SHOPS, upgradeLevel, upgradePrice } from '@game/meta/shop';
 import { loadRegistry } from '@game/data/registry';
 import { GAME_TITLE } from '@game/branding';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
@@ -9,7 +10,7 @@ import { useMenuNav } from './useMenuNav';
 
 const registry = loadRegistry();
 
-type TownView = 'square' | 'bellhop' | 'codex' | 'chronicle' | 'tinker';
+type TownView = 'square' | 'bellhop' | 'codex' | 'chronicle' | 'tinker' | 'flick' | 'cinder' | 'mayor';
 
 function connectedPads(): number {
   if (!navigator.getGamepads) return 0;
@@ -18,6 +19,9 @@ function connectedPads(): number {
 
 const NPCS: { id: TownView; icon: string; name: string; blurb: string }[] = [
   { id: 'bellhop', icon: '🔔', name: 'The Bellhop', blurb: 'Set out on a run' },
+  { id: 'flick', icon: '🥋', name: 'Grandmaster Flick', blurb: 'Class training (glimmers)' },
+  { id: 'cinder', icon: '🔥', name: 'Forgemaster Cinder', blurb: 'Unlock old arms (glimmers)' },
+  { id: 'mayor', icon: '🕯️', name: 'Mayor Tallow', blurb: 'Town upgrades (glimmers)' },
   { id: 'codex', icon: '📖', name: 'Archivist Glow', blurb: 'The Codex — deeds, weapons, foes' },
   { id: 'chronicle', icon: '🦋', name: 'Chronicler Soot', blurb: 'Your story so far' },
   { id: 'tinker', icon: '🔧', name: 'Fizzwick', blurb: 'Settings & save tools' },
@@ -34,7 +38,12 @@ export function TownScreen({
 }) {
   const [view, setView] = useState<TownView>('square');
   const [selectedAct, setSelectedAct] = useState(1);
+  const [, forceRender] = useState(0);
   const profile = loadProfile(window.localStorage, slot);
+  const commit = () => {
+    saveProfile(window.localStorage, profile);
+    forceRender((n) => n + 1);
+  };
   const unlockedActs = 1 + profile.actsCleared.filter((a) => a < 4).length; // acts 1..N playable
   const unlockedClasses = [...registry.classes.values()].filter((c) =>
     profile.unlockedClasses.includes(c.id),
@@ -124,22 +133,6 @@ export function TownScreen({
                   <div style={{ fontSize: 12, opacity: 0.8, fontWeight: 500 }}>{npc.blurb}</div>
                 </button>
               ))}
-              <button
-                disabled
-                title="Opens in a future update"
-                style={{ ...cardBtnStyle(false), opacity: 0.45, cursor: 'default', textAlign: 'left', padding: '14px 16px' }}
-              >
-                <div style={{ fontSize: 20 }}>🥋 Grandmaster Flick</div>
-                <div style={{ fontSize: 12, opacity: 0.8, fontWeight: 500 }}>Class training — coming with the class update</div>
-              </button>
-              <button
-                disabled
-                title="Opens in a future update"
-                style={{ ...cardBtnStyle(false), opacity: 0.45, cursor: 'default', textAlign: 'left', padding: '14px 16px' }}
-              >
-                <div style={{ fontSize: 20 }}>🔥 Forgemaster Cinder</div>
-                <div style={{ fontSize: 12, opacity: 0.8, fontWeight: 500 }}>Item shop — coming with the glimmer shops</div>
-              </button>
             </div>
             <button onClick={onBack} style={{ ...miniLink, marginTop: 14 }} data-action="back-to-slots">
               ← change save slot
@@ -226,6 +219,127 @@ export function TownScreen({
                 : 'Keyboard + mouse ready. Connect controllers before starting for couch co-op.'}
             </p>
             <button onClick={() => setView('square')} style={miniLink} data-action="back-to-town">
+              ← back to the square
+            </button>
+          </>
+        )}
+
+        {view === 'flick' && (
+          <>
+            <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 4px' }}>🥋 Grandmaster Flick</h2>
+            <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 10px' }}>{SHOPS.flick.blurb}</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {SHOPS.flick.classes.map((c) => {
+                const cls = registry.classes.get(c.id);
+                const owned = profile.unlockedClasses.includes(c.id);
+                const afford = profile.glimmers >= c.price;
+                return (
+                  <div key={c.id} style={{ border: `2px solid ${owned ? COLORS.gold : COLORS.panelBorder}`, borderRadius: 10, padding: '10px 14px', width: 170 }}>
+                    <div style={{ fontWeight: 800 }}>{cls?.name ?? c.id}</div>
+                    <div style={{ fontSize: 11, opacity: 0.8, minHeight: 40 }}>{cls?.blurb}</div>
+                    {owned ? (
+                      <div style={{ fontSize: 12, color: COLORS.gold }}>trained ✓</div>
+                    ) : (
+                      <button
+                        data-buy-class={c.id}
+                        disabled={!afford}
+                        onClick={() => {
+                          if (buyClass(profile, c.id, c.price).ok) commit();
+                        }}
+                        style={{ ...cardBtnStyle(false), padding: '4px 12px', fontSize: 12, opacity: afford ? 1 : 0.45 }}
+                      >
+                        ✨ {c.price}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 11, opacity: 0.6, marginTop: 8 }}>Deeds unlock these too — the Codex shows how.</p>
+            <button onClick={() => setView('square')} style={miniLink} data-action="back-to-town">
+              ← back to the square
+            </button>
+          </>
+        )}
+
+        {view === 'cinder' && (
+          <>
+            <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 4px' }}>🔥 Forgemaster Cinder</h2>
+            <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 10px' }}>{SHOPS.cinder.blurb}</p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {SHOPS.cinder.items.map((it) => {
+                const owned = profile.unlockedItems.includes(it.id);
+                const afford = profile.glimmers >= it.price;
+                const name = it.id
+                  .split('-')
+                  .map((s) => s[0]!.toUpperCase() + s.slice(1))
+                  .join(' ');
+                return (
+                  <div key={it.id} style={{ border: `2px solid ${owned ? COLORS.gold : COLORS.panelBorder}`, borderRadius: 10, padding: '8px 12px', width: 150 }}>
+                    <div style={{ fontWeight: 800, fontSize: 13 }}>{name}</div>
+                    {owned ? (
+                      <div style={{ fontSize: 12, color: COLORS.gold }}>forged ✓</div>
+                    ) : (
+                      <button
+                        data-buy-item={it.id}
+                        disabled={!afford}
+                        onClick={() => {
+                          if (buyItem(profile, it.id, it.price).ok) commit();
+                        }}
+                        style={{ ...cardBtnStyle(false), padding: '3px 10px', fontSize: 12, opacity: afford ? 1 : 0.45 }}
+                      >
+                        ✨ {it.price}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setView('square')} style={{ ...miniLink, marginTop: 10 }} data-action="back-to-town">
+              ← back to the square
+            </button>
+          </>
+        )}
+
+        {view === 'mayor' && (
+          <>
+            <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 4px' }}>🕯️ Mayor Tallow</h2>
+            <p style={{ fontSize: 12, opacity: 0.75, margin: '0 0 10px' }}>{SHOPS.mayor.blurb}</p>
+            <div style={{ display: 'grid', gap: 8, maxWidth: 440, margin: '0 auto' }}>
+              {SHOPS.mayor.upgrades.map((u) => {
+                const level = upgradeLevel(profile, u.id);
+                const maxed = level >= u.maxLevel;
+                const price = upgradePrice(u, level);
+                const afford = profile.glimmers >= price;
+                return (
+                  <div key={u.id} style={{ border: `2px solid ${COLORS.panelBorder}`, borderRadius: 10, padding: '8px 12px', textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 13.5 }}>
+                          {u.name} <span style={{ opacity: 0.7 }}>({level}/{u.maxLevel})</span>
+                        </div>
+                        <div style={{ fontSize: 11.5, opacity: 0.8 }}>{u.desc}</div>
+                      </div>
+                      {maxed ? (
+                        <span style={{ color: COLORS.gold, fontSize: 12 }}>max ✓</span>
+                      ) : (
+                        <button
+                          data-buy-upgrade={u.id}
+                          disabled={!afford}
+                          onClick={() => {
+                            if (buyUpgrade(profile, u).ok) commit();
+                          }}
+                          style={{ ...cardBtnStyle(false), padding: '4px 12px', fontSize: 12, opacity: afford ? 1 : 0.45 }}
+                        >
+                          ✨ {price}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setView('square')} style={{ ...miniLink, marginTop: 10 }} data-action="back-to-town">
               ← back to the square
             </button>
           </>

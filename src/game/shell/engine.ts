@@ -7,6 +7,7 @@ import { TICK_SECONDS } from '@game/core/constants';
 import { neutralInput, type InputFrame } from '@game/core/input';
 import { DeedEngine } from '@game/core/deeds';
 import { loadProfile, saveProfile, type KeyValueStorage, type Profile } from '@game/meta/profile';
+import { townBonuses } from '@game/meta/shop';
 import { GameRenderer, takeSnapshot, type RenderSnapshot } from './renderer';
 import { InputSampler } from './inputSources';
 import { createDebugApi, type DebugApi } from '../debug/harness';
@@ -42,6 +43,8 @@ export class Engine {
     this.profileStorage = storage;
     this.profile = loadProfile(storage, opts.slot ?? 1);
     this.sim.unlockedItems = new Set(this.profile.unlockedItems);
+    const bonuses = townBonuses(this.profile);
+    this.sim.setTownBonuses(bonuses.grants, bonuses.startBits);
     this.deedEngine = new DeedEngine(
       this.sim.registry.deeds,
       this.profile.deedProgress,

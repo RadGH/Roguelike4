@@ -396,6 +396,7 @@ export class Sim {
     const prevMax = stat(p.stats, 'maxHp');
     const grantSets = [
       cls.statMods,
+      this.townGrants,
       ...p.weapons.map((w) => resolveWeapon(this.registry, w).grants),
       ...p.passives.map((id) => this.registry.passives.get(id)?.grants ?? []),
       ...p.boonIds.map((id) => {
@@ -603,6 +604,17 @@ export class Sim {
 
   /** Item ids unlocked on this save slot; weapons with an unlockDeed need to be here. */
   unlockedItems = new Set<string>();
+  /** Permanent town-upgrade bonuses, included in every stat rebuild. */
+  private townGrants: import('../data/schemas').Grant[] = [];
+
+  setTownBonuses(grants: import('../data/schemas').Grant[], startBits: number): void {
+    this.townGrants = grants;
+    for (const p of this.state.players) {
+      p.bits += startBits;
+      this.recomputeStats(p);
+      p.hp = stat(p.stats, 'maxHp');
+    }
+  }
 
   private isItemAvailable(id: string): boolean {
     const w = this.registry.weapons.get(id);

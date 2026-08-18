@@ -17,6 +17,7 @@ export type Profile = {
   emberkeys: number;
   actsCleared: number[];
   endlessUnlocked: boolean;
+  townUpgrades: Record<string, number>;
   lifetime: {
     runs: number;
     wins: number;
@@ -46,6 +47,7 @@ export function freshProfile(slot = 1): Profile {
     emberkeys: 0,
     actsCleared: [],
     endlessUnlocked: false,
+    townUpgrades: {},
     lifetime: { runs: 0, wins: 0, kills: 0, deepestWave: 0 },
   };
 }
