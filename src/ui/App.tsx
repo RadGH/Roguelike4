@@ -8,7 +8,7 @@ type Screen =
   | { name: 'title' }
   | { name: 'slots' }
   | { name: 'town'; slot: number }
-  | { name: 'arena'; seed: number; players: number; slot: number; act: number };
+  | { name: 'arena'; seed: number; players: number; slot: number; act: number; classIds: string[] };
 
 export function App() {
   const params = new URLSearchParams(window.location.search);
@@ -22,6 +22,7 @@ export function App() {
           players: Math.min(4, Math.max(1, forcedPlayers || 1)),
           slot: 1,
           act: Number(params.get('act')) || 1,
+          classIds: (params.get('classes') ?? '').split(',').filter(Boolean),
         }
       : { name: 'title' },
   );
@@ -40,6 +41,7 @@ export function App() {
         playerCount={screen.players}
         slot={screen.slot}
         startAct={screen.act}
+        classIds={screen.classIds}
         onExit={() => setScreen(debug ? { name: 'title' } : { name: 'town', slot: screen.slot })}
       />
     );
@@ -58,13 +60,14 @@ export function App() {
     return (
       <TownScreen
         slot={screen.slot}
-        onStart={({ act, players }) =>
+        onStart={({ act, players, classIds }) =>
           setScreen({
             name: 'arena',
             seed: (Date.now() % 1000000) + 1,
             players,
             slot: screen.slot,
             act,
+            classIds,
           })
         }
         onBack={() => setScreen({ name: 'slots' })}

@@ -185,9 +185,35 @@ export const DeedMatchSchema = z.discriminatedUnion('event', [
   z.object({ event: z.literal('burnKill') }).strict(),
   z.object({ event: z.literal('explosionMultikill') }).strict(),
   z.object({ event: z.literal('damageOfType'), type: DamageTypeSchema }).strict(),
+  z.object({ event: z.literal('magicDamage') }).strict(), // any magic school
   z.object({ event: z.literal('goldHeld') }).strict(),
   z.object({ event: z.literal('dashThrough') }).strict(),
+  z.object({ event: z.literal('lifestealHealed') }).strict(),
+  z.object({ event: z.literal('lowHpWaveClear') }).strict(),
 ]);
+
+export const ClassSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    name: z.string(),
+    blurb: z.string(),
+    handPoints: z.number().int().min(0).max(4),
+    denyTags: z.array(z.string()).default([]), // weapons carrying any of these are unequippable
+    statMods: z.array(GrantSchema).default([]),
+    startingWeapons: z.array(z.string()).default([]),
+    // Engine mechanic vocabulary — sim implements exactly these
+    mechanic: z.enum(['none', 'ironhide', 'backspin', 'redline', 'redthirst']).default('none'),
+    levelUpItems: z
+      .array(z.object({ level: z.number().int().min(2), options: z.array(z.string()).min(1) }).strict())
+      .default([]),
+    unlock: z
+      .discriminatedUnion('type', [
+        z.object({ type: z.literal('default') }).strict(),
+        z.object({ type: z.literal('deed'), deedId: z.string() }).strict(),
+      ])
+      .default({ type: 'default' }),
+  })
+  .strict();
 
 export const DeedSchema = z
   .object({
@@ -280,4 +306,5 @@ export type EffectDef = z.infer<typeof EffectSchema>;
 export type WaveDef = z.infer<typeof WaveSchema>;
 export type BoonDef = z.infer<typeof BoonSchema>;
 export type DeedDef = z.infer<typeof DeedSchema>;
+export type ClassDef = z.infer<typeof ClassSchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;

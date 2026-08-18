@@ -34,9 +34,9 @@ export class Engine {
     seed: number,
     playerCount = 1,
     storage: KeyValueStorage = window.localStorage,
-    opts: { slot?: number; startAct?: number } = {},
+    opts: { slot?: number; startAct?: number; classIds?: string[] } = {},
   ) {
-    this.sim = new Sim(seed, playerCount);
+    this.sim = new Sim(seed, playerCount, undefined, opts.classIds ?? []);
     if (opts.startAct && opts.startAct > 1) this.sim.setStartingAct(opts.startAct);
     this.profileStorage = storage;
     this.profile = loadProfile(storage, opts.slot ?? 1);
@@ -134,6 +134,7 @@ export class Engine {
   private boonChoices = new Map<number, string[]>();
   private chestChoices = new Map<number, string[]>();
   private pendingEquip = new Map<number, string>();
+  private classEquipPending = new Set<number>();
 
   private weaponInfo(id: string) {
     const name = id
@@ -152,16 +153,17 @@ export class Engine {
     };
   }
 
-  /** Advance one player's intermission pipeline: chests first, then boons. */
+  /** Advance one player's intermission pipeline: class items → chests → boons. */
   private refreshIntermissionOffers(playerIndex: number): void {
     const p = this.sim.state.players[playerIndex]!;
+    if (p.pendingClassItems.length > 0) return; // class choice panel shows first
     if (p.pendingChests > 0) {
       if (!this.chestChoices.has(playerIndex)) {
         this.chestChoices.set(playerIndex, this.sim.rollWeaponChoices(playerIndex, 3));
       }
     } else {
       this.chestChoices.delete(playerIndex);
-      this.pendingEquip.delete(playerIndex);
+      if (!this.classEquipPending.has(playerIndex)) this.pendingEquip.delete(playerIndex);
       if (p.pendingBoons > 0) {
         if (!this.boonChoices.has(playerIndex)) {
           this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(4));
@@ -169,6 +171,21 @@ export class Engine {
       } else {
         this.boonChoices.delete(playerIndex);
       }
+    }
+  }
+
+  chooseClassItem(playerIndex: number, weaponId: string): void {
+    if (!this.intermissionActive) return;
+    const p = this.sim.state.players[playerIndex];
+    const options = p?.pendingClassItems[0];
+    if (!p || !options?.includes(weaponId)) return;
+    if (this.sim.equipWeapon(playerIndex, weaponId)) {
+      p.pendingClassItems.shift();
+      this.refreshIntermissionOffers(playerIndex);
+    } else {
+      // Hands full — pick something to replace
+      this.pendingEquip.set(playerIndex, weaponId);
+      this.classEquipPending.add(playerIndex);
     }
   }
 
@@ -182,22 +199,36 @@ export class Engine {
     this.boonChoices.clear();
     this.chestChoices.clear();
     this.pendingEquip.clear();
+    this.classEquipPending.clear();
   }
 
   chooseChestWeapon(playerIndex: number, weaponId: string): void {
     if (!this.intermissionActive || !this.chestChoices.get(playerIndex)?.includes(weaponId)) return;
-    this.pendingEquip.set(playerIndex, weaponId);
+    // Free hands? Equip straight away — no replace friction.
+    if (this.sim.equipWeapon(playerIndex, weaponId)) {
+      this.finishChest(playerIndex);
+    } else {
+      this.pendingEquip.set(playerIndex, weaponId);
+    }
   }
 
   cancelEquip(playerIndex: number): void {
     this.pendingEquip.delete(playerIndex);
+    this.classEquipPending.delete(playerIndex);
   }
 
   equipReplace(playerIndex: number, slotIndex: number): void {
     const weaponId = this.pendingEquip.get(playerIndex);
     if (!this.intermissionActive || !weaponId) return;
     this.sim.replaceWeapon(playerIndex, slotIndex, weaponId);
-    this.finishChest(playerIndex);
+    if (this.classEquipPending.has(playerIndex)) {
+      this.classEquipPending.delete(playerIndex);
+      this.pendingEquip.delete(playerIndex);
+      this.sim.state.players[playerIndex]!.pendingClassItems.shift();
+      this.refreshIntermissionOffers(playerIndex);
+    } else {
+      this.finishChest(playerIndex);
+    }
   }
 
   salvageChest(playerIndex: number): void {
@@ -229,19 +260,34 @@ export class Engine {
       wave: this.sim.state.wave,
       lastWaveOfAct: !this.sim.hasNextWave(),
       gold: shared.gold, // mirrored — same for everyone
-      allDone: this.sim.state.players.every((p) => p.pendingBoons === 0 && p.pendingChests === 0),
+      allDone: this.sim.state.players.every(
+        (p) => p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
+      ),
       panels: this.sim.state.players.map((p) => {
         const chest = this.chestChoices.get(p.index);
         const equip = this.pendingEquip.get(p.index);
         const boons = this.boonChoices.get(p.index);
+        const classOptions = p.pendingClassItems[0];
         return {
           player: p.index,
+          classId: p.classId,
+          className: this.sim.registry.classes.get(p.classId)?.name ?? p.classId,
           level: p.level,
+          classChoice:
+            classOptions && !this.classEquipPending.has(p.index)
+              ? { options: classOptions.map((id) => this.weaponInfo(id)) }
+              : null,
+          classEquip: this.classEquipPending.has(p.index)
+            ? {
+                pendingEquip: this.weaponInfo(this.pendingEquip.get(p.index)!),
+                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.weaponInfo(w.itemId) })),
+              }
+            : null,
           kills: this.sim.tracker.killsByPlayer.get(p.index) ?? 0,
           damageTaken: Math.round(this.sim.tracker.damageTakenByPlayer.get(p.index) ?? 0),
           pendingBoons: p.pendingBoons,
           pendingChests: p.pendingChests,
-          done: p.pendingBoons === 0 && p.pendingChests === 0,
+          done: p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
           chest: chest
             ? {
                 choices: chest.map((id) => this.weaponInfo(id)),
@@ -261,7 +307,9 @@ export class Engine {
 
   continueToNextWave(): void {
     if (!this.intermissionActive) return;
-    const allDone = this.sim.state.players.every((p) => p.pendingBoons === 0 && p.pendingChests === 0);
+    const allDone = this.sim.state.players.every(
+      (p) => p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
+    );
     if (!allDone) return; // resolve every player's rewards first
     this.clearIntermission();
     if (this.sim.state.endless) this.sim.startEndlessWave(this.sim.state.wave + 1);

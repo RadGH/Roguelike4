@@ -23,6 +23,8 @@ export type DefenseProfile = {
   resistAll: number; // 0..1
   resists: Partial<Record<DamageType, number>>; // typed absorbs incl. enemy 50% absorbs
   flatReduction: number;
+  /** Fraction of armor that also applies vs spells (Fighter's Ironhide). */
+  armorVsSpellsFrac?: number;
 };
 
 export function defenseFromStats(sheet: StatSheet): DefenseProfile {
@@ -100,10 +102,12 @@ export function resolveHit(
     dmg -= blocked;
   }
 
-  // 3. Armor — attacks only, diminishing, wave-scaled knee
-  if (isAttack && defense.armor > 0) {
+  // 3. Armor — attacks only, diminishing, wave-scaled knee.
+  //    Ironhide-style defenses apply a fraction of armor vs spells too.
+  const effectiveArmor = isAttack ? defense.armor : defense.armor * (defense.armorVsSpellsFrac ?? 0);
+  if (effectiveArmor > 0) {
     const knee = balance.defense.armorKneeBase + balance.defense.armorKneePerWave * wave;
-    const reduction = Math.min(balance.defense.armorCap, defense.armor / (defense.armor + knee));
+    const reduction = Math.min(balance.defense.armorCap, effectiveArmor / (effectiveArmor + knee));
     const absorbed = dmg * reduction;
     mit.armor = absorbed;
     dmg -= absorbed;

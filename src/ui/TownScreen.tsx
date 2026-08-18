@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { loadProfile } from '@game/meta/profile';
+import { loadRegistry } from '@game/data/registry';
 import { GAME_TITLE } from '@game/branding';
+import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { cardBtnStyle, COLORS, panelStyle, screenStyle } from './theme';
 import { CodexPanel } from './CodexPanel';
 import { useMenuNav } from './useMenuNav';
+
+const registry = loadRegistry();
 
 type TownView = 'square' | 'bellhop' | 'codex' | 'chronicle' | 'tinker';
 
@@ -25,12 +29,17 @@ export function TownScreen({
   onBack,
 }: {
   slot: number;
-  onStart: (opts: { act: number; players: number }) => void;
+  onStart: (opts: { act: number; players: number; classIds: string[] }) => void;
   onBack: () => void;
 }) {
   const [view, setView] = useState<TownView>('square');
+  const [selectedAct, setSelectedAct] = useState(1);
   const profile = loadProfile(window.localStorage, slot);
   const unlockedActs = 1 + profile.actsCleared.filter((a) => a < 4).length; // acts 1..N playable
+  const unlockedClasses = [...registry.classes.values()].filter((c) =>
+    profile.unlockedClasses.includes(c.id),
+  );
+  const playerCount = Math.min(4, Math.max(1, connectedPads() || 1));
 
   const squareFocus = useMenuNav({
     player: 'any',
@@ -40,13 +49,53 @@ export function TownScreen({
     onBack,
   });
 
-  const actFocus = useMenuNav({
-    player: 'any',
-    count: unlockedActs,
-    enabled: view === 'bellhop',
-    onConfirm: (i) => onStart({ act: i + 1, players: Math.min(4, Math.max(1, connectedPads() || 1)) }),
-    onBack: () => setView('square'),
-  });
+  // Class rows: pad/keyboard focus drives selection; mouse clicks set it directly.
+  // Fixed hook count (max party of 4) — `enabled` gates the live ones.
+  const [sel, setSel] = useState([0, 0, 0, 0]);
+  const start = () =>
+    onStart({
+      act: selectedAct,
+      players: playerCount,
+      classIds: sel
+        .slice(0, playerCount)
+        .map((s) => unlockedClasses[Math.min(s, unlockedClasses.length - 1)]?.id ?? 'hero'),
+    });
+  const classFocus = [0, 1, 2, 3].map((i) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- fixed-length array, stable order
+    useMenuNav({
+      player: i,
+      count: unlockedClasses.length,
+      enabled: view === 'bellhop' && i < playerCount,
+      onConfirm: start, // A / Enter sets out at the selected act
+      onBack: i === 0 ? () => setView('square') : undefined,
+      keyboard: i === 0,
+    }),
+  );
+  useEffect(() => {
+    setSel((prev) => {
+      const next = [...prev];
+      let changed = false;
+      classFocus.forEach((f, i) => {
+        if (next[i] !== f) {
+          next[i] = f;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classFocus[0], classFocus[1], classFocus[2], classFocus[3]]);
+
+  // Number keys pick the destination act
+  useEffect(() => {
+    if (view !== 'bellhop') return;
+    const onKey = (e: KeyboardEvent) => {
+      const n = Number(e.key);
+      if (n >= 1 && n <= unlockedActs) setSelectedAct(n);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [view, unlockedActs]);
 
   return (
     <div style={screenStyle} data-screen="town">
@@ -100,7 +149,45 @@ export function TownScreen({
 
         {view === 'bellhop' && (
           <>
-            <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 10px' }}>🔔 Where to, Wicklighter?</h2>
+            <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 10px' }}>🔔 Where to, Wicklighters?</h2>
+
+            {Array.from({ length: playerCount }, (_, i) => (
+              <div key={i} style={{ margin: '6px 0' }}>
+                <span style={{ color: PLAYER_COLORS_CSS[i], fontWeight: 800, fontSize: 13, marginRight: 8 }}>
+                  P{i + 1}
+                </span>
+                {unlockedClasses.map((c, ci) => {
+                  const selected = sel[i] === ci;
+                  return (
+                    <button
+                      key={c.id}
+                      data-class-pick={`${i}-${c.id}`}
+                      title={c.blurb}
+                      onClick={() =>
+                        setSel((prev) => {
+                          const next = [...prev];
+                          next[i] = ci;
+                          return next;
+                        })
+                      }
+                      style={{
+                        ...cardBtnStyle(selected),
+                        padding: '6px 12px',
+                        fontSize: 13,
+                        marginRight: 6,
+                        borderColor: selected ? PLAYER_COLORS_CSS[i] : undefined,
+                      }}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+            <p style={{ fontSize: 11.5, opacity: 0.65, margin: '4px 0 10px' }}>
+              cycle class with ←/→ (stick or arrows) · more classes unlock through deeds — see the Codex
+            </p>
+
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               {[1, 2, 3, 4].map((act) => {
                 const open = act <= unlockedActs;
@@ -109,9 +196,9 @@ export function TownScreen({
                     key={act}
                     disabled={!open}
                     data-start-act={act}
-                    onClick={() => onStart({ act, players: Math.min(4, Math.max(1, connectedPads() || 1)) })}
+                    onClick={() => setSelectedAct(act)}
                     style={{
-                      ...cardBtnStyle(open && actFocus === act - 1),
+                      ...cardBtnStyle(open && selectedAct === act),
                       opacity: open ? 1 : 0.4,
                       cursor: open ? 'pointer' : 'default',
                       width: 130,
@@ -126,7 +213,14 @@ export function TownScreen({
                 );
               })}
             </div>
-            <p style={{ fontSize: 12, opacity: 0.7, marginTop: 10 }}>
+            <button
+              onClick={start}
+              data-action="set-out"
+              style={{ ...cardBtnStyle(true), marginTop: 12, fontSize: 16, padding: '10px 30px' }}
+            >
+              Set out ▶ (A / Enter)
+            </button>
+            <p style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
               {connectedPads() > 0
                 ? `${Math.min(4, connectedPads())} controller(s) connected — the whole couch sets out together.`
                 : 'Keyboard + mouse ready. Connect controllers before starting for couch co-op.'}

@@ -14,16 +14,19 @@ import wavesAct3Json from '@data/waves/act3.json';
 import wavesAct4Json from '@data/waves/act4.json';
 import boonsJson from '@data/boons.json';
 import deedsJson from '@data/deeds.json';
+import classesJson from '@data/classes.json';
 import {
   ActWavesSchema,
   BalanceSchema,
   BoonSchema,
+  ClassSchema,
   DeedSchema,
   EnemySchema,
   WeaponSchema,
   type ActWavesDef,
   type BalanceDef,
   type BoonDef,
+  type ClassDef,
   type DeedDef,
   type EnemyDef,
   type WaveDef,
@@ -62,6 +65,7 @@ export type Registry = {
   waves: Map<number, ActWavesDef>; // act → waves
   boons: Map<string, BoonDef>;
   deeds: Map<string, DeedDef>;
+  classes: Map<string, ClassDef>;
 };
 
 let cached: Registry | null = null;
@@ -84,7 +88,28 @@ export function loadRegistry(): Registry {
     waves: new Map(actWaves.map((aw) => [aw.act, aw])),
     boons: parseList(BoonSchema, boonsJson as unknown[], 'boons'),
     deeds: parseList(DeedSchema, deedsJson as unknown[], 'deeds'),
+    classes: parseList(ClassSchema, classesJson as unknown[], 'classes'),
   };
+  // Class cross-checks: starting weapons, level-up options, unlock deeds, and the
+  // reverse direction (deed class unlocks reference real classes).
+  for (const [id, c] of reg.classes) {
+    for (const w of c.startingWeapons) {
+      if (!reg.weapons.has(w)) throw new Error(`class "${id}": unknown starting weapon "${w}"`);
+    }
+    for (const lu of c.levelUpItems) {
+      for (const w of lu.options) {
+        if (!reg.weapons.has(w)) throw new Error(`class "${id}": unknown level-up item "${w}"`);
+      }
+    }
+    if (c.unlock.type === 'deed' && !reg.deeds.has(c.unlock.deedId))
+      throw new Error(`class "${id}": unknown unlock deed "${c.unlock.deedId}"`);
+  }
+  for (const [id, d] of reg.deeds) {
+    for (const u of d.unlocks) {
+      if (u.type === 'class' && !reg.classes.has(u.id))
+        throw new Error(`deed "${id}": unlocks unknown class "${u.id}"`);
+    }
+  }
   for (const [id, e] of reg.enemies) {
     if (e.summonId && !reg.enemies.has(e.summonId))
       throw new Error(`enemy "${id}": summonId references unknown enemy "${e.summonId}"`);

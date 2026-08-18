@@ -70,6 +70,29 @@ export class DeedEngine {
             }
           }
           break;
+        case 'magicDamage': {
+          const schools = ['fire', 'lightning', 'ice', 'poison', 'arcane'];
+          for (const ev of trackerEvents) {
+            if (
+              ev.type === 'damage' &&
+              (ev.source.actor.kind === 'player' || ev.source.actor.kind === 'pet') &&
+              ev.types.some((t) => schools.includes(t))
+            ) {
+              gained += ev.amount;
+            }
+          }
+          break;
+        }
+        case 'lifestealHealed':
+          for (const ev of trackerEvents) {
+            if (ev.type === 'heal' && ev.source.grantedBy === 'lifesteal') gained += ev.amount;
+          }
+          break;
+        case 'lowHpWaveClear':
+          for (const ev of simEvents) {
+            if (ev.type === 'lowHpWaveClear') absolute = deed.target;
+          }
+          break;
         case 'explosionMultikill': {
           for (const [, count] of getExplosionKills()) {
             if (count >= deed.target) absolute = count;

@@ -10,9 +10,11 @@ test('full menu flow: title → slots → town → bellhop → arena', async ({ 
   await expect(page.locator('text=Wickburrow')).toBeVisible();
   await page.locator('[data-npc="bellhop"]').click();
   await expect(page.locator('[data-start-act="1"]')).toBeVisible();
-  // Acts 2-4 locked on a fresh slot
+  // Acts 2-4 locked on a fresh slot; only Hero on a fresh save
   await expect(page.locator('[data-start-act="2"]')).toBeDisabled();
+  await expect(page.locator('[data-class-pick="0-hero"]')).toBeVisible();
   await page.locator('[data-start-act="1"]').click();
+  await page.locator('[data-action="set-out"]').click();
   await expect(page.locator('[data-screen="arena"] canvas')).toBeVisible();
 });
 

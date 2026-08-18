@@ -1,0 +1,81 @@
+[
+  {
+    "id": "hero",
+    "name": "Hero",
+    "blurb": "The everyperson with a bedroll and big dreams. No tricks, no limits.",
+    "handPoints": 2,
+    "startingWeapons": ["shortsword", "sling"],
+    "unlock": { "type": "default" }
+  },
+  {
+    "id": "fighter",
+    "name": "Fighter",
+    "blurb": "Proud wall of muscle. Four hands' worth of weaponry, zero spellbooks.",
+    "handPoints": 4,
+    "denyTags": ["spell"],
+    "statMods": [
+      { "stat": "maxHp", "flat": 4 },
+      { "stat": "meleeDamage", "flat": 2 }
+    ],
+    "startingWeapons": ["shortsword", "hatchet"],
+    "mechanic": "ironhide",
+    "unlock": { "type": "deed", "deedId": "melee-damage-1000" }
+  },
+  {
+    "id": "rogue",
+    "name": "Rogue",
+    "blurb": "Grinning, pockets full of knives. Dashing through enemies sharpens the next cut.",
+    "handPoints": 2,
+    "denyTags": ["melee2h"],
+    "statMods": [
+      { "stat": "dodge", "flat": 0.05 },
+      { "stat": "critChance", "flat": 0.05 }
+    ],
+    "startingWeapons": ["dagger", "dagger"],
+    "mechanic": "backspin",
+    "unlock": { "type": "deed", "deedId": "dash-through-25" }
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "blurb": "Bookish, flammable. Chooses a signature spell at level 2.",
+    "handPoints": 2,
+    "denyTags": ["physical"],
+    "statMods": [
+      { "stat": "maxHp", "flat": -2 },
+      { "stat": "fireDamage", "flat": 2 },
+      { "stat": "lightningDamage", "flat": 2 },
+      { "stat": "iceDamage", "flat": 2 },
+      { "stat": "poisonDamage", "flat": 2 },
+      { "stat": "arcaneDamage", "flat": 2 }
+    ],
+    "startingWeapons": ["wand"],
+    "levelUpItems": [{ "level": 2, "options": ["fireball", "lightning-bolt", "frostbolt"] }],
+    "unlock": { "type": "deed", "deedId": "magic-damage-500" }
+  },
+  {
+    "id": "berserker",
+    "name": "Berserker",
+    "blurb": "Angry, shirtless, delighted. Hits harder the closer they are to the dark.",
+    "handPoints": 4,
+    "denyTags": ["spell"],
+    "statMods": [{ "stat": "meleeDamage", "flat": 2 }],
+    "startingWeapons": ["hatchet", "hatchet"],
+    "mechanic": "redline",
+    "unlock": { "type": "deed", "deedId": "low-hp-clear" }
+  },
+  {
+    "id": "vampire",
+    "name": "Vampire",
+    "blurb": "Velvet cape, sunscreen everywhere. Every wound they deal feeds them.",
+    "handPoints": 2,
+    "denyTags": ["ranged2h"],
+    "statMods": [
+      { "stat": "lifestealPhys", "flat": 0.08 },
+      { "stat": "lifestealMagic", "flat": 0.08 }
+    ],
+    "startingWeapons": ["dagger", "wand"],
+    "mechanic": "redthirst",
+    "unlock": { "type": "deed", "deedId": "lifesteal-500" }
+  }
+]

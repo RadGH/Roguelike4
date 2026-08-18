@@ -26,7 +26,12 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
   // Ordered action list mirrors the rendered button order — pads navigate it.
   const actions = useMemo(() => {
     const out: (() => void)[] = [];
-    if (panel.chest) {
+    if (panel.classChoice) {
+      for (const c of panel.classChoice.options) out.push(() => engine.chooseClassItem(pi, c.id));
+    } else if (panel.classEquip) {
+      for (const w of panel.classEquip.currentWeapons) out.push(() => engine.equipReplace(pi, w.slot));
+      out.push(() => engine.cancelEquip(pi));
+    } else if (panel.chest) {
       if (panel.chest.pendingEquip) {
         for (const w of panel.chest.currentWeapons) out.push(() => engine.equipReplace(pi, w.slot));
         out.push(() => engine.cancelEquip(pi));
@@ -45,7 +50,8 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
     count: actions.length,
     enabled: actions.length > 0,
     onConfirm: (i) => actions[i]?.(),
-    onBack: panel.chest?.pendingEquip ? () => engine.cancelEquip(pi) : undefined,
+    onBack:
+      panel.chest?.pendingEquip || panel.classEquip ? () => engine.cancelEquip(pi) : undefined,
     keyboard: pi === 0,
   });
   const focusStyle = (i: number): React.CSSProperties =>
@@ -67,10 +73,63 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-        <span style={{ color, fontWeight: 800 }}>P{pi + 1} · Lv {panel.level}</span>
+        <span style={{ color, fontWeight: 800 }}>
+          P{pi + 1} {panel.className} · Lv {panel.level}
+        </span>
         <span style={{ opacity: 0.85 }}>⚔️ {panel.kills} · 💔 {panel.damageTaken}</span>
       </div>
-      {panel.chest ? (
+      {panel.classChoice ? (
+        <>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+            🎓 Your training bears fruit — choose a {panel.className} technique!
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {panel.classChoice.options.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => engine.chooseClassItem(pi, c.id)}
+                data-class-item={`${pi}-${c.id}`}
+                style={{ ...cardBtn, border: '2px solid #8ce68c', ...focusStyle(i) }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
+                <div style={{ fontSize: 10, opacity: 0.9 }}>{c.desc}</div>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : panel.classEquip ? (
+        <>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+            Equip <span style={{ color: '#8ce68c' }}>{panel.classEquip.pendingEquip.name}</span> — replace what?
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {panel.classEquip.currentWeapons.map((w, i) => (
+              <button
+                key={w.slot}
+                onClick={() => engine.equipReplace(pi, w.slot)}
+                data-replace-slot={`${pi}-${w.slot}`}
+                style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f', ...focusStyle(i) }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 13 }}>{w.name}</div>
+                <div style={{ fontSize: 10, opacity: 0.85 }}>{w.desc}</div>
+              </button>
+            ))}
+            <button
+              onClick={() => engine.cancelEquip(pi)}
+              data-action={`cancel-equip-${pi}`}
+              style={{
+                ...cardBtn,
+                border: '2px solid #666',
+                background: 'transparent',
+                minWidth: 60,
+                ...focusStyle(panel.classEquip.currentWeapons.length),
+              }}
+            >
+              ←
+            </button>
+          </div>
+        </>
+      ) : panel.chest ? (
         panel.chest.pendingEquip ? (
           <>
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>

@@ -40,6 +40,57 @@
     "rarity": "common"
   },
   {
+    "id": "dagger",
+    "category": "weapon",
+    "tags": ["melee1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["melee"], "multiplier": 0.7, "flat": [1, 2] },
+    "delivery": { "type": "meleeArc", "reach": 1.8, "arcDeg": 90, "cooldown": 0.22 },
+    "grants": [
+      { "stat": "meleeDamage", "flat": 2 },
+      { "stat": "critChance", "flat": 0.05 }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "hatchet",
+    "category": "weapon",
+    "tags": ["melee1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["melee"], "multiplier": 0.9, "flat": [2, 3] },
+    "delivery": { "type": "meleeArc", "reach": 2.0, "arcDeg": 110, "cooldown": 0.3 },
+    "grants": [{ "stat": "meleeDamage", "flat": 2 }],
+    "rarity": "common"
+  },
+  {
+    "id": "lightning-bolt",
+    "category": "weapon",
+    "tags": ["spell", "magical", "lightning"],
+    "hands": 1,
+    "kind": "spell",
+    "damage": { "types": ["lightning"], "multiplier": 0.9, "flat": [2, 3] },
+    "delivery": { "type": "projectile", "speed": 14, "radius": 0.25, "range": 12, "cooldown": 0.9 },
+    "grants": [{ "stat": "lightningDamage", "flat": 3 }],
+    "effects": [{ "kind": "stun", "duration": 0.5, "chance": 1 }],
+    "rarity": "uncommon",
+    "unlockDeed": "magic-damage-500"
+  },
+  {
+    "id": "frostbolt",
+    "category": "weapon",
+    "tags": ["spell", "magical", "ice"],
+    "hands": 1,
+    "kind": "spell",
+    "damage": { "types": ["ice"], "multiplier": 0.85, "flat": [2, 3] },
+    "delivery": { "type": "projectile", "speed": 10, "radius": 0.28, "range": 12, "cooldown": 0.7 },
+    "grants": [{ "stat": "iceDamage", "flat": 3 }],
+    "effects": [{ "kind": "slow", "duration": 1.5, "magnitude": 0.35, "chance": 1 }],
+    "rarity": "uncommon",
+    "unlockDeed": "magic-damage-500"
+  },
+  {
     "id": "firecracker",
     "category": "weapon",
     "tags": ["ranged1h", "physical"],

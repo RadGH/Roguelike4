@@ -33,12 +33,13 @@ import {
   minWave,
   type Registry,
 } from '../data/registry';
-import type { EnemyDef, WeaponDef } from '../data/schemas';
+import type { ClassDef, EnemyDef, WeaponDef } from '../data/schemas';
 
 export type WeaponSlot = { itemId: string; cooldownLeft: number };
 
 export type PlayerState = {
   index: number;
+  classId: string;
   x: number;
   y: number;
   facing: number;
@@ -47,6 +48,8 @@ export type PlayerState = {
   stats: StatSheet;
   defense: DefenseProfile;
   weapons: WeaponSlot[];
+  guaranteedCrit: boolean; // backspin: next hit crits
+  pendingClassItems: string[][]; // queued class level-up choices (option lists)
   gold: number;
   xp: number;
   xpIntoLevel: number;
@@ -184,6 +187,7 @@ export type SimEvent =
   | { type: 'bossSpawned'; instance: number; defId: string }
   | { type: 'bossPhase'; instance: number; phase: number }
   | { type: 'playerRevived'; player: number; by: number }
+  | { type: 'lowHpWaveClear' }
   | { type: 'runOver' };
 
 const MAX_PROJECTILES = 512;
@@ -200,11 +204,18 @@ export class Sim {
   private spatialScratch: SpatialEntry[] = [];
   private enemyByInstance = new Map<number, EnemyState>();
 
-  constructor(seed: number, playerCount = 1, arena: Arena = { width: 40, height: 30 }) {
+  constructor(
+    seed: number,
+    playerCount = 1,
+    arena: Arena = { width: 40, height: 30 },
+    classIds: string[] = [],
+  ) {
     this.registry = loadRegistry();
     this.rng = createRng(seed);
     const players: PlayerState[] = [];
-    for (let i = 0; i < playerCount; i++) players.push(this.createPlayer(i, playerCount, arena));
+    for (let i = 0; i < playerCount; i++) {
+      players.push(this.createPlayer(i, playerCount, arena, classIds[i] ?? 'hero'));
+    }
     const projectiles: ProjectileState[] = [];
     for (let i = 0; i < MAX_PROJECTILES; i++) {
       projectiles.push({
@@ -239,16 +250,23 @@ export class Sim {
     };
   }
 
-  private createPlayer(i: number, playerCount: number, arena: Arena): PlayerState {
+  classDef(classId: string): ClassDef {
+    const c = this.registry.classes.get(classId);
+    if (!c) throw new Error(`Unknown class "${classId}"`);
+    return c;
+  }
+
+  private createPlayer(i: number, playerCount: number, arena: Arena, classId = 'hero'): PlayerState {
     const bal = this.registry.balance;
-    const weapons: WeaponSlot[] = [
-      { itemId: 'shortsword', cooldownLeft: 0 },
-      { itemId: 'sling', cooldownLeft: 0 },
-    ];
-    const grantSets = weapons.map((w) => getWeapon(this.registry, w.itemId).grants);
+    const cls = this.classDef(classId);
+    const weapons: WeaponSlot[] = cls.startingWeapons.map((id) => ({ itemId: id, cooldownLeft: 0 }));
+    const grantSets = [cls.statMods, ...weapons.map((w) => getWeapon(this.registry, w.itemId).grants)];
     const stats = buildStats(bal.player.baseStats as StatSheet, grantSets);
     return {
       index: i,
+      classId,
+      guaranteedCrit: false,
+      pendingClassItems: [],
       x: arena.width / 2 + (i - (playerCount - 1) / 2) * 2,
       y: arena.height / 2,
       facing: 0,
@@ -299,11 +317,13 @@ export class Sim {
 
   // ---- boons ----
 
-  /** Rebuild a player's stat sheet from base + weapons + boons. Never mutate incrementally. */
+  /** Rebuild a player's stat sheet from base + class + weapons + boons. Never mutate incrementally. */
   recomputeStats(p: PlayerState): void {
     const bal = this.registry.balance;
+    const cls = this.classDef(p.classId);
     const prevMax = stat(p.stats, 'maxHp');
     const grantSets = [
+      cls.statMods,
       ...p.weapons.map((w) => getWeapon(this.registry, w.itemId).grants),
       ...p.boonIds.map((id) => {
         const b = this.registry.boons.get(id);
@@ -313,9 +333,35 @@ export class Sim {
     ];
     p.stats = buildStats(bal.player.baseStats as StatSheet, grantSets);
     p.defense = defenseFromStats(p.stats);
+    if (cls.mechanic === 'ironhide') p.defense.armorVsSpellsFrac = 0.25;
     const newMax = stat(p.stats, 'maxHp');
     if (newMax > prevMax) p.hp += newMax - prevMax; // max HP gains heal the delta
     p.hp = Math.min(p.hp, newMax);
+  }
+
+  /** Heal with mechanic caps (redline: never above 80% max HP). */
+  healPlayer(p: PlayerState, amount: number, grantedBy: string | null): number {
+    if (!p.alive || amount <= 0) return 0;
+    const cls = this.classDef(p.classId);
+    const cap = stat(p.stats, 'maxHp') * (cls.mechanic === 'redline' ? 0.8 : 1);
+    const healed = Math.min(amount, Math.max(0, cap - p.hp));
+    if (healed <= 0) return 0;
+    p.hp += healed;
+    this.tracker.push({
+      type: 'heal',
+      tick: this.state.tick,
+      wave: this.state.wave,
+      source: {
+        actor: { kind: 'player', index: p.index },
+        itemId: null,
+        grantedBy,
+        deliveryTag: 'pickup',
+        hitId: this.tracker.newHitId(),
+      },
+      target: { kind: 'player', index: p.index },
+      amount: healed,
+    });
+    return healed;
   }
 
   /** Weighted 1-of-N boon choices (no duplicates within one offer). */
@@ -491,13 +537,40 @@ export class Sim {
     return !w.unlockDeed || this.unlockedItems.has(id);
   }
 
-  /** Roll distinct weapon choices excluding held + locked items. */
+  /** Class equip legality (deny tags). Capacity is checked separately. */
+  classCanUse(classId: string, weaponId: string): boolean {
+    const cls = this.classDef(classId);
+    const w = getWeapon(this.registry, weaponId);
+    return !cls.denyTags.some((t) => w.tags.includes(t));
+  }
+
+  handPointsUsed(p: PlayerState): number {
+    return p.weapons.reduce((a, w) => a + getWeapon(this.registry, w.itemId).hands, 0);
+  }
+
+  handPointsMax(p: PlayerState): number {
+    return this.classDef(p.classId).handPoints;
+  }
+
+  /** Equip into a free slot if hand points allow. Returns success. */
+  equipWeapon(playerIndex: number, weaponId: string): boolean {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    if (!this.classCanUse(p.classId, weaponId)) return false;
+    const cost = getWeapon(this.registry, weaponId).hands;
+    if (this.handPointsUsed(p) + cost > this.handPointsMax(p)) return false;
+    p.weapons.push({ itemId: weaponId, cooldownLeft: 0 });
+    this.recomputeStats(p);
+    return true;
+  }
+
+  /** Roll distinct weapon choices: unlocked, class-legal, not already held. */
   rollWeaponChoices(playerIndex: number, count = 3): string[] {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
     const held = new Set(p.weapons.map((w) => w.itemId));
     const pool = [...this.registry.weapons.keys()].filter(
-      (id) => !held.has(id) && this.isItemAvailable(id),
+      (id) => !held.has(id) && this.isItemAvailable(id) && this.classCanUse(p.classId, id),
     );
     const out: string[] = [];
     for (let i = 0; i < count && pool.length > 0; i++) {
@@ -513,6 +586,10 @@ export class Sim {
     if (!p) throw new Error(`No player ${playerIndex}`);
     if (!this.registry.weapons.has(weaponId)) throw new Error(`Unknown weapon "${weaponId}"`);
     if (slotIndex < 0 || slotIndex >= p.weapons.length) throw new Error(`Bad slot ${slotIndex}`);
+    // Capacity must still fit after the swap (e.g. 1H → 2H on a full loadout)
+    const newCost = getWeapon(this.registry, weaponId).hands;
+    const oldCost = getWeapon(this.registry, p.weapons[slotIndex]!.itemId).hands;
+    if (this.handPointsUsed(p) - oldCost + newCost > this.handPointsMax(p)) return;
     p.weapons[slotIndex] = { itemId: weaponId, cooldownLeft: 0 };
     this.recomputeStats(p);
   }
@@ -562,6 +639,10 @@ export class Sim {
     if (s.phase === 'fighting' && s.spawning.done && s.enemies.length === 0) {
       s.phase = 'cleared';
       this.eventsThisTick.push({ type: 'waveCleared', wave: s.wave });
+      // Deed hook: someone finished the wave dangerously low (checked pre-revive)
+      if (s.players.some((p) => p.alive && p.hp / (stat(p.stats, 'maxHp') || 1) < 0.25)) {
+        this.eventsThisTick.push({ type: 'lowHpWaveClear' });
+      }
       // Co-op rule: snuffed players auto-revive at wave end
       for (const p of s.players) {
         if (!p.alive) {
@@ -585,7 +666,11 @@ export class Sim {
     if (p.iframeTimer > 0) p.iframeTimer = Math.max(0, p.iframeTimer - dt);
     if (p.contactHitCooldown > 0) p.contactHitCooldown = Math.max(0, p.contactHitCooldown - dt);
     const regen = stat(p.stats, 'hpRegen');
-    if (regen > 0) p.hp = Math.min(stat(p.stats, 'maxHp'), p.hp + regen * dt);
+    if (regen > 0) {
+      const cls = this.classDef(p.classId);
+      const cap = stat(p.stats, 'maxHp') * (cls.mechanic === 'redline' ? 0.8 : 1);
+      p.hp = Math.min(cap, p.hp + regen * dt);
+    }
 
     let mx = input.moveX;
     let my = input.moveY;
@@ -640,6 +725,7 @@ export class Sim {
         const def = getEnemy(this.registry, e.defId);
         if (Math.hypot(e.x - p.x, e.y - p.y) <= def.radius + r) {
           p.dashTouched.add(e.instance);
+          p.guaranteedCrit = true; // backspin fuel (only the mechanic consumes it)
           this.eventsThisTick.push({ type: 'dashThroughEnemy', player: p.index, enemy: e.instance });
         }
       }
@@ -745,7 +831,7 @@ export class Sim {
     }
   }
 
-  /** Weapon → enemy damage, including listed effect application. */
+  /** Weapon → enemy damage, including mechanics, lifesteal, and listed effects. */
   private weaponHitEnemy(
     enemy: EnemyState,
     p: PlayerState,
@@ -753,6 +839,7 @@ export class Sim {
     deliveryTag: SourceChain['deliveryTag'],
     hitId: number,
   ): void {
+    const cls = this.classDef(p.classId);
     const attack: AttackProfile = {
       kind: weapon.kind,
       types: weapon.damage.types,
@@ -766,7 +853,22 @@ export class Sim {
       deliveryTag,
       hitId,
     };
-    this.applyDamageToEnemy(enemy, attack, p.stats, source);
+    // Backspin: dashing through an enemy guarantees the next hit crits
+    let forceCrit = false;
+    if (cls.mechanic === 'backspin' && p.guaranteedCrit) {
+      forceCrit = true;
+      p.guaranteedCrit = false;
+    }
+    // Redline: +1% damage per 1% missing HP
+    let damageMult = 1;
+    if (cls.mechanic === 'redline') {
+      const maxHp = stat(p.stats, 'maxHp') || 1;
+      damageMult = 1 + Math.max(0, 1 - p.hp / maxHp);
+    }
+    const dealt = this.applyDamageToEnemy(enemy, attack, p.stats, source, { forceCrit, damageMult });
+    // Lifesteal (physical for attacks, magical for spells)
+    const frac = stat(p.stats, weapon.kind === 'attack' ? 'lifestealPhys' : 'lifestealMagic');
+    if (frac > 0 && dealt > 0) this.healPlayer(p, dealt * frac, 'lifesteal');
     if (enemy.alive) {
       for (const eff of weapon.effects) {
         if (this.rng.combat.chance(eff.chance)) {
@@ -782,9 +884,9 @@ export class Sim {
     attack: AttackProfile,
     attackerStats: StatSheet | null,
     source: SourceChain,
-    opts: { rawOverride?: number; noCrit?: boolean } = {},
-  ): void {
-    if (!enemy.alive) return;
+    opts: { rawOverride?: number; noCrit?: boolean; forceCrit?: boolean; damageMult?: number } = {},
+  ): number {
+    if (!enemy.alive) return 0;
     const def = getEnemy(this.registry, enemy.defId);
     let raw: number;
     let crit = false;
@@ -798,7 +900,13 @@ export class Sim {
       );
       raw = rolled.raw;
       crit = rolled.crit;
+      if (opts.forceCrit && !crit) {
+        const critDmg = stat(attackerStats ?? {}, 'critDamage') || this.registry.balance.player.critBase;
+        raw *= 1 + Math.max(0, critDmg);
+        crit = true;
+      }
     }
+    if (opts.damageMult) raw *= opts.damageMult;
     const enemyDefense: DefenseProfile = {
       armor: def.armor,
       dodge: 0,
@@ -848,6 +956,7 @@ export class Sim {
         source.actor.kind === 'player' ? source.actor.index : source.actor.kind === 'pet' ? source.actor.owner : -1;
       this.onEnemyKilled(enemy, def, byPlayer);
     }
+    return hit.amount;
   }
 
   private onEnemyKilled(enemy: EnemyState, def: EnemyDef, byPlayer: number): void {
@@ -1571,6 +1680,11 @@ export class Sim {
       p.xpIntoLevel -= threshold;
       p.level++;
       p.pendingBoons++;
+      // Class-granted item choices at scripted levels (bypass account locks)
+      const cls = this.classDef(p.classId);
+      for (const lu of cls.levelUpItems) {
+        if (lu.level === p.level) p.pendingClassItems.push([...lu.options]);
+      }
       this.eventsThisTick.push({ type: 'levelUp', player: p.index, level: p.level });
       threshold = bal.base + bal.perLevel * (p.level - 1);
     }
