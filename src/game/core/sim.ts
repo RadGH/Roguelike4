@@ -1993,6 +1993,8 @@ export class Sim {
       mitigated: hit.mitigation,
       overkill: Math.max(0, -p.hp),
     });
+    // Post-hit invulnerability: damage arrives in beats, never as an instant melt
+    p.iframeTimer = Math.max(p.iframeTimer, this.registry.balance.player.hitIframes);
     this.eventsThisTick.push({ type: 'playerHit', player: p.index, amount: hit.amount });
     this.eventsThisTick.push({
       type: 'damageNumber',

@@ -6,8 +6,14 @@
     "moveSpeed": 5.4,
     "attackCooldown": 0.8,
     "multiplier": 0.6,
-    "flat": [2, 3],
-    "types": ["pet", "melee"],
+    "flat": [
+      2,
+      3
+    ],
+    "types": [
+      "pet",
+      "melee"
+    ],
     "lifetime": 0,
     "maxPerOwner": 1,
     "leash": 8
@@ -18,11 +24,36 @@
     "radius": 0.45,
     "moveSpeed": 3.0,
     "attackCooldown": 1.0,
-    "multiplier": 0.5,
-    "flat": [1, 2],
-    "types": ["pet", "melee"],
+    "multiplier": 0.65,
+    "flat": [
+      1,
+      2
+    ],
+    "types": [
+      "pet",
+      "melee"
+    ],
     "lifetime": 20,
-    "maxPerOwner": 6,
+    "maxPerOwner": 8,
     "leash": 12
+  },
+  {
+    "id": "bone-chum",
+    "name": "Bone Chum",
+    "radius": 0.38,
+    "moveSpeed": 4.6,
+    "attackCooldown": 0.7,
+    "multiplier": 0.85,
+    "flat": [
+      2,
+      3
+    ],
+    "types": [
+      "pet",
+      "melee"
+    ],
+    "lifetime": 0,
+    "maxPerOwner": 1,
+    "leash": 9
   }
 ]

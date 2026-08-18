@@ -7,6 +7,8 @@ import { Sim } from '../core/sim';
 import { neutralInput, type InputFrame } from '../core/input';
 import { TICK_RATE } from '../core/constants';
 import { stat } from '../core/stats';
+import { resolveWeapon } from '../core/items';
+import type { WeaponInstance } from '../core/items';
 
 export type BotPolicy = 'kite' | 'brawl';
 
@@ -38,10 +40,19 @@ export type HeadlessResult = {
 };
 
 /** One bot-piloted input frame for a player. */
-function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): InputFrame {
+export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): InputFrame {
   const p = sim.state.players[playerIndex]!;
   const frame = neutralInput();
   if (!p.alive) return frame;
+  // Melee-only loadouts need a duelist's gait, not a kiter's; a weaponless
+  // pet class must hold mid-range or its leashed pets never reach the fight
+  const hasMelee = p.weapons.some(
+    (w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc',
+  );
+  const meleeOnly =
+    p.weapons.length > 0 &&
+    p.weapons.every((w) => sim.registry.weapons.get(w.itemId)?.delivery.type === 'meleeArc');
+  const petCommander = p.weapons.length === 0;
 
   let fleeX = 0;
   let fleeY = 0;
@@ -57,7 +68,9 @@ function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): InputFrame 
     const scary = e.charge.phase === 'windup' || e.charge.phase === 'charging';
     const radius = scary ? 10 : 7;
     if (d < radius) {
-      const w = (radius - d) * (radius - d) * (scary ? 1.2 : 0.3);
+      // heavier hitters push harder — the bot respects elites and minibosses
+      const menace = 1 + e.damage / 5;
+      const w = (radius - d) * (radius - d) * (scary ? 1.2 : 0.3) * menace;
       fleeX += (dx / d) * w;
       fleeY += (dy / d) * w;
       threat++;
@@ -112,7 +125,57 @@ function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): InputFrame 
 
   let mx: number;
   let my: number;
-  if (policy === 'brawl' && threat === 0 && sim.state.enemies.length > 0) {
+  // Mixed melee/ranged kits kite the swarm, but a kit with lifesteal sustain
+  // closes in to finish stragglers — end-of-wave whittling is where pure
+  // kiting stalls out the clock, and sustain makes the contact survivable
+  const aliveCount = sim.state.enemies.reduce((n, e) => n + (e.alive ? 1 : 0), 0);
+  const sustain =
+    stat(p.stats, 'lifestealPhys') > 0 || stat(p.stats, 'lifestealMagic') > 0;
+  // ...and never "finish" a miniboss/elite: heavy hitters get kited, not hugged
+  const nearestE = sim.nearestEnemy(p.x, p.y, 100);
+  const hpFrac = p.hp / Math.max(1, stat(p.stats, 'maxHp'));
+  const finishThem =
+    hasMelee &&
+    !meleeOnly &&
+    sustain &&
+    aliveCount <= 2 &&
+    !!nearestE &&
+    // weak stragglers always; a heavy (miniboss/boss) only while healthy —
+    // lifesteal turns short, disciplined contact windows into net healing
+    (nearestE.damage <= 3 || hpFrac > 0.65);
+  if ((meleeOnly || petCommander || finishThem) && aliveCount > 0) {
+    // Ring-keeping duelist: hover just inside arc reach, strafe, bail on telegraphs.
+    // Pet commanders hold a wider ring so leashed pets can reach the fight.
+    const e = nearestE;
+    if (e) {
+      const dx = e.x - p.x;
+      const dy = e.y - p.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const scary = e.charge.phase === 'windup' || e.charge.phase === 'charging';
+      const ring = scary ? 8 : petCommander ? 5.5 : meleeOnly ? 1.5 : 2.0;
+      const toward = d > ring ? 1.2 : d < ring * 0.6 ? -0.8 : 0;
+      // A duelist commits: general crowd pressure never outweighs the approach —
+      // only telegraphs and incoming shots earn a sidestep
+      const fleeBlend = scary || dodgeUrgent ? 0.4 : 0;
+      mx = (dx / d) * toward + (-dy / d) * 0.5 + fleeX * fleeBlend;
+      my = (dy / d) * toward + (dx / d) * 0.5 + fleeY * fleeBlend;
+      // Backspin rogues weave dashes through the target to bank guaranteed crits
+      if (
+        !scary &&
+        d < 3 &&
+        p.dashCooldown <= 0 &&
+        !p.guaranteedCrit &&
+        sim.registry.classes.get(p.classId)?.mechanic === 'backspin'
+      ) {
+        frame.dash = true;
+        mx = dx / d;
+        my = dy / d;
+      }
+    } else {
+      mx = pullX;
+      my = pullY;
+    }
+  } else if (policy === 'brawl' && threat === 0 && sim.state.enemies.length > 0) {
     // walk toward the nearest enemy to keep auto-aim in range
     const e = sim.nearestEnemy(p.x, p.y, 100);
     if (e) {
@@ -157,6 +220,14 @@ function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): InputFrame 
 
 /** Greedy reward policy: class items → first; chests → first weapon that fits,
  *  else passive, else salvage; boons → biggest matching damage stat, else first. */
+/** Rough single-target DPS estimate for comparing chest offers to the current kit. */
+function roughDps(sim: Sim, inst: WeaponInstance): number {
+  const w = resolveWeapon(sim.registry, inst);
+  const avg = ((w.flat[0] + w.flat[1]) / 2) * w.multiplier;
+  const count = w.delivery.type === 'meleeArc' ? 1 : (w.delivery.count ?? 1);
+  return (avg * count) / Math.max(0.1, w.delivery.cooldown);
+}
+
 function resolveRewards(sim: Sim): void {
   for (const p of sim.state.players) {
     let guard = 0;
@@ -182,6 +253,37 @@ function resolveRewards(sim: Sim): void {
           taken = true;
           break;
         }
+        // Full hands: swap out the weakest weapon when the offer is a clear
+        // upgrade — humans don't carry a starter wand to the boss
+        let worstIdx = -1;
+        let worstDps = Infinity;
+        const resolved = p.weapons.map((w) => resolveWeapon(sim.registry, w));
+        const spellCount = resolved.filter((w) => w.kind === 'spell').length;
+        for (let i = 0; i < p.weapons.length; i++) {
+          // AoE and status weapons punch far above their listed numbers —
+          // never treat them as the weak link
+          const cur = resolved[i]!;
+          const special =
+            (cur.delivery.type !== 'meleeArc' && (cur.delivery.blastRadius ?? 0) > 0) ||
+            (cur.effects?.length ?? 0) > 0;
+          if (special) continue;
+          // A caster's spells feed each other through spellDamage grants —
+          // keep the synergy stack intact
+          if (cur.kind === 'spell' && spellCount >= 2) continue;
+          const d = roughDps(sim, p.weapons[i]!);
+          if (d < worstDps) {
+            worstDps = d;
+            worstIdx = i;
+          }
+        }
+        if (worstIdx >= 0 && roughDps(sim, offer.inst) > worstDps * 1.25) {
+          const before = p.weapons[worstIdx]!.itemId;
+          sim.replaceWeapon(p.index, worstIdx, offer.inst);
+          if (p.weapons[worstIdx]!.itemId !== before) {
+            taken = true;
+            break;
+          }
+        }
       }
       if (!taken) p.bits += 2; // salvage
       p.pendingChests--;
@@ -193,12 +295,20 @@ function resolveRewards(sim: Sim): void {
     guard = 0;
     while (p.pendingBoons > 0 && guard++ < 50) {
       const choices = sim.rollBoonChoices(4);
-      // Prefer boons that raise the player's current best damage stat family
-      const pick =
-        choices.find((id) => {
-          const b = sim.registry.boons.get(id)!;
-          return b.grants.some((g) => (stat(p.stats, g.stat) ?? 0) > 0 && g.stat.includes('Damage'));
-        }) ?? choices[0]!;
+      // Humans buy survivability as the waves deepen: keep maxHp ≈ 10 + 1.5×wave,
+      // then push damage. Defense (armor/regen/dodge) counts toward "survival".
+      const wantSurvival = (stat(p.stats, 'maxHp') || 10) < 10 + sim.state.wave * 1.5;
+      const survivalPick = choices.find((id) => {
+        const b = sim.registry.boons.get(id)!;
+        return b.grants.some((g) =>
+          ['maxHp', 'armor', 'hpRegen', 'dodge', 'flatReduction', 'resistAll'].includes(g.stat),
+        );
+      });
+      const damagePick = choices.find((id) => {
+        const b = sim.registry.boons.get(id)!;
+        return b.grants.some((g) => (stat(p.stats, g.stat) ?? 0) > 0 && g.stat.includes('Damage'));
+      });
+      const pick = (wantSurvival ? (survivalPick ?? damagePick) : (damagePick ?? survivalPick)) ?? choices[0]!;
       sim.applyBoon(p.index, pick);
     }
   }

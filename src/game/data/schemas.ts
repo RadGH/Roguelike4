@@ -324,6 +324,7 @@ export const BalanceSchema = z
         dashSpeed: z.number().positive(),
         dashDuration: z.number().positive(),
         dashIframes: z.number().positive(),
+        hitIframes: z.number().positive(),
         dashCooldown: z.number().positive(),
         radius: z.number().positive(),
         critBase: z.number(), // base critDamage (0.5 → ×1.5)

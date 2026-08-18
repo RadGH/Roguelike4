@@ -87,10 +87,10 @@ describe('leveling', () => {
   it('XP grants levels with overflow across multiple levels', () => {
     const sim = new Sim(17, 1);
     const p = sim.state.players[0]!;
-    // base 10, perLevel 6: L1→2 needs 10, L2→3 needs 16, L3→4 needs 22 (Σ=48)
+    // base 10, perLevel 5: L1→2 needs 10, L2→3 needs 15, L3→4 needs 20 (Σ=45)
     (sim as unknown as { grantXp(p: unknown, n: number): void }).grantXp(p, 50);
     expect(p.level).toBe(4);
-    expect(p.xpIntoLevel).toBe(50 - 48);
+    expect(p.xpIntoLevel).toBe(50 - 45);
     expect(p.pendingBoons).toBe(3);
   });
 });

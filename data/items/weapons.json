@@ -164,7 +164,7 @@
       "type": "meleeArc",
       "reach": 1.8,
       "arcDeg": 90,
-      "cooldown": 0.22
+      "cooldown": 0.2
     },
     "grants": [
       {

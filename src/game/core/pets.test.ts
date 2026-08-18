@@ -67,8 +67,9 @@ describe('pets', () => {
 
   it('per-owner pet caps hold', () => {
     const sim = new Sim(5, 1);
-    for (let i = 0; i < 10; i++) sim.spawnPet('zombie', 0, 'zombie-flute', 10, 10);
-    expect(sim.state.pets.length).toBe(6); // zombie maxPerOwner
+    const zombieCap = sim.registry.pets.get('zombie')!.maxPerOwner;
+    for (let i = 0; i < zombieCap + 4; i++) sim.spawnPet('zombie', 0, 'zombie-flute', 10, 10);
+    expect(sim.state.pets.length).toBe(zombieCap); // zombie maxPerOwner from data
     expect(sim.spawnPet('dog', 0, 'hunter', 10, 10)).not.toBeNull();
     expect(sim.spawnPet('dog', 0, 'hunter', 10, 10)).toBeNull(); // dog cap 1
   });

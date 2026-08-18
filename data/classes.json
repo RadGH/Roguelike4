@@ -51,11 +51,11 @@
     "statMods": [
       {
         "stat": "dodge",
-        "flat": 0.05
+        "flat": 0.1
       },
       {
         "stat": "critChance",
-        "flat": 0.05
+        "flat": 0.1
       }
     ],
     "startingWeapons": [
@@ -204,7 +204,7 @@
   {
     "id": "necromancer",
     "name": "Necromancer",
-    "blurb": "Sweet old soul, terrible hobbies. Needs no weapon \u2014 the fallen fight for them.",
+    "blurb": "Sweet old soul, terrible hobbies. Bone Chum starts the engine; the fallen keep it running.",
     "handPoints": 0,
     "statMods": [
       {
@@ -213,7 +213,7 @@
       },
       {
         "stat": "maxHp",
-        "flat": 2
+        "flat": 4
       }
     ],
     "startingWeapons": [],
@@ -221,6 +221,9 @@
     "unlock": {
       "type": "deed",
       "deedId": "pet-kills-50"
-    }
+    },
+    "startingPets": [
+      "bone-chum"
+    ]
   }
 ]

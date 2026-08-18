@@ -12,7 +12,8 @@
     "dashIframes": 0.15,
     "dashCooldown": 0.9,
     "radius": 0.55,
-    "critBase": 0.5
+    "critBase": 0.5,
+    "hitIframes": 0.35
   },
   "defense": {
     "armorKneeBase": 25,
@@ -28,7 +29,7 @@
   },
   "leveling": {
     "base": 10,
-    "perLevel": 6
+    "perLevel": 5
   },
   "evil": {
     "candleSpawn": 0.25,
