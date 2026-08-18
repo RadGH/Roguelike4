@@ -40,6 +40,133 @@
     "rarity": "common"
   },
   {
+    "id": "firecracker",
+    "category": "weapon",
+    "tags": ["ranged1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["ranged", "fire"], "multiplier": 0.7, "flat": [1, 2] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 9,
+      "radius": 0.25,
+      "blastRadius": 1.6,
+      "range": 9,
+      "cooldown": 1.1
+    },
+    "grants": [{ "stat": "rangedDamage", "flat": 2 }],
+    "rarity": "common"
+  },
+  {
+    "id": "fireball",
+    "category": "weapon",
+    "tags": ["spell", "magical", "fire"],
+    "hands": 1,
+    "kind": "spell",
+    "damage": { "types": ["fire"], "multiplier": 1.0, "flat": [2, 4] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 8,
+      "radius": 0.3,
+      "blastRadius": 1.8,
+      "range": 12,
+      "cooldown": 1.4
+    },
+    "grants": [{ "stat": "fireDamage", "flat": 3 }],
+    "effects": [{ "kind": "burn", "amount": 3, "chance": 0.5 }],
+    "rarity": "uncommon",
+    "unlockDeed": "fire-kill-1"
+  },
+  {
+    "id": "flame-lash",
+    "category": "weapon",
+    "tags": ["spell", "magical", "fire"],
+    "hands": 1,
+    "kind": "spell",
+    "damage": { "types": ["fire"], "multiplier": 1.1, "flat": [2, 3] },
+    "delivery": { "type": "meleeArc", "reach": 3.2, "arcDeg": 70, "cooldown": 0.6 },
+    "grants": [{ "stat": "fireDamage", "flat": 3 }],
+    "effects": [{ "kind": "burn", "amount": 6, "chance": 1 }],
+    "rarity": "rare",
+    "unlockDeed": "burn-kills-25"
+  },
+  {
+    "id": "rocket-launcher",
+    "category": "weapon",
+    "tags": ["ranged2h", "physical"],
+    "hands": 2,
+    "kind": "attack",
+    "damage": { "types": ["ranged", "fire"], "multiplier": 2.5, "flat": [4, 7] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 10,
+      "radius": 0.35,
+      "blastRadius": 2.6,
+      "range": 13,
+      "cooldown": 2.4
+    },
+    "grants": [{ "stat": "rangedDamage", "flat": 4 }],
+    "rarity": "epic",
+    "unlockDeed": "explosion-multikill-5"
+  },
+  {
+    "id": "greatclub",
+    "category": "weapon",
+    "tags": ["melee2h", "physical"],
+    "hands": 2,
+    "kind": "attack",
+    "damage": { "types": ["melee"], "multiplier": 2.2, "flat": [3, 6] },
+    "delivery": { "type": "meleeArc", "reach": 2.8, "arcDeg": 150, "cooldown": 0.9 },
+    "grants": [{ "stat": "meleeDamage", "flat": 4 }],
+    "rarity": "uncommon",
+    "unlockDeed": "melee-damage-1000"
+  },
+  {
+    "id": "coin-cannon",
+    "category": "weapon",
+    "tags": ["ranged1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["ranged"], "multiplier": 0.9, "flat": [1, 3] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 14,
+      "radius": 0.22,
+      "range": 12,
+      "cooldown": 0.4,
+      "count": 2,
+      "spreadDeg": 10
+    },
+    "grants": [
+      { "stat": "rangedDamage", "flat": 2 },
+      { "stat": "goldGain", "pct": 0.1 }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "gold-hoard-500"
+  },
+  {
+    "id": "throwing-knives",
+    "category": "weapon",
+    "tags": ["ranged1h", "physical"],
+    "hands": 1,
+    "kind": "attack",
+    "damage": { "types": ["ranged"], "multiplier": 0.6, "flat": [1, 2] },
+    "delivery": {
+      "type": "projectile",
+      "speed": 15,
+      "radius": 0.2,
+      "range": 10,
+      "cooldown": 0.28,
+      "pierce": 1
+    },
+    "grants": [
+      { "stat": "rangedDamage", "flat": 2 },
+      { "stat": "critChance", "flat": 0.05 }
+    ],
+    "rarity": "uncommon",
+    "unlockDeed": "dash-through-25"
+  },
+  {
     "id": "wand",
     "category": "weapon",
     "tags": ["spell", "magical"],

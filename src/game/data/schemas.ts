@@ -156,6 +156,31 @@ export const ActWavesSchema = z
   })
   .strict();
 
+export const DeedMatchSchema = z.discriminatedUnion('event', [
+  z.object({ event: z.literal('killWithType'), type: DamageTypeSchema }).strict(),
+  z.object({ event: z.literal('burnKill') }).strict(),
+  z.object({ event: z.literal('explosionMultikill') }).strict(),
+  z.object({ event: z.literal('damageOfType'), type: DamageTypeSchema }).strict(),
+  z.object({ event: z.literal('goldHeld') }).strict(),
+  z.object({ event: z.literal('dashThrough') }).strict(),
+]);
+
+export const DeedSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    desc: z.string(),
+    hint: z.string(),
+    kind: z.enum(['counter', 'single-event', 'run-state', 'world-state', 'discovery']),
+    scope: z.enum(['party', 'perPlayer']),
+    target: z.number().positive(),
+    match: DeedMatchSchema,
+    unlocks: z
+      .array(z.object({ type: z.enum(['weapon', 'class', 'feat']), id: z.string() }).strict())
+      .default([]),
+    glimmerBonus: z.number().nonnegative().default(0),
+  })
+  .strict();
+
 export const BoonSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
@@ -230,4 +255,5 @@ export type Grant = z.infer<typeof GrantSchema>;
 export type EffectDef = z.infer<typeof EffectSchema>;
 export type WaveDef = z.infer<typeof WaveSchema>;
 export type BoonDef = z.infer<typeof BoonSchema>;
+export type DeedDef = z.infer<typeof DeedSchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;

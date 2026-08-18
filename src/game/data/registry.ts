@@ -7,15 +7,18 @@ import weaponsJson from '@data/items/weapons.json';
 import enemiesAct1Json from '@data/enemies/act1.json';
 import wavesAct1Json from '@data/waves/act1.json';
 import boonsJson from '@data/boons.json';
+import deedsJson from '@data/deeds.json';
 import {
   ActWavesSchema,
   BalanceSchema,
   BoonSchema,
+  DeedSchema,
   EnemySchema,
   WeaponSchema,
   type ActWavesDef,
   type BalanceDef,
   type BoonDef,
+  type DeedDef,
   type EnemyDef,
   type WaveDef,
   type WeaponDef,
@@ -52,6 +55,7 @@ export type Registry = {
   enemies: Map<string, EnemyDef>;
   waves: Map<number, ActWavesDef>; // act → waves
   boons: Map<string, BoonDef>;
+  deeds: Map<string, DeedDef>;
 };
 
 let cached: Registry | null = null;
@@ -65,7 +69,20 @@ export function loadRegistry(): Registry {
     enemies: parseList(EnemySchema, enemiesAct1Json as unknown[], 'enemies.act1'),
     waves: new Map([[act1Waves.act, act1Waves]]),
     boons: parseList(BoonSchema, boonsJson as unknown[], 'boons'),
+    deeds: parseList(DeedSchema, deedsJson as unknown[], 'deeds'),
   };
+  // Day-one audit (build-time slice): every weapon unlockDeed exists; every deed's
+  // weapon unlock exists; and at least one day-one path feeds each deed's need.
+  for (const [id, w] of reg.weapons) {
+    if (w.unlockDeed && !reg.deeds.has(w.unlockDeed))
+      throw new Error(`weapon "${id}": unknown unlockDeed "${w.unlockDeed}"`);
+  }
+  for (const [id, d] of reg.deeds) {
+    for (const u of d.unlocks) {
+      if (u.type === 'weapon' && !reg.weapons.has(u.id))
+        throw new Error(`deed "${id}": unlocks unknown weapon "${u.id}"`);
+    }
+  }
   // Cross-reference checks: every wave entry and splitter child must exist.
   for (const [act, aw] of reg.waves) {
     for (const w of aw.waves) {

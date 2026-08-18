@@ -146,6 +146,40 @@ export function GameView({
           </div>
         </div>
       )}
+      {hud && hud.toasts.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 80,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+            pointerEvents: 'none',
+            zIndex: 15,
+          }}
+        >
+          {hud.toasts.map((t) => (
+            <div
+              key={t.id}
+              data-toast
+              style={{
+                background: 'rgba(43,33,64,0.92)',
+                border: '2px solid #ffd97a',
+                borderRadius: 10,
+                color: '#fff4d6',
+                fontFamily: 'system-ui',
+                fontWeight: 800,
+                padding: '8px 18px',
+                textAlign: 'center',
+              }}
+            >
+              {t.text}
+            </div>
+          ))}
+        </div>
+      )}
       {hud?.paused && engineRef.current && (
         <PauseOverlay
           engine={engineRef.current}

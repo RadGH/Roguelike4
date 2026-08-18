@@ -4,6 +4,8 @@
 import { Sim } from '@game/core/sim';
 import { TICK_SECONDS } from '@game/core/constants';
 import { neutralInput, type InputFrame } from '@game/core/input';
+import { DeedEngine } from '@game/core/deeds';
+import { loadProfile, saveProfile, type KeyValueStorage, type Profile } from '@game/meta/profile';
 import { GameRenderer, takeSnapshot, type RenderSnapshot } from './renderer';
 import { InputSampler } from './inputSources';
 import { createDebugApi, type DebugApi } from '../debug/harness';
@@ -21,8 +23,23 @@ export class Engine {
   private pausedByDebug = false;
   readonly debug: DebugApi;
 
-  constructor(seed: number, playerCount = 1) {
+  readonly profile: Profile;
+  private profileStorage: KeyValueStorage;
+  private deedEngine: DeedEngine;
+  private maxGoldHeld = 0;
+  private toasts: { id: number; text: string; until: number }[] = [];
+  private nextToastId = 1;
+
+  constructor(seed: number, playerCount = 1, storage: KeyValueStorage = window.localStorage) {
     this.sim = new Sim(seed, playerCount);
+    this.profileStorage = storage;
+    this.profile = loadProfile(storage, 1);
+    this.sim.unlockedItems = new Set(this.profile.unlockedItems);
+    this.deedEngine = new DeedEngine(
+      this.sim.registry.deeds,
+      this.profile.deedProgress,
+      new Set(this.profile.deedsCompleted),
+    );
     this.prevSnap = takeSnapshot(this.sim);
     this.currSnap = takeSnapshot(this.sim);
     this.debug = createDebugApi(
@@ -60,6 +77,9 @@ export class Engine {
             this.startWave(10);
           } else if (action.startsWith('grantXp:')) {
             this.sim.grantXpTo(0, Number(action.slice(8)) || 0);
+          } else if (action.startsWith('equip:')) {
+            const [, weaponId, slotStr] = action.split(':');
+            this.sim.replaceWeapon(0, Number(slotStr) || 0, weaponId!);
           } else if (action === 'addPlayer') {
             if (this.sim.state.players.length < 4) this.sim.addPlayer();
           } else if (action.startsWith('snuff:')) {
@@ -263,6 +283,8 @@ export class Engine {
       runState: this.runState,
       paused: this.userPaused,
       disconnectedPads: [...this.disconnectedPads],
+      glimmers: this.profile.glimmers,
+      toasts: this.toasts.filter((t) => t.until > performance.now()).map((t) => ({ id: t.id, text: t.text })),
       enemies: this.sim.aliveEnemyCount(),
       combo: this.sim.state.combo.count,
       players: this.sim.state.players.map((pl) => ({
@@ -314,17 +336,65 @@ export class Engine {
 
   private stepOnce(inputs: readonly InputFrame[]): void {
     this.prevSnap = this.currSnap;
+    const trackerStart = this.sim.tracker.events.length;
     const events = this.sim.tick(inputs);
     for (const ev of events) {
       if (ev.type === 'damageNumber' && this.renderer.isReady) {
         this.renderer.spawnDamageNumber(ev.x, ev.y, ev.amount, ev.crit, ev.onPlayer);
       } else if (ev.type === 'runOver') {
         this.runState = 'gameOver';
+        this.recordRunEnd(false);
       } else if (ev.type === 'waveCleared' && !this.sim.hasNextWave()) {
         this.runState = 'victory';
+        this.recordRunEnd(true);
       }
     }
+
+    // Deeds: evaluate this tick's event slice
+    this.maxGoldHeld = Math.max(this.maxGoldHeld, this.sim.state.players[0]?.gold ?? 0);
+    const completions = this.deedEngine.processTick(
+      this.sim.tracker.events.slice(trackerStart),
+      events,
+      { maxGoldHeld: this.maxGoldHeld },
+    );
+    if (completions.length > 0) {
+      for (const c of completions) {
+        this.profile.glimmers += c.glimmerBonus;
+        for (const u of c.unlocks) {
+          if (u.type === 'weapon' && !this.profile.unlockedItems.includes(u.id)) {
+            this.profile.unlockedItems.push(u.id);
+            this.sim.unlockedItems.add(u.id);
+            this.pushToast(`✨ Unlocked: ${this.weaponInfo(u.id).name}!`);
+          } else if (u.type === 'class' && !this.profile.unlockedClasses.includes(u.id)) {
+            this.profile.unlockedClasses.push(u.id);
+            this.pushToast(`✨ New class unlocked: ${u.id}!`);
+          } else if (u.type === 'feat' && !this.profile.unlockedFeats.includes(u.id)) {
+            this.profile.unlockedFeats.push(u.id);
+            this.pushToast(`✨ New feat unlocked: ${u.id}!`);
+          }
+        }
+      }
+      this.persistProfile();
+    }
     this.currSnap = takeSnapshot(this.sim);
+  }
+
+  private pushToast(text: string): void {
+    this.toasts.push({ id: this.nextToastId++, text, until: performance.now() + 4500 });
+  }
+
+  private recordRunEnd(won: boolean): void {
+    this.profile.lifetime.runs++;
+    if (won) this.profile.lifetime.wins++;
+    this.profile.lifetime.kills += [...this.sim.tracker.killsByPlayer.values()].reduce((a, b) => a + b, 0);
+    this.profile.lifetime.deepestWave = Math.max(this.profile.lifetime.deepestWave, this.sim.state.wave);
+    if (won) this.profile.glimmers += 15; // act-clear bounty (per design economy table)
+    this.persistProfile();
+  }
+
+  private persistProfile(): void {
+    this.profile.deedsCompleted = [...this.deedEngine.completed];
+    saveProfile(this.profileStorage, this.profile);
   }
 
   /** Damage-meter drill-down for the recap panels. */

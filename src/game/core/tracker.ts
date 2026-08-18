@@ -38,7 +38,7 @@ export type TrackerEvent =
       mitigated: Mitigation;
       overkill: number;
     }
-  | { type: 'kill'; tick: number; wave: number; source: SourceChain; target: ActorRef }
+  | { type: 'kill'; tick: number; wave: number; source: SourceChain; target: ActorRef; types: DamageType[] }
   | { type: 'heal'; tick: number; wave: number; source: SourceChain; target: ActorRef; amount: number }
   | { type: 'pickup'; tick: number; wave: number; player: number; what: 'gold' | 'xp'; amount: number }
   | { type: 'dodgeSave'; tick: number; wave: number; target: ActorRef; source: SourceChain };

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "fire-kill-1",
+    "desc": "Defeat an enemy with fire damage",
+    "hint": "Something warm would help. Wands run hot by default.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 1,
+    "match": { "event": "killWithType", "type": "fire" },
+    "unlocks": [{ "type": "weapon", "id": "fireball" }],
+    "glimmerBonus": 1
+  },
+  {
+    "id": "burn-kills-25",
+    "desc": "Let burns finish off 25 enemies",
+    "hint": "Light them up, then walk away.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 25,
+    "match": { "event": "burnKill" },
+    "unlocks": [{ "type": "weapon", "id": "flame-lash" }],
+    "glimmerBonus": 2
+  },
+  {
+    "id": "explosion-multikill-5",
+    "desc": "Defeat 5 or more enemies with a single explosion",
+    "hint": "Crowded enemies. One very big bang.",
+    "kind": "single-event",
+    "scope": "party",
+    "target": 5,
+    "match": { "event": "explosionMultikill" },
+    "unlocks": [{ "type": "weapon", "id": "rocket-launcher" }],
+    "glimmerBonus": 3
+  },
+  {
+    "id": "melee-damage-1000",
+    "desc": "Deal 1,000 total melee damage",
+    "hint": "Swing early, swing often.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 1000,
+    "match": { "event": "damageOfType", "type": "melee" },
+    "unlocks": [{ "type": "weapon", "id": "greatclub" }],
+    "glimmerBonus": 2
+  },
+  {
+    "id": "gold-hoard-500",
+    "desc": "Hold 500 gold during a single run",
+    "hint": "Spend later. Hoard now.",
+    "kind": "run-state",
+    "scope": "party",
+    "target": 500,
+    "match": { "event": "goldHeld" },
+    "unlocks": [{ "type": "weapon", "id": "coin-cannon" }],
+    "glimmerBonus": 2
+  },
+  {
+    "id": "dash-through-25",
+    "desc": "Dash through 25 enemies",
+    "hint": "The shortest path is directly through them.",
+    "kind": "counter",
+    "scope": "party",
+    "target": 25,
+    "match": { "event": "dashThrough" },
+    "unlocks": [{ "type": "weapon", "id": "throwing-knives" }],
+    "glimmerBonus": 2
+  }
+]

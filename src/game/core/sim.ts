@@ -56,6 +56,7 @@ export type PlayerState = {
   contactHitCooldown: number;
   reviveProgress: number; // seconds of Interact held near this player's wisp
   revivedThisWave: boolean;
+  dashTouched: Set<number>; // enemies passed through during the current dash
 };
 
 export type ChargeState = {
@@ -114,6 +115,7 @@ export type ProjectileState = {
   enemyDefId: string | null;
   enemyDamage: number; // scaled damage for enemy projectiles
   pierceLeft: number;
+  blastRadius: number; // >0: explodes on impact (explosion-tagged AoE)
   hitIds: Set<number>;
 };
 
@@ -144,6 +146,7 @@ export type SimState = {
 
 export type SimEvent =
   | { type: 'dash'; player: number }
+  | { type: 'dashThroughEnemy'; player: number; enemy: number }
   | { type: 'enemyKilled'; defId: string; instance: number; byPlayer: number }
   | { type: 'playerHit'; player: number; amount: number }
   | { type: 'playerDown'; player: number }
@@ -181,6 +184,7 @@ export class Sim {
       projectiles.push({
         active: false, x: 0, y: 0, vx: 0, vy: 0, radius: 0, traveled: 0, range: 0,
         fromPlayer: -1, itemId: null, enemyDefId: null, enemyDamage: 0, pierceLeft: 0,
+        blastRadius: 0,
         hitIds: new Set(),
       });
     }
@@ -237,6 +241,7 @@ export class Sim {
       contactHitCooldown: 0,
       reviveProgress: 0,
       revivedThisWave: false,
+      dashTouched: new Set(),
     };
   }
 
@@ -386,12 +391,23 @@ export class Sim {
 
   // ---- weapons (equipment management) ----
 
-  /** Roll distinct weapon choices excluding what the player already holds. */
+  /** Item ids unlocked on this save slot; weapons with an unlockDeed need to be here. */
+  unlockedItems = new Set<string>();
+
+  private isItemAvailable(id: string): boolean {
+    const w = this.registry.weapons.get(id);
+    if (!w) return false;
+    return !w.unlockDeed || this.unlockedItems.has(id);
+  }
+
+  /** Roll distinct weapon choices excluding held + locked items. */
   rollWeaponChoices(playerIndex: number, count = 3): string[] {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
     const held = new Set(p.weapons.map((w) => w.itemId));
-    const pool = [...this.registry.weapons.keys()].filter((id) => !held.has(id));
+    const pool = [...this.registry.weapons.keys()].filter(
+      (id) => !held.has(id) && this.isItemAvailable(id),
+    );
     const out: string[] = [];
     for (let i = 0; i < count && pool.length > 0; i++) {
       const idx = this.rng.drops.int(0, pool.length - 1);
@@ -503,6 +519,7 @@ export class Sim {
         p.dashDirX = Math.cos(p.facing);
         p.dashDirY = Math.sin(p.facing);
       }
+      p.dashTouched.clear();
       this.eventsThisTick.push({ type: 'dash', player: p.index });
     }
 
@@ -523,6 +540,18 @@ export class Sim {
     p.x = Math.min(this.state.arena.width - r, Math.max(r, p.x));
     p.y = Math.min(this.state.arena.height - r, Math.max(r, p.y));
     if (p.moving || p.dashTimer > 0) p.squishPhase = (p.squishPhase + dt * 9) % (Math.PI * 2);
+
+    // Dash-through detection (Rogue-style deeds + future class mechanics)
+    if (p.dashTimer > 0) {
+      for (const e of this.state.enemies) {
+        if (!e.alive || p.dashTouched.has(e.instance)) continue;
+        const def = getEnemy(this.registry, e.defId);
+        if (Math.hypot(e.x - p.x, e.y - p.y) <= def.radius + r) {
+          p.dashTouched.add(e.instance);
+          this.eventsThisTick.push({ type: 'dashThroughEnemy', player: p.index, enemy: e.instance });
+        }
+      }
+    }
   }
 
   /** Hold Interact near a snuffed teammate's wisp to relight them (once per wave). */
@@ -615,6 +644,7 @@ export class Sim {
         proj.enemyDefId = null;
         proj.enemyDamage = 0;
         proj.pierceLeft = d.pierce;
+        proj.blastRadius = d.blastRadius * (1 + stat(p.stats, 'area'));
         proj.hitIds.clear();
       }
     }
@@ -711,7 +741,14 @@ export class Sim {
     });
     if (enemy.hp <= 0 && enemy.alive) {
       enemy.alive = false;
-      this.tracker.push({ type: 'kill', tick: this.state.tick, wave: this.state.wave, source, target });
+      this.tracker.push({
+        type: 'kill',
+        tick: this.state.tick,
+        wave: this.state.wave,
+        source,
+        target,
+        types: attack.types,
+      });
       const byPlayer =
         source.actor.kind === 'player' ? source.actor.index : source.actor.kind === 'pet' ? source.actor.owner : -1;
       this.onEnemyKilled(enemy, def, byPlayer);
@@ -1179,9 +1216,25 @@ export class Sim {
           if (Math.hypot(enemy.x - pr.x, enemy.y - pr.y) > def.radius + pr.radius) continue;
           const p = this.state.players[pr.fromPlayer]!;
           const weapon = pr.itemId ? getWeapon(this.registry, pr.itemId) : null;
-          if (weapon) this.weaponHitEnemy(enemy, p, weapon, 'projectile', this.tracker.newHitId());
-          pr.hitIds.add(c.id);
-          if (pr.pierceLeft > 0) pr.pierceLeft--;
+          if (weapon) {
+            if (pr.blastRadius > 0) {
+              // Explode: one hitId shared by every enemy in the blast (multikill deeds)
+              const hitId = this.tracker.newHitId();
+              const inBlast = this.spatial.query(pr.x, pr.y, pr.blastRadius + 1, this.spatialScratch);
+              for (const bc of inBlast) {
+                const be = this.enemyByInstance.get(bc.id);
+                if (!be || !be.alive) continue;
+                const bdef = getEnemy(this.registry, be.defId);
+                if (Math.hypot(be.x - pr.x, be.y - pr.y) > pr.blastRadius + bdef.radius) continue;
+                this.weaponHitEnemy(be, p, weapon, 'explosion', hitId);
+                pr.hitIds.add(bc.id);
+              }
+            } else {
+              this.weaponHitEnemy(enemy, p, weapon, 'projectile', this.tracker.newHitId());
+              pr.hitIds.add(c.id);
+            }
+          }
+          if (pr.pierceLeft > 0 && pr.blastRadius === 0) pr.pierceLeft--;
           else {
             pr.active = false;
             break;
