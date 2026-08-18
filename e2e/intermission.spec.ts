@@ -59,17 +59,10 @@ test('boon pick actually raises player stats', async ({ page }) => {
   // Grant XP by clearing spawned enemies and collecting orbs via a movement sweep.
   await page.evaluate(() => {
     window.__debug.pause();
-    window.__debug.step(60);
+    window.__debug.step(160);
     window.__debug.cheat('stopSpawns');
+    window.__debug.cheat('grantXp:15'); // deterministic level-up → boons pending
     window.__debug.cheat('killAll');
-    // sweep to vacuum orbs
-    window.__debug.setInput({ moveX: 1 });
-    window.__debug.step(45);
-    window.__debug.setInput({ moveX: -1 });
-    window.__debug.step(90);
-    window.__debug.setInput({ moveX: 1 });
-    window.__debug.step(45);
-    window.__debug.setInput({ moveX: 0 });
     window.__debug.step(5);
     window.__debug.resume();
   });

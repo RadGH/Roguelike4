@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Engine } from '@game/shell/engine';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { MeterTable } from './MeterTable';
+import { useMenuNav } from './useMenuNav';
 
 type IntermissionData = NonNullable<ReturnType<Engine['intermission']>>;
 type Panel = IntermissionData['panels'][number];
@@ -21,6 +22,36 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
   const [showMeters, setShowMeters] = useState(false);
   const pi = panel.player;
   const color = PLAYER_COLORS_CSS[pi];
+
+  // Ordered action list mirrors the rendered button order — pads navigate it.
+  const actions = useMemo(() => {
+    const out: (() => void)[] = [];
+    if (panel.chest) {
+      if (panel.chest.pendingEquip) {
+        for (const w of panel.chest.currentWeapons) out.push(() => engine.equipReplace(pi, w.slot));
+        out.push(() => engine.cancelEquip(pi));
+      } else {
+        for (const c of panel.chest.choices) out.push(() => engine.chooseChestWeapon(pi, c.id));
+        out.push(() => engine.salvageChest(pi));
+      }
+    } else if (panel.boonChoices) {
+      for (const c of panel.boonChoices) out.push(() => engine.chooseBoon(pi, c.id));
+    }
+    return out;
+  }, [panel, engine, pi]);
+
+  const focus = useMenuNav({
+    player: pi,
+    count: actions.length,
+    enabled: actions.length > 0,
+    onConfirm: (i) => actions[i]?.(),
+    onBack: panel.chest?.pendingEquip ? () => engine.cancelEquip(pi) : undefined,
+    keyboard: pi === 0,
+  });
+  const focusStyle = (i: number): React.CSSProperties =>
+    i === focus && actions.length > 0
+      ? { outline: `3px solid ${color}`, outlineOffset: 2 }
+      : {};
 
   return (
     <div
@@ -46,12 +77,12 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
               Equip <span style={{ color: '#ffd97a' }}>{panel.chest.pendingEquip.name}</span> — replace what?
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {panel.chest.currentWeapons.map((w) => (
+              {panel.chest.currentWeapons.map((w, i) => (
                 <button
                   key={w.slot}
                   onClick={() => engine.equipReplace(pi, w.slot)}
                   data-replace-slot={`${pi}-${w.slot}`}
-                  style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f' }}
+                  style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f', ...focusStyle(i) }}
                 >
                   <div style={{ fontWeight: 800, fontSize: 13 }}>{w.name}</div>
                   <div style={{ fontSize: 10, opacity: 0.85 }}>{w.desc}</div>
@@ -60,7 +91,13 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
               <button
                 onClick={() => engine.cancelEquip(pi)}
                 data-action={`cancel-equip-${pi}`}
-                style={{ ...cardBtn, border: '2px solid #666', background: 'transparent', minWidth: 60 }}
+                style={{
+                  ...cardBtn,
+                  border: '2px solid #666',
+                  background: 'transparent',
+                  minWidth: 60,
+                  ...focusStyle(panel.chest.currentWeapons.length),
+                }}
               >
                 ←
               </button>
@@ -72,12 +109,12 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
               🧰 Chest{panel.pendingChests > 1 ? ` ×${panel.pendingChests}` : ''} — take a weapon?
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-              {panel.chest.choices.map((c) => (
+              {panel.chest.choices.map((c, i) => (
                 <button
                   key={c.id}
                   onClick={() => engine.chooseChestWeapon(pi, c.id)}
                   data-chest-weapon={`${pi}-${c.id}`}
-                  style={{ ...cardBtn, border: '2px solid #ffd97a' }}
+                  style={{ ...cardBtn, border: '2px solid #ffd97a', ...focusStyle(i) }}
                 >
                   <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
                   <div style={{ fontSize: 10, opacity: 0.9 }}>{c.desc}</div>
@@ -86,7 +123,13 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
               <button
                 onClick={() => engine.salvageChest(pi)}
                 data-action={`salvage-${pi}`}
-                style={{ ...cardBtn, border: '2px dashed #ffd97a88', background: 'transparent', color: '#ffd97a' }}
+                style={{
+                  ...cardBtn,
+                  border: '2px dashed #ffd97a88',
+                  background: 'transparent',
+                  color: '#ffd97a',
+                  ...focusStyle(panel.chest.choices.length),
+                }}
               >
                 Salvage
                 <div style={{ fontSize: 10, opacity: 0.8 }}>+15 gold</div>
@@ -105,7 +148,7 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 key={c.id}
                 onClick={() => engine.chooseBoon(pi, c.id)}
                 data-boon={`${pi}-${c.id}`}
-                style={cardBtn}
+                style={{ ...cardBtn, ...focusStyle(i) }}
               >
                 <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>{c.desc}</div>
@@ -138,7 +181,13 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
 }
 
 export function IntermissionOverlay({ data, engine }: { data: IntermissionData; engine: Engine }) {
-  // Keyboard shortcuts drive P1's panel only (pads get menu nav in a later chunk)
+  // When everyone is done, any pad's A (or Enter) advances the wave.
+  useMenuNav({
+    player: 'any',
+    count: 1,
+    enabled: data.allDone,
+    onConfirm: () => engine.continueToNextWave(),
+  });
   const p1 = data.panels[0];
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

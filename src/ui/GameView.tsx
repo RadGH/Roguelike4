@@ -3,6 +3,7 @@ import { Engine } from '@game/shell/engine';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { IntermissionOverlay } from './IntermissionOverlay';
 import { RunEndOverlay } from './RunEndOverlay';
+import { PauseOverlay } from './PauseOverlay';
 
 type Hud = ReturnType<Engine['hud']>;
 type IntermissionData = ReturnType<Engine['intermission']>;
@@ -144,6 +145,14 @@ export function GameView({
             ))}
           </div>
         </div>
+      )}
+      {hud?.paused && engineRef.current && (
+        <PauseOverlay
+          engine={engineRef.current}
+          playerCount={hud.players.length}
+          disconnectedPads={hud.disconnectedPads}
+          onQuit={onExit}
+        />
       )}
       {hud && hud.runState !== 'playing' && engineRef.current && (
         <RunEndOverlay

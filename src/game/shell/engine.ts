@@ -58,6 +58,8 @@ export class Engine {
           } else if (action === 'gotoBossWave') {
             this.clearIntermission();
             this.startWave(10);
+          } else if (action.startsWith('grantXp:')) {
+            this.sim.grantXpTo(0, Number(action.slice(8)) || 0);
           } else if (action === 'addPlayer') {
             if (this.sim.state.players.length < 4) this.sim.addPlayer();
           } else if (action.startsWith('snuff:')) {
@@ -90,6 +92,7 @@ export class Engine {
     this.input.playerScreenPos = (i) => this.renderer.playerScreenPos(i, this.currSnap);
     this.startWave(1);
     window.addEventListener('gamepadconnected', this.onPadConnected);
+    window.addEventListener('gamepaddisconnected', this.onPadDisconnected);
     this.running = true;
     this.lastTime = performance.now();
     this.renderer.app.ticker.add(() => this.frame());
@@ -258,6 +261,8 @@ export class Engine {
       wave: this.sim.state.wave,
       cleared: this.sim.state.phase === 'cleared',
       runState: this.runState,
+      paused: this.userPaused,
+      disconnectedPads: [...this.disconnectedPads],
       enemies: this.sim.aliveEnemyCount(),
       combo: this.sim.state.combo.count,
       players: this.sim.state.players.map((pl) => ({
@@ -278,12 +283,34 @@ export class Engine {
   /** playing → gameOver (party snuffed) | victory (act's last wave cleared) */
   runState: 'playing' | 'gameOver' | 'victory' = 'playing';
   private joinRequests = 0;
-  private onPadConnected = () => {
+  /** User-facing pause (Esc/Start). Distinct from the debug pause. */
+  userPaused = false;
+  private disconnectedPads = new Set<number>();
+  private onPadConnected = (e: Event) => {
+    const idx = (e as GamepadEvent).gamepad?.index ?? -1;
+    if (this.disconnectedPads.has(idx)) {
+      this.disconnectedPads.delete(idx); // reconnect — stay paused, resume manually
+      return;
+    }
     const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean).length : 0;
     if (pads > this.sim.state.players.length && this.sim.state.players.length < 4) {
       this.joinRequests++;
     }
   };
+  private onPadDisconnected = (e: Event) => {
+    const idx = (e as GamepadEvent).gamepad?.index ?? -1;
+    if (idx >= 0 && idx < this.sim.state.players.length && this.runState === 'playing') {
+      this.disconnectedPads.add(idx);
+      this.userPaused = true; // auto-pause: someone's controller died
+    }
+  };
+
+  togglePause(): void {
+    if (this.runState !== 'playing') return;
+    this.userPaused = !this.userPaused;
+  }
+
+  quitToTitleRequested: (() => void) | null = null;
 
   private stepOnce(inputs: readonly InputFrame[]): void {
     this.prevSnap = this.currSnap;
@@ -331,7 +358,10 @@ export class Engine {
     this.lastTime = now;
     if (elapsed > 0.25) elapsed = 0.25; // tab-back clamp
 
-    if (!this.pausedByDebug) {
+    // Pause toggle from any device (Esc / Start)
+    if (this.input.consumePause()) this.togglePause();
+
+    if (!this.pausedByDebug && !this.userPaused) {
       this.accumulator += elapsed;
       while (this.accumulator >= TICK_SECONDS) {
         const frames = this.input.sample(this.sim.state.players.length);
@@ -358,6 +388,7 @@ export class Engine {
     this.disposed = true;
     this.running = false;
     window.removeEventListener('gamepadconnected', this.onPadConnected);
+    window.removeEventListener('gamepaddisconnected', this.onPadDisconnected);
     this.input.dispose();
     this.renderer.dispose();
   }

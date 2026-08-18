@@ -14,8 +14,17 @@ export class InputSampler {
   private mouseY = 0;
   private dashLatch = false;
   private abilityLatch = false;
+  private pauseLatch = false;
+  private prevPadStart: boolean[] = [];
   private prevPadButtons: boolean[][] = [];
   private detach: (() => void) | null = null;
+
+  /** One-shot: true if any device requested pause since the last call. */
+  consumePause(): boolean {
+    const v = this.pauseLatch;
+    this.pauseLatch = false;
+    return v;
+  }
 
   /** Screen-space player position provider so mouse aim can be a direction. */
   playerScreenPos: (playerIndex: number) => { x: number; y: number } = () => ({
@@ -31,6 +40,7 @@ export class InputSampler {
         e.preventDefault();
       }
       if (e.code === 'KeyQ') this.abilityLatch = true;
+      if (e.code === 'Escape') this.pauseLatch = true;
     };
     const onKeyUp = (e: KeyboardEvent) => this.keys.delete(e.code);
     const onMouseDown = (e: MouseEvent) => {
@@ -115,6 +125,8 @@ export class InputSampler {
       if (btn(2)) f.interact = true; // X (held — revives channel)
       if (btn(1) && !prev[1]) f.ability = true; // B (edge)
       if (btn(7)) f.fire = true; // RT
+      if (btn(9) && !this.prevPadStart[i]) this.pauseLatch = true; // Start (edge)
+      this.prevPadStart[i] = btn(9);
       this.prevPadButtons[i] = [btn(0), btn(1), btn(2), btn(3), false, false, false, btn(7)];
     }
 

@@ -1,5 +1,6 @@
 import type { Engine } from '@game/shell/engine';
 import { MeterTable } from './MeterTable';
+import { useMenuNav } from './useMenuNav';
 
 export function RunEndOverlay({
   kind,
@@ -12,6 +13,7 @@ export function RunEndOverlay({
 }) {
   const meters = engine.meters();
   const victory = kind === 'victory';
+  useMenuNav({ player: 'any', count: 1, enabled: true, onConfirm: onExit });
   return (
     <div
       data-screen={victory ? 'victory' : 'game-over'}

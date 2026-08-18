@@ -1253,6 +1253,12 @@ export class Sim {
     }
   }
 
+  /** Public XP grant (used by sim policies and debug cheats). */
+  grantXpTo(playerIndex: number, amount: number): void {
+    const p = this.state.players[playerIndex];
+    if (p) this.grantXp(p, amount);
+  }
+
   private grantXp(p: PlayerState, amount: number): void {
     p.xp += amount;
     p.xpIntoLevel += amount;
