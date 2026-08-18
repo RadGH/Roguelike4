@@ -227,6 +227,7 @@ export type SimState = {
   pickups: PickupState[];
   pools: PoolState[];
   decoys: { x: number; y: number; ttl: number }[];
+  cages: { x: number; y: number; discoveryId: string; progress: number; rescued: boolean }[];
   combo: { count: number; decay: number; best: number };
   lootRotation: number; // next player index to receive a chest (round-robin)
   spawning: {
@@ -254,6 +255,7 @@ export type SimEvent =
   | { type: 'playerRevived'; player: number; by: number }
   | { type: 'lowHpWaveClear' }
   | { type: 'flawlessWave' }
+  | { type: 'npcRescued'; discoveryId: string; by: number }
   | { type: 'secondWick'; player: number }
   | { type: 'runOver' };
 
@@ -318,6 +320,7 @@ export class Sim {
       pickups,
       pools,
       decoys: [],
+      cages: [],
       combo: { count: 0, decay: 0, best: 0 },
       lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
@@ -666,6 +669,23 @@ export class Sim {
     const evilMult = 1 + bal.evil.candleSpawn * this.evilCount('evilCandle');
     this.state.wave = wave;
     this.state.phase = 'fighting';
+    // Discovery cages: someone needs rescuing out there (waves 3-8, once per run)
+    const waveInAct = ((wave - 1) % 10) + 1;
+    if (waveInAct >= 3 && waveInAct <= 8) {
+      for (const d of this.registry.discoveries.values()) {
+        if (d.act !== this.state.act) continue;
+        if (this.discoveredNpcs.has(d.id) || this.cagesSpawnedThisRun.has(d.id)) continue;
+        if (!this.rng.waves.chance(0.35)) continue;
+        this.cagesSpawnedThisRun.add(d.id);
+        this.state.cages.push({
+          x: 4 + this.rng.waves.next() * (this.state.arena.width - 8),
+          y: 4 + this.rng.waves.next() * (this.state.arena.height - 8),
+          discoveryId: d.id,
+          progress: 0,
+          rescued: false,
+        });
+      }
+    }
     for (const p of this.state.players) {
       p.damageTakenThisWave = 0;
       if (!p.alive) continue;
@@ -838,6 +858,9 @@ export class Sim {
   /** Item ids unlocked on this save slot; weapons with an unlockDeed need to be here. */
   unlockedItems = new Set<string>();
   unlockedFeats = new Set<string>();
+  /** NPCs already rescued on this account — their cages stop appearing. */
+  discoveredNpcs = new Set<string>();
+  private cagesSpawnedThisRun = new Set<string>();
 
   /** Evil item copies across the whole party (they stack). */
   evilCount(mod: string): number {
@@ -1110,6 +1133,29 @@ export class Sim {
     this.tickPets(dt);
     this.tickProjectiles(dt);
     this.tickPools(dt);
+    for (const cage of this.state.cages) {
+      if (cage.rescued) continue;
+      let helper = -1;
+      for (const p of s.players) {
+        if (!p.alive) continue;
+        const input = inputs[p.index];
+        if (!input?.interact) continue;
+        if (Math.hypot(p.x - cage.x, p.y - cage.y) <= 1.8) {
+          helper = p.index;
+          break;
+        }
+      }
+      if (helper >= 0) {
+        cage.progress += dt;
+        if (cage.progress >= 2) {
+          cage.rescued = true;
+          this.discoveredNpcs.add(cage.discoveryId);
+          this.eventsThisTick.push({ type: 'npcRescued', discoveryId: cage.discoveryId, by: helper });
+        }
+      } else {
+        cage.progress = Math.max(0, cage.progress - dt * 2);
+      }
+    }
     for (let i = this.state.decoys.length - 1; i >= 0; i--) {
       const d = this.state.decoys[i]!;
       d.ttl -= dt;

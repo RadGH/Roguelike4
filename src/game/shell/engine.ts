@@ -53,6 +53,7 @@ export class Engine {
     this.profile = loadProfile(storage, this.slot);
     this.sim.unlockedItems = new Set(this.profile.unlockedItems);
     this.sim.unlockedFeats = new Set(this.profile.unlockedFeats);
+    this.sim.discoveredNpcs = new Set(this.profile.discoveries);
     const bonuses = townBonuses(this.profile);
     this.sim.setTownBonuses(bonuses.grants, bonuses.startBits);
     this.deedEngine = new DeedEngine(
@@ -615,6 +616,14 @@ export class Engine {
         this.audio.play('snuffed');
       } else if (ev.type === 'blockedDamage') {
         this.audio.play('block');
+      } else if (ev.type === 'npcRescued') {
+        const d = this.sim.registry.discoveries.get(ev.discoveryId);
+        if (d && !this.profile.discoveries.includes(d.id)) {
+          this.profile.discoveries.push(d.id);
+          this.persistProfile();
+          this.pushToast(`🕊️ ${d.name} rescued! Visit Grandmaster Flick back home.`);
+          this.audio.play('unlock');
+        }
       } else if (ev.type === 'secondWick') {
         this.pushToast(`🕯️ P${ev.player + 1}'s Second Wick catches! Not today, dark.`);
       } else if (ev.type === 'runOver') {

@@ -360,6 +360,16 @@ export const BoonSchema = z
   })
   .strict();
 
+export const DiscoverySchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    act: z.number().int().min(1).max(4),
+    classId: z.string(),
+    name: z.string(),
+    blurb: z.string(),
+  })
+  .strict();
+
 export const PetSchema = z
   .object({
     id: z.string().regex(/^[a-z0-9-]+$/),
@@ -476,4 +486,5 @@ export type PassiveDef = z.infer<typeof PassiveSchema>;
 export type FeatDef = z.infer<typeof FeatSchema>;
 export type TriggerDef = z.infer<typeof TriggerSchema>;
 export type PetDef = z.infer<typeof PetSchema>;
+export type DiscoveryDef = z.infer<typeof DiscoverySchema>;
 export type ActWavesDef = z.infer<typeof ActWavesSchema>;

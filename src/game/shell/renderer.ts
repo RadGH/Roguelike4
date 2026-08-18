@@ -151,6 +151,7 @@ export type RenderSnapshot = {
   projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
   pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' | 'heart' }[];
   pools: { x: number; y: number; radius: number }[];
+  cages: { x: number; y: number; progress: number }[];
   pets: { instance: number; defId: string; owner: number; x: number; y: number; squishPhase: number }[];
 };
 
@@ -196,6 +197,9 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
     pools: sim.state.pools
       .filter((p) => p.active)
       .map((p) => ({ x: p.x, y: p.y, radius: p.radius })),
+    cages: sim.state.cages
+      .filter((c) => !c.rescued)
+      .map((c) => ({ x: c.x, y: c.y, progress: c.progress / 2 })),
     pets: sim.state.pets.map((pt) => ({
       instance: pt.instance,
       defId: pt.defId,
@@ -478,6 +482,27 @@ export class GameRenderer {
         .circle(pool.x * PX_PER_UNIT, pool.y * PX_PER_UNIT, pool.radius * PX_PER_UNIT)
         .fill({ color: 0x7fbf68, alpha: 0.3 })
         .stroke({ color: 0x5f9e4a, width: 2, alpha: 0.5 });
+    }
+
+    // Discovery cages: a little prisoner and a rescue ring
+    for (const cage of curr.cages) {
+      const cx = cage.x * PX_PER_UNIT;
+      const cy = cage.y * PX_PER_UNIT;
+      this.poolGfx
+        .roundRect(cx - 14, cy - 16, 28, 30, 6)
+        .fill({ color: 0x5d4d35, alpha: 0.9 })
+        .stroke({ color: 0x8a7d5e, width: 2 });
+      for (let bx = -8; bx <= 8; bx += 8) {
+        this.poolGfx.rect(cx + bx - 1.5, cy - 14, 3, 26).fill({ color: 0x3d3325 });
+      }
+      this.poolGfx.circle(cx, cy - 2, 5).fill({ color: 0xfff4d6 });
+      this.poolGfx.circle(cx - 2, cy - 3, 1).fill({ color: 0x2b2140 });
+      this.poolGfx.circle(cx + 2, cy - 3, 1).fill({ color: 0x2b2140 });
+      if (cage.progress > 0) {
+        this.poolGfx
+          .arc(cx, cy, 22, -Math.PI / 2, -Math.PI / 2 + cage.progress * Math.PI * 2)
+          .stroke({ color: 0xffd97a, width: 3 });
+      }
     }
 
     // Pickups

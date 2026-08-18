@@ -18,6 +18,7 @@ export type Profile = {
   actsCleared: number[];
   endlessUnlocked: boolean;
   townUpgrades: Record<string, number>;
+  discoveries: string[]; // rescued NPCs (discovery-class gating)
   lifetime: {
     runs: number;
     wins: number;
@@ -41,6 +42,7 @@ export function freshProfile(slot = 1): Profile {
     unlockedItems: [],
     unlockedClasses: ['hero'],
     unlockedFeats: [],
+    discoveries: [],
     deedProgress: {},
     deedsCompleted: [],
     glimmers: 0,

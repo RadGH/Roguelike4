@@ -245,11 +245,20 @@ export function TownScreen({
                 const cls = registry.classes.get(c.id);
                 const owned = profile.unlockedClasses.includes(c.id);
                 const afford = profile.glimmers >= c.price;
+                // Discovery classes need their NPC rescued out in the wilds first
+                const discovery = [...registry.discoveries.values()].find((d) => d.classId === c.id);
+                const undiscovered = !!discovery && !profile.discoveries.includes(discovery.id);
                 return (
                   <div key={c.id} style={{ border: `2px solid ${owned ? COLORS.gold : COLORS.panelBorder}`, borderRadius: 10, padding: '10px 14px', width: 170 }}>
-                    <div style={{ fontWeight: 800 }}>{cls?.name ?? c.id}</div>
-                    <div style={{ fontSize: 11, opacity: 0.8, minHeight: 40 }}>{cls?.blurb}</div>
-                    {owned ? (
+                    <div style={{ fontWeight: 800 }}>{undiscovered ? '❓ A missing someone' : (cls?.name ?? c.id)}</div>
+                    <div style={{ fontSize: 11, opacity: 0.8, minHeight: 40 }}>
+                      {undiscovered
+                        ? `Rumor places them somewhere in Act ${discovery.act}. Caged, probably. Rescue first.`
+                        : cls?.blurb}
+                    </div>
+                    {undiscovered ? (
+                      <div style={{ fontSize: 12, opacity: 0.7 }}>🔒 not yet met</div>
+                    ) : owned ? (
                       <div style={{ fontSize: 12, color: COLORS.gold }}>trained ✓</div>
                     ) : (
                       <button

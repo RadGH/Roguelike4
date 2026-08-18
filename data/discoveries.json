@@ -1,0 +1,30 @@
+[
+  {
+    "id": "bumble",
+    "act": 1,
+    "classId": "beekeeper",
+    "name": "Beekeeper Bumble",
+    "blurb": "Found humming in a cage of brambles, entirely unbothered. The bees were furious on their behalf."
+  },
+  {
+    "id": "mortimer",
+    "act": 2,
+    "classId": "necromancer",
+    "name": "Gravekeeper Mortimer",
+    "blurb": "The marsh tried to keep them. They asked it politely to reconsider."
+  },
+  {
+    "id": "basil",
+    "act": 3,
+    "classId": "chef",
+    "name": "Chef Basil",
+    "blurb": "Frozen mid-garnish. The plating survived. Priorities intact."
+  },
+  {
+    "id": "wobble",
+    "act": 4,
+    "classId": "oracle",
+    "name": "Madame Wobble",
+    "blurb": "Saw the rescue coming last Tuesday. Waited anyway — it's politer to be surprised."
+  }
+]
