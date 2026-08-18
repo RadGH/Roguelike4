@@ -380,5 +380,187 @@
       }
     ],
     "weight": 0.8
+  },
+  {
+    "id": "thick-thread",
+    "name": "Thick Thread",
+    "desc": "+1 flat damage reduction",
+    "grants": [
+      {
+        "stat": "flatReduction",
+        "flat": 1
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "mirror-sheen",
+    "name": "Mirror Sheen",
+    "desc": "+8% resistance to everything",
+    "grants": [
+      {
+        "stat": "resistAll",
+        "flat": 0.08
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "stout-shield",
+    "name": "Stout Shield",
+    "desc": "+1 physical block",
+    "grants": [
+      {
+        "stat": "blockPhys",
+        "flat": 1
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "clear-mind",
+    "name": "Clear Mind",
+    "desc": "+1 spell block",
+    "grants": [
+      {
+        "stat": "blockSpell",
+        "flat": 1
+      }
+    ],
+    "weight": 0.7
+  },
+  {
+    "id": "quick-hands",
+    "name": "Quick Hands",
+    "desc": "+6% attack speed",
+    "grants": [
+      {
+        "stat": "cooldownRate",
+        "flat": 0.06
+      }
+    ],
+    "weight": 0.9
+  },
+  {
+    "id": "swift-shots",
+    "name": "Swift Shots",
+    "desc": "+10% projectile speed",
+    "grants": [
+      {
+        "stat": "projectileSpeed",
+        "pct": 0.1
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "wider-arc",
+    "name": "Wider Arc",
+    "desc": "+8% area",
+    "grants": [
+      {
+        "stat": "area",
+        "flat": 0.08
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "keen-edge",
+    "name": "Keen Edge",
+    "desc": "+3% crit chance",
+    "grants": [
+      {
+        "stat": "critChance",
+        "flat": 0.03
+      }
+    ],
+    "weight": 0.9
+  },
+  {
+    "id": "heavy-crits",
+    "name": "Heavy Crits",
+    "desc": "+20% critical damage",
+    "grants": [
+      {
+        "stat": "critDamage",
+        "flat": 0.2
+      }
+    ],
+    "weight": 0.8
+  },
+  {
+    "id": "void-whisper",
+    "name": "Void Whisper",
+    "desc": "+1 void damage (+12% each)",
+    "grants": [
+      {
+        "stat": "voidDamage",
+        "flat": 1,
+        "pct": 0.12
+      }
+    ],
+    "weight": 0.6
+  },
+  {
+    "id": "red-drop",
+    "name": "Red Drop",
+    "desc": "+2% lifesteal on physical hits",
+    "grants": [
+      {
+        "stat": "lifestealPhys",
+        "flat": 0.02
+      }
+    ],
+    "weight": 0.7
+  },
+  {
+    "id": "violet-drop",
+    "name": "Violet Drop",
+    "desc": "+2% lifesteal on magical hits",
+    "grants": [
+      {
+        "stat": "lifestealMagic",
+        "flat": 0.02
+      }
+    ],
+    "weight": 0.7
+  },
+  {
+    "id": "longer-echo",
+    "name": "Longer Echo",
+    "desc": "+10% effect duration",
+    "grants": [
+      {
+        "stat": "duration",
+        "pct": 0.1
+      }
+    ],
+    "weight": 0.7
+  },
+  {
+    "id": "bright-lantern",
+    "name": "Bright Lantern",
+    "desc": "+10% pickup radius",
+    "grants": [
+      {
+        "stat": "pickupRadius",
+        "pct": 0.1
+      }
+    ],
+    "weight": 0.9
+  },
+  {
+    "id": "best-friend",
+    "name": "Best Friend",
+    "desc": "+2 pet damage (+12% each)",
+    "grants": [
+      {
+        "stat": "petDamage",
+        "flat": 2,
+        "pct": 0.12
+      }
+    ],
+    "weight": 0.8
   }
 ]

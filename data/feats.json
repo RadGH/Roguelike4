@@ -201,5 +201,205 @@
         "flat": 1
       }
     ]
+  },
+  {
+    "id": "iron-will",
+    "category": "feat",
+    "name": "Iron Will",
+    "desc": "+15% resistance to everything. Simply refuse.",
+    "grants": [
+      {
+        "stat": "resistAll",
+        "flat": 0.15
+      }
+    ]
+  },
+  {
+    "id": "executioner",
+    "category": "feat",
+    "name": "Executioner",
+    "desc": "+40% critical damage. Make the important ones count.",
+    "grants": [
+      {
+        "stat": "critDamage",
+        "flat": 0.4
+      }
+    ]
+  },
+  {
+    "id": "elementalist",
+    "category": "feat",
+    "name": "Elementalist",
+    "desc": "+1 to every damage school. A generalist with sparks.",
+    "grants": [
+      {
+        "stat": "fireDamage",
+        "flat": 1
+      },
+      {
+        "stat": "lightningDamage",
+        "flat": 1
+      },
+      {
+        "stat": "iceDamage",
+        "flat": 1
+      },
+      {
+        "stat": "poisonDamage",
+        "flat": 1
+      },
+      {
+        "stat": "arcaneDamage",
+        "flat": 1
+      },
+      {
+        "stat": "voidDamage",
+        "flat": 1
+      }
+    ]
+  },
+  {
+    "id": "second-wind",
+    "category": "feat",
+    "name": "Second Wind",
+    "desc": "+1.2 HP/s regeneration. The lungs of a much larger candle.",
+    "grants": [
+      {
+        "stat": "hpRegen",
+        "flat": 1.2
+      }
+    ]
+  },
+  {
+    "id": "keen-eye",
+    "category": "feat",
+    "name": "Keen Eye",
+    "desc": "+8% critical chance. You see the soft spots.",
+    "grants": [
+      {
+        "stat": "critChance",
+        "flat": 0.08
+      }
+    ]
+  },
+  {
+    "id": "bulwark",
+    "category": "feat",
+    "name": "Bulwark",
+    "desc": "+2 block against everything. An argument ender.",
+    "grants": [
+      {
+        "stat": "blockPhys",
+        "flat": 2
+      },
+      {
+        "stat": "blockSpell",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "quickdraw",
+    "category": "feat",
+    "name": "Quickdraw",
+    "desc": "+12% attack speed. The cooldowns barely exist.",
+    "grants": [
+      {
+        "stat": "cooldownRate",
+        "flat": 0.12
+      }
+    ]
+  },
+  {
+    "id": "far-sight",
+    "category": "feat",
+    "name": "Far Sight",
+    "desc": "+20% projectile speed. Your shots arrive early to everything.",
+    "grants": [
+      {
+        "stat": "projectileSpeed",
+        "pct": 0.2
+      }
+    ]
+  },
+  {
+    "id": "wide-swing",
+    "category": "feat",
+    "name": "Wide Swing",
+    "desc": "+15% area on everything with an area. Generosity, weaponized.",
+    "grants": [
+      {
+        "stat": "area",
+        "flat": 0.15
+      }
+    ]
+  },
+  {
+    "id": "thick-skin",
+    "category": "feat",
+    "name": "Thick Skin",
+    "desc": "+2 flat damage reduction. Chip damage retires early.",
+    "grants": [
+      {
+        "stat": "flatReduction",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "vampiric-hint",
+    "category": "feat",
+    "name": "Vampiric Hint",
+    "desc": "+4% lifesteal on everything. Just a taste.",
+    "grants": [
+      {
+        "stat": "lifestealPhys",
+        "flat": 0.04
+      },
+      {
+        "stat": "lifestealMagic",
+        "flat": 0.04
+      }
+    ]
+  },
+  {
+    "id": "moths-blessing",
+    "category": "feat",
+    "name": "Moth's Blessing",
+    "desc": "+10% move speed. You are drawn to trouble, gracefully.",
+    "grants": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.1
+      }
+    ]
+  },
+  {
+    "id": "packrat",
+    "category": "feat",
+    "name": "Packrat",
+    "desc": "+30% pickup radius and +10% gold. Nothing left behind.",
+    "grants": [
+      {
+        "stat": "pickupRadius",
+        "pct": 0.3
+      },
+      {
+        "stat": "goldGain",
+        "flat": 0.1
+      }
+    ]
+  },
+  {
+    "id": "stone-stance",
+    "category": "feat",
+    "name": "Stone Stance",
+    "desc": "+3 armor. Stand like you mean it.",
+    "grants": [
+      {
+        "stat": "armor",
+        "flat": 3
+      }
+    ]
   }
 ]

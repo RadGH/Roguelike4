@@ -249,5 +249,366 @@
       }
     ],
     "rarity": "common"
+  },
+  {
+    "id": "candle-crown",
+    "category": "passive",
+    "desc": "+4 max HP and +0.4 HP/s. Heavy is the head that stays lit.",
+    "rarity": "uncommon",
+    "grants": [
+      {
+        "stat": "maxHp",
+        "flat": 4
+      },
+      {
+        "stat": "hpRegen",
+        "flat": 0.4
+      }
+    ]
+  },
+  {
+    "id": "lucky-clover",
+    "category": "passive",
+    "desc": "+6% dodge and +4% crit. Four leaves, zero promises.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "dodge",
+        "flat": 0.06
+      },
+      {
+        "stat": "critChance",
+        "flat": 0.04
+      }
+    ]
+  },
+  {
+    "id": "heavy-boots",
+    "category": "passive",
+    "desc": "+3 armor, -5% move speed. Stomp responsibly.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "armor",
+        "flat": 3
+      },
+      {
+        "stat": "moveSpeed",
+        "pct": -0.05
+      }
+    ]
+  },
+  {
+    "id": "feather-cloak",
+    "category": "passive",
+    "desc": "+8% move speed and +3% dodge. Mostly decorative. Mostly.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.08
+      },
+      {
+        "stat": "dodge",
+        "flat": 0.03
+      }
+    ]
+  },
+  {
+    "id": "magnet-ring",
+    "category": "passive",
+    "desc": "+40% pickup radius. Everything shiny is technically yours.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "pickupRadius",
+        "pct": 0.4
+      }
+    ]
+  },
+  {
+    "id": "scholars-monocle",
+    "category": "passive",
+    "desc": "+15% experience. Squint and learn.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "xpGain",
+        "flat": 0.15
+      }
+    ]
+  },
+  {
+    "id": "merchants-ledger",
+    "category": "passive",
+    "desc": "+15% gold. The numbers simply prefer you.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "goldGain",
+        "flat": 0.15
+      }
+    ]
+  },
+  {
+    "id": "sturdy-buckle",
+    "category": "passive",
+    "desc": "+2 physical block. It has never once come undone.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "blockPhys",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "warm-scarf",
+    "category": "passive",
+    "desc": "+25% fire and ice resistance. Grandmother-grade protection.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "resistFire",
+        "flat": 0.25
+      },
+      {
+        "stat": "resistIce",
+        "flat": 0.25
+      }
+    ]
+  },
+  {
+    "id": "rubber-soles",
+    "category": "passive",
+    "desc": "+35% lightning resistance. Squeak with confidence.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "resistLightning",
+        "flat": 0.35
+      }
+    ]
+  },
+  {
+    "id": "antidote-vial",
+    "category": "passive",
+    "desc": "+35% poison resistance. Tastes like victory and licorice.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "resistPoison",
+        "flat": 0.35
+      }
+    ]
+  },
+  {
+    "id": "dream-catcher",
+    "category": "passive",
+    "desc": "+35% arcane resistance. Bad spells get tangled.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "resistArcane",
+        "flat": 0.35
+      }
+    ]
+  },
+  {
+    "id": "brimstone-boots",
+    "category": "passive",
+    "desc": "Kills sometimes leave a small fire where the enemy stood.",
+    "rarity": "uncommon",
+    "triggers": [
+      {
+        "on": "kill",
+        "chance": 0.12,
+        "action": "firePool",
+        "params": {
+          "radius": 1.1,
+          "dps": 3,
+          "duration": 2
+        }
+      }
+    ],
+    "unlockDeed": "burn-kills-25"
+  },
+  {
+    "id": "piggy-bank",
+    "category": "passive",
+    "desc": "Collecting gold charges your next hit, up to +40%.",
+    "rarity": "uncommon",
+    "triggers": [
+      {
+        "on": "goldCollect",
+        "chance": 1,
+        "action": "coinCharge",
+        "params": {
+          "perCoin": 0.012,
+          "cap": 0.4
+        }
+      }
+    ],
+    "unlockDeed": "gold-hoard-500"
+  },
+  {
+    "id": "stormcloud-in-a-jar",
+    "category": "passive",
+    "desc": "Melee hits sometimes arc lightning to a neighbor.",
+    "rarity": "rare",
+    "triggers": [
+      {
+        "on": "meleeHit",
+        "chance": 0.18,
+        "action": "chainLightning",
+        "params": {
+          "jumps": 1,
+          "damageFrac": 0.5,
+          "radius": 4
+        }
+      }
+    ],
+    "unlockDeed": "stun-100"
+  },
+  {
+    "id": "splitting-headache",
+    "category": "passive",
+    "desc": "Your projectiles split on their first hit. The headache is theirs.",
+    "rarity": "rare",
+    "mods": [
+      "projectileSplit"
+    ],
+    "unlockDeed": "explosion-multikill-5"
+  },
+  {
+    "id": "extra-bouncy",
+    "category": "passive",
+    "desc": "Your projectiles bounce off walls. Physics files a complaint.",
+    "rarity": "uncommon",
+    "mods": [
+      "projectileBounce"
+    ]
+  },
+  {
+    "id": "jesters-die",
+    "category": "passive",
+    "desc": "Boon picks offer 5 choices. One of them is always tempting.",
+    "rarity": "rare",
+    "mods": [
+      "boonChoices5"
+    ],
+    "unlockDeed": "snuffed-10"
+  },
+  {
+    "id": "quilted-vest",
+    "category": "passive",
+    "desc": "+3 max HP and +1 flat damage reduction. Very soft. Very stubborn.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "maxHp",
+        "flat": 3
+      },
+      {
+        "stat": "flatReduction",
+        "flat": 1
+      }
+    ]
+  },
+  {
+    "id": "hot-sauce",
+    "category": "passive",
+    "desc": "+2 fire damage. For food, allegedly.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "fireDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "static-comb",
+    "category": "passive",
+    "desc": "+2 lightning damage. Your hair is a weather system.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "lightningDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "everfrost-cube",
+    "category": "passive",
+    "desc": "+2 ice damage. It never melts and never explains.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "iceDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "dubious-mushroom",
+    "category": "passive",
+    "desc": "+2 poison damage. The vendor seemed sure it was fine.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "poisonDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "polished-focus",
+    "category": "passive",
+    "desc": "+2 arcane damage. You can see next week in it, dimly.",
+    "rarity": "common",
+    "grants": [
+      {
+        "stat": "arcaneDamage",
+        "flat": 2
+      }
+    ]
+  },
+  {
+    "id": "night-oil",
+    "category": "passive",
+    "desc": "+1 void damage and +5% crit. Burns dark, reads well.",
+    "rarity": "uncommon",
+    "grants": [
+      {
+        "stat": "voidDamage",
+        "flat": 1
+      },
+      {
+        "stat": "critChance",
+        "flat": 0.05
+      }
+    ]
+  },
+  {
+    "id": "training-weights",
+    "category": "passive",
+    "desc": "+15% melee and ranged damage, -4% move speed. Feel the burn politely.",
+    "rarity": "uncommon",
+    "grants": [
+      {
+        "stat": "meleeDamage",
+        "pct": 0.15
+      },
+      {
+        "stat": "rangedDamage",
+        "pct": 0.15
+      },
+      {
+        "stat": "moveSpeed",
+        "pct": -0.04
+      }
+    ]
   }
 ]

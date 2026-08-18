@@ -1074,5 +1074,1039 @@
       }
     ],
     "rarity": "common"
+  },
+  {
+    "id": "warhammer",
+    "category": "weapon",
+    "tags": [
+      "melee2h",
+      "physical"
+    ],
+    "hands": 2,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        6,
+        9
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.2,
+      "arcDeg": 90,
+      "cooldown": 1.1
+    },
+    "effects": [
+      {
+        "kind": "stun",
+        "duration": 0.5,
+        "chance": 0.25
+      }
+    ],
+    "rarity": "uncommon",
+    "unlockDeed": "melee-damage-1000"
+  },
+  {
+    "id": "scythe",
+    "category": "weapon",
+    "tags": [
+      "melee2h",
+      "physical"
+    ],
+    "hands": 2,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        5,
+        8
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.8,
+      "arcDeg": 170,
+      "cooldown": 0.95
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "rapier",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.3,
+      "arcDeg": 40,
+      "cooldown": 0.22
+    },
+    "grants": [
+      {
+        "stat": "critChance",
+        "flat": 0.08
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "spiked-club",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        4,
+        6
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.0,
+      "arcDeg": 90,
+      "cooldown": 0.6
+    },
+    "rarity": "common"
+  },
+  {
+    "id": "frost-brand",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "magical",
+      "ice"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ice"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.1,
+      "arcDeg": 100,
+      "cooldown": 0.5
+    },
+    "effects": [
+      {
+        "kind": "slow",
+        "duration": 1.2,
+        "magnitude": 0.3,
+        "chance": 1
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "ember-fang",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "magical",
+      "fire"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "fire"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 1.8,
+      "arcDeg": 80,
+      "cooldown": 0.3
+    },
+    "effects": [
+      {
+        "kind": "burn",
+        "amount": 3,
+        "chance": 0.6
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "thorn-whip",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 3.4,
+      "arcDeg": 60,
+      "cooldown": 0.5
+    },
+    "effects": [
+      {
+        "kind": "poison",
+        "amount": 2,
+        "chance": 0.5
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "butter-knife",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        1,
+        2
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 1.5,
+      "arcDeg": 60,
+      "cooldown": 0.15
+    },
+    "grants": [
+      {
+        "stat": "moveSpeed",
+        "pct": 0.04
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "bell-mallet",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "melee"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        4,
+        7
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.0,
+      "arcDeg": 110,
+      "cooldown": 0.8
+    },
+    "effects": [
+      {
+        "kind": "stun",
+        "duration": 0.4,
+        "chance": 0.2
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "shotgun-bow",
+    "category": "weapon",
+    "tags": [
+      "ranged2h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 13,
+      "radius": 0.25,
+      "range": 7,
+      "cooldown": 0.9,
+      "count": 5,
+      "spreadDeg": 35
+    },
+    "rarity": "rare",
+    "unlockDeed": "ranged-kills-50"
+  },
+  {
+    "id": "longbow",
+    "category": "weapon",
+    "tags": [
+      "ranged2h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        5,
+        8
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 16,
+      "radius": 0.25,
+      "range": 18,
+      "cooldown": 0.8
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "blowdart",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        1,
+        2
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 14,
+      "radius": 0.25,
+      "range": 9,
+      "cooldown": 0.35
+    },
+    "effects": [
+      {
+        "kind": "poison",
+        "amount": 3,
+        "chance": 1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "boomerang",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 10,
+      "radius": 0.25,
+      "range": 8,
+      "cooldown": 0.7,
+      "pierce": 2
+    },
+    "rarity": "common"
+  },
+  {
+    "id": "crossbow",
+    "category": "weapon",
+    "tags": [
+      "ranged2h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        6,
+        9
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 17,
+      "radius": 0.25,
+      "range": 14,
+      "cooldown": 1.0,
+      "pierce": 1
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "pebble-cannon",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 12,
+      "radius": 0.25,
+      "range": 10,
+      "cooldown": 0.45
+    },
+    "rarity": "common"
+  },
+  {
+    "id": "star-thrower",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 12,
+      "radius": 0.25,
+      "range": 9,
+      "cooldown": 0.6,
+      "count": 3,
+      "spreadDeg": 18
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "gold-slinger",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 12,
+      "radius": 0.25,
+      "range": 10,
+      "cooldown": 0.55
+    },
+    "grants": [
+      {
+        "stat": "goldGain",
+        "flat": 0.08
+      }
+    ],
+    "rarity": "uncommon",
+    "unlockDeed": "gold-hoard-500"
+  },
+  {
+    "id": "hornet-jar",
+    "category": "weapon",
+    "tags": [
+      "ranged1h",
+      "physical"
+    ],
+    "hands": 1,
+    "kind": "attack",
+    "damage": {
+      "types": [
+        "ranged"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        1,
+        2
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 9,
+      "radius": 0.25,
+      "range": 8,
+      "cooldown": 0.8,
+      "count": 4,
+      "spreadDeg": 30
+    },
+    "effects": [
+      {
+        "kind": "poison",
+        "amount": 2,
+        "chance": 1
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "pet-kills-50"
+  },
+  {
+    "id": "meteor",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "fire"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "fire"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        8,
+        12
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 8,
+      "radius": 0.25,
+      "range": 12,
+      "cooldown": 2.2,
+      "blastRadius": 2.2
+    },
+    "effects": [
+      {
+        "kind": "burn",
+        "amount": 6,
+        "chance": 1
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "burn-kills-100"
+  },
+  {
+    "id": "ember-swarm",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "fire"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "fire"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        1,
+        2
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 9,
+      "radius": 0.25,
+      "range": 9,
+      "cooldown": 0.7,
+      "count": 3,
+      "spreadDeg": 24
+    },
+    "effects": [
+      {
+        "kind": "burn",
+        "amount": 2,
+        "chance": 0.8
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "null-rod",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "void"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 11,
+      "radius": 0.25,
+      "range": 11,
+      "cooldown": 0.7
+    },
+    "grants": [
+      {
+        "stat": "voidDamage",
+        "flat": 2
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "mimic-kills-13"
+  },
+  {
+    "id": "void-siphon",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "void"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 10,
+      "radius": 0.25,
+      "range": 10,
+      "cooldown": 0.8
+    },
+    "grants": [
+      {
+        "stat": "lifestealMagic",
+        "flat": 0.05
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "lifesteal-500"
+  },
+  {
+    "id": "arc-lance",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "lightning"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "lightning"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 15,
+      "radius": 0.25,
+      "range": 13,
+      "cooldown": 0.75,
+      "pierce": 2
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "blizzard-core",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "ice"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "ice"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 8,
+      "radius": 0.25,
+      "range": 10,
+      "cooldown": 1.2,
+      "blastRadius": 1.6
+    },
+    "effects": [
+      {
+        "kind": "freeze",
+        "duration": 0.7,
+        "chance": 0.3
+      },
+      {
+        "kind": "slow",
+        "duration": 1.5,
+        "magnitude": 0.35,
+        "chance": 1
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "freeze-100"
+  },
+  {
+    "id": "venom-orb",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "poison"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 8,
+      "radius": 0.25,
+      "range": 9,
+      "cooldown": 1.0,
+      "poolRadius": 1.0,
+      "poolDps": 2,
+      "poolDuration": 2.0,
+      "poolType": "poison"
+    },
+    "effects": [
+      {
+        "kind": "poison",
+        "amount": 5,
+        "chance": 1
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "starlight-prism",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "arcane"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 11,
+      "radius": 0.25,
+      "range": 11,
+      "cooldown": 0.55,
+      "count": 2,
+      "spreadDeg": 12
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "moonbeam",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "arcane"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 14,
+      "radius": 0.25,
+      "range": 14,
+      "cooldown": 0.6,
+      "pierce": 3
+    },
+    "rarity": "uncommon"
+  },
+  {
+    "id": "wisp-lantern",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "arcane"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        1,
+        2
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 9,
+      "radius": 0.25,
+      "range": 9,
+      "cooldown": 0.4
+    },
+    "grants": [
+      {
+        "stat": "pickupRadius",
+        "pct": 0.2
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "pocket-sun",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "fire"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "fire"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        4,
+        6
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 7,
+      "radius": 0.25,
+      "range": 6,
+      "cooldown": 1.1,
+      "blastRadius": 1.8
+    },
+    "effects": [
+      {
+        "kind": "burn",
+        "amount": 4,
+        "chance": 1
+      }
+    ],
+    "rarity": "rare"
+  },
+  {
+    "id": "snowglobe",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "ice"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "ice"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 9,
+      "radius": 0.25,
+      "range": 9,
+      "cooldown": 0.9,
+      "blastRadius": 1.4
+    },
+    "effects": [
+      {
+        "kind": "slow",
+        "duration": 2.0,
+        "magnitude": 0.4,
+        "chance": 1
+      }
+    ],
+    "rarity": "uncommon"
+  },
+  {
+    "id": "tesla-orb",
+    "category": "weapon",
+    "tags": [
+      "spell",
+      "magical",
+      "lightning"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "lightning"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "projectile",
+      "speed": 12,
+      "radius": 0.25,
+      "range": 10,
+      "cooldown": 0.5
+    },
+    "rarity": "common",
+    "unlockDeed": "stun-100"
   }
 ]

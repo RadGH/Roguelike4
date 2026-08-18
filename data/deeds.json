@@ -36,6 +36,10 @@
       {
         "type": "feat",
         "id": "cinder"
+      },
+      {
+        "type": "passive",
+        "id": "brimstone-boots"
       }
     ],
     "glimmerBonus": 2
@@ -58,6 +62,10 @@
       {
         "type": "passive",
         "id": "splitter-prism"
+      },
+      {
+        "type": "passive",
+        "id": "splitting-headache"
       }
     ],
     "glimmerBonus": 3
@@ -81,6 +89,10 @@
       {
         "type": "class",
         "id": "fighter"
+      },
+      {
+        "type": "weapon",
+        "id": "warhammer"
       }
     ],
     "glimmerBonus": 2
@@ -147,6 +159,10 @@
       {
         "type": "class",
         "id": "vampire"
+      },
+      {
+        "type": "weapon",
+        "id": "void-siphon"
       }
     ],
     "glimmerBonus": 2
@@ -169,6 +185,14 @@
       {
         "type": "passive",
         "id": "coin-operated-blade"
+      },
+      {
+        "type": "weapon",
+        "id": "gold-slinger"
+      },
+      {
+        "type": "passive",
+        "id": "piggy-bank"
       }
     ],
     "glimmerBonus": 2
@@ -210,6 +234,10 @@
       {
         "type": "class",
         "id": "hunter"
+      },
+      {
+        "type": "weapon",
+        "id": "shotgun-bow"
       }
     ],
     "glimmerBonus": 2
@@ -233,6 +261,10 @@
       {
         "type": "passive",
         "id": "zombie-flute"
+      },
+      {
+        "type": "weapon",
+        "id": "hornet-jar"
       }
     ],
     "glimmerBonus": 3
@@ -251,6 +283,10 @@
       {
         "type": "class",
         "id": "warlock"
+      },
+      {
+        "type": "weapon",
+        "id": "null-rod"
       }
     ],
     "glimmerBonus": 5
@@ -269,6 +305,10 @@
       {
         "type": "class",
         "id": "pyromancer"
+      },
+      {
+        "type": "weapon",
+        "id": "meteor"
       }
     ],
     "glimmerBonus": 3
@@ -288,6 +328,14 @@
       {
         "type": "class",
         "id": "stormcaller"
+      },
+      {
+        "type": "weapon",
+        "id": "tesla-orb"
+      },
+      {
+        "type": "passive",
+        "id": "stormcloud-in-a-jar"
       }
     ],
     "glimmerBonus": 3
@@ -307,6 +355,10 @@
       {
         "type": "class",
         "id": "frostwitch"
+      },
+      {
+        "type": "weapon",
+        "id": "blizzard-core"
       }
     ],
     "glimmerBonus": 3
@@ -343,6 +395,10 @@
       {
         "type": "class",
         "id": "jester"
+      },
+      {
+        "type": "passive",
+        "id": "jesters-die"
       }
     ],
     "glimmerBonus": 2
