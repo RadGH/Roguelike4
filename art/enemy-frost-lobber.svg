@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Frost Lobber: a snow-cannon yeti-tot with impressive throwing form -->
+  <ellipse cx="32" cy="57" rx="16" ry="4" fill="#00000022"/>
+  <path d="M16 44 C14 30 22 22 32 22 C42 22 50 30 48 44 C47 52 40 57 32 57 C24 57 17 52 16 44 Z" fill="#b5e2f0"/>
+  <path d="M20 40 C20 30 25 26 32 26 C39 26 44 30 44 40 C44 34 39 30 32 30 C25 30 20 34 20 40 Z" fill="#e2f4fa"/>
+  <circle cx="25" cy="40" r="5" fill="#fff"/>
+  <circle cx="39" cy="40" r="5" fill="#fff"/>
+  <circle cx="26" cy="41" r="2.4" fill="#1f3444"/>
+  <circle cx="38" cy="41" r="2.4" fill="#1f3444"/>
+  <path d="M28 50 q4 2.5 8 0" stroke="#1f3444" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="52" cy="20" r="6" fill="#fff" stroke="#b5e2f0" stroke-width="2"/>
+  <path d="M46 26 q-4 4 -8 4" stroke="#b5e2f0" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M14 32 q-4 -2 -4 -7 q4 -1 7 3 Z" fill="#b5e2f0"/>
+</svg>

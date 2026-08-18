@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <!-- Avalanche Jr.: a very large snow-toddler taking very large steps -->
+  <ellipse cx="48" cy="88" rx="32" ry="6" fill="#00000026"/>
+  <circle cx="48" cy="60" r="28" fill="#e8f4ff"/>
+  <circle cx="48" cy="30" r="17" fill="#f6fbff"/>
+  <path d="M34 54 a28 28 0 0 1 6 -14" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <circle cx="42" cy="28" r="5.5" fill="#fff" stroke="#b5d4ea" stroke-width="1.5"/>
+  <circle cx="56" cy="28" r="5.5" fill="#fff" stroke="#b5d4ea" stroke-width="1.5"/>
+  <circle cx="43" cy="29" r="2.6" fill="#2b3a45"/>
+  <circle cx="55" cy="29" r="2.6" fill="#2b3a45"/>
+  <path d="M43 37 q5 4 10 0" stroke="#2b3a45" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="48" cy="33" r="2.5" fill="#ff9d76"/>
+  <circle cx="40" cy="56" r="3" fill="#b5d4ea"/>
+  <circle cx="52" cy="64" r="3" fill="#b5d4ea"/>
+  <circle cx="58" cy="52" r="2.5" fill="#b5d4ea"/>
+  <path d="M20 48 q-8 -2 -10 -8 q6 -3 12 2 Z" fill="#e8f4ff"/>
+  <path d="M76 48 q8 -2 10 -8 q-6 -3 -12 2 Z" fill="#e8f4ff"/>
+  <path d="M28 12 l6 8 M40 8 l2 8 M56 8 l-2 8 M68 12 l-6 8" stroke="#d5eefa" stroke-width="3" stroke-linecap="round"/>
+</svg>

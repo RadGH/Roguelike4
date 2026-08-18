@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Bone Chum: a loyal little skeleton pal, starts the necromancer's engine -->
+  <ellipse cx="32" cy="56" rx="12" ry="3.5" fill="#0000001e"/>
+  <circle cx="32" cy="26" r="14" fill="#f0ead8"/>
+  <path d="M20 30 q0 -12 12 -12 q12 0 12 12" fill="#fbf6e8"/>
+  <circle cx="26" cy="27" r="4" fill="#2b2140"/>
+  <circle cx="38" cy="27" r="4" fill="#2b2140"/>
+  <circle cx="27" cy="26" r="1.4" fill="#9be8ff"/>
+  <circle cx="39" cy="26" r="1.4" fill="#9be8ff"/>
+  <path d="M28 36 l2 2 l2 -2 l2 2 l2 -2" stroke="#2b2140" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <rect x="28" y="42" width="8" height="10" rx="3" fill="#f0ead8"/>
+  <path d="M28 46 l8 0 M28 49 l8 0" stroke="#d8cfb8" stroke-width="1.5"/>
+  <path d="M24 44 q-4 2 -4 6 M40 44 q4 2 4 6" stroke="#f0ead8" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

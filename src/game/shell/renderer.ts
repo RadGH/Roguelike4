@@ -14,10 +14,43 @@ import dandelionPopperUrl from '../../../art/enemy-dandelion-popper.svg?url';
 import mimicUrl from '../../../art/enemy-mimic.svg?url';
 import petDogUrl from '../../../art/pet-dog.svg?url';
 import petZombieUrl from '../../../art/pet-zombie.svg?url';
+import petBeeUrl from '../../../art/pet-bee.svg?url';
+import petBoneChumUrl from '../../../art/pet-bone-chum.svg?url';
+// Act 2 — Sogbottom Marsh
+import soggunUrl from '../../../art/enemy-soggun.svg?url';
+import bubblimUrl from '../../../art/enemy-bubblim.svg?url';
+import mudpuppyUrl from '../../../art/enemy-mudpuppy.svg?url';
+import croakswainUrl from '../../../art/enemy-croakswain.svg?url';
+import bogboilUrl from '../../../art/enemy-bogboil.svg?url';
+import drizzlecloudUrl from '../../../art/enemy-drizzlecloud.svg?url';
+import theDampUrl from '../../../art/boss-the-damp.svg?url';
+import ribbertUrl from '../../../art/boss-ribbert.svg?url';
+// Act 3 — The Frosted Wick
+import snowballUrl from '../../../art/enemy-snowball-with-teeth.svg?url';
+import icicleImpUrl from '../../../art/enemy-icicle-imp.svg?url';
+import chatterjawUrl from '../../../art/enemy-chatterjaw.svg?url';
+import yodelerUrl from '../../../art/enemy-yodeler.svg?url';
+import draftGhastUrl from '../../../art/enemy-draft-ghast.svg?url';
+import frostLobberUrl from '../../../art/enemy-frost-lobber.svg?url';
+import avalancheJrUrl from '../../../art/boss-avalanche-jr.svg?url';
+import shiverinaUrl from '../../../art/boss-shiverina.svg?url';
+// Act 4 — The Snuffed Palace
+import pillowmanUrl from '../../../art/enemy-pillowman.svg?url';
+import velvetArcherUrl from '../../../art/enemy-velvet-archer.svg?url';
+import nightLightSnatcherUrl from '../../../art/enemy-night-light-snatcher.svg?url';
+import duvetGolemUrl from '../../../art/enemy-duvet-golem.svg?url';
+import hushlingUrl from '../../../art/enemy-hushling.svg?url';
+import gloamLobberUrl from '../../../art/enemy-gloam-lobber.svg?url';
+import theUnderstudyUrl from '../../../art/boss-the-understudy.svg?url';
+import grandSnuffUrl from '../../../art/boss-grand-snuff.svg?url';
+// Act 1 miniboss
+import sirFluffingtonUrl from '../../../art/boss-sir-fluffington.svg?url';
 
 const PET_ART: Record<string, string> = {
   dog: petDogUrl,
   zombie: petZombieUrl,
+  bee: petBeeUrl,
+  'bone-chum': petBoneChumUrl,
 };
 
 export const PX_PER_UNIT = 32;
@@ -35,7 +68,35 @@ const ENEMY_ART: Record<string, string> = {
   'dandelion-popper': dandelionPopperUrl,
   'dandelion-seed': puffballUrl, // seeds are just tiny puffs — intentional
   'possessed-chest': mimicUrl,
-  'gilded-mimic': mimicUrl,
+  // gilded-mimic intentionally absent: it uses the mimic fallback + gold tint
+  'sir-fluffington': sirFluffingtonUrl,
+  // Act 2 — Sogbottom Marsh
+  soggun: soggunUrl,
+  bubblim: bubblimUrl,
+  mudpuppy: mudpuppyUrl,
+  croakswain: croakswainUrl,
+  bogboil: bogboilUrl,
+  drizzlecloud: drizzlecloudUrl,
+  'the-damp': theDampUrl,
+  ribbert: ribbertUrl,
+  // Act 3 — The Frosted Wick
+  'snowball-with-teeth': snowballUrl,
+  'icicle-imp': icicleImpUrl,
+  chatterjaw: chatterjawUrl,
+  yodeler: yodelerUrl,
+  'draft-ghast': draftGhastUrl,
+  'frost-lobber': frostLobberUrl,
+  'avalanche-jr': avalancheJrUrl,
+  shiverina: shiverinaUrl,
+  // Act 4 — The Snuffed Palace
+  pillowman: pillowmanUrl,
+  'velvet-archer': velvetArcherUrl,
+  'night-light-snatcher': nightLightSnatcherUrl,
+  'duvet-golem': duvetGolemUrl,
+  hushling: hushlingUrl,
+  'gloam-lobber': gloamLobberUrl,
+  'the-understudy': theUnderstudyUrl,
+  'grand-snuff': grandSnuffUrl,
 };
 
 // Acts 2-4 use tinted archetype placeholders until the bespoke art pass (M4).
@@ -52,15 +113,10 @@ const ARCHETYPE_FALLBACK_ART: Record<string, string> = {
   boss: mopsyUrl,
 };
 
+// Safety net for future enemies added to data before their art exists: the
+// archetype fallback renders with this tint so clones stay distinguishable.
 const ENEMY_TINT: Record<string, number> = {
-  soggun: 0x7fd4c0, bubblim: 0x9fe0a8, mudpuppy: 0x9a8f6a, croakswain: 0x86c977,
-  bogboil: 0x6fae9e, drizzlecloud: 0xb9d8e8, ribbert: 0x7fc977,
-  'snowball-with-teeth': 0xe8f4ff, 'icicle-imp': 0xa8dcf5, chatterjaw: 0xd0e8f5,
-  yodeler: 0xc0d8ea, 'draft-ghast': 0xd8ecf7, 'frost-lobber': 0xb5e2f0, shiverina: 0xcfe8ff,
-  pillowman: 0x8a7fb5, 'velvet-archer': 0xa07fd4, 'night-light-snatcher': 0x776a9e,
-  'duvet-golem': 0x6a5f8e, hushling: 0xb59fd8, 'gloam-lobber': 0x9a86c8, 'grand-snuff': 0x5d4d85,
-  'gilded-mimic': 0xffe28a,
-  'sir-fluffington': 0xf5e9ff, 'the-damp': 0x74b0a2, 'avalanche-jr': 0xe8f4ff, 'the-understudy': 0x9a86c8,
+  'gilded-mimic': 0xffe28a, // shares the mimic sprite on purpose — gold sheen
 };
 
 export type RenderSnapshot = {

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Chatterjaw: wind-up teeth that escaped a joke shop into the cold -->
+  <ellipse cx="32" cy="57" rx="16" ry="4" fill="#00000022"/>
+  <path d="M14 34 C14 24 22 18 32 18 C42 18 50 24 50 34 L50 40 C50 44 46 46 42 46 L22 46 C18 46 14 44 14 40 Z" fill="#d0e8f5"/>
+  <path d="M16 50 C16 44 20 42 24 42 L40 42 C44 42 48 44 48 50 C48 54 44 56 40 56 L24 56 C20 56 16 54 16 50 Z" fill="#b5d4ea"/>
+  <path d="M20 40 l4 6 l4 -6 l4 6 l4 -6 l4 6 l4 -6" fill="#fff" stroke="#8fb8d4" stroke-width="1"/>
+  <circle cx="25" cy="28" r="5" fill="#fff"/>
+  <circle cx="39" cy="28" r="5" fill="#fff"/>
+  <circle cx="26" cy="29" r="2.4" fill="#1f3444"/>
+  <circle cx="38" cy="29" r="2.4" fill="#1f3444"/>
+  <path d="M52 30 a6 6 0 0 1 6 6 a6 6 0 0 1 -4 6" stroke="#8fb8d4" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="55" cy="44" r="2.5" fill="#8fb8d4"/>
+</svg>

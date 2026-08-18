@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Gloam Lobber: lobs little parcels of dark, giggling quietly -->
+  <ellipse cx="32" cy="57" rx="16" ry="4" fill="#00000026"/>
+  <path d="M16 44 C14 30 22 22 32 22 C42 22 50 30 48 44 C47 52 40 57 32 57 C24 57 17 52 16 44 Z" fill="#9a86c8"/>
+  <path d="M20 40 C20 31 25 27 32 27 C39 27 44 31 44 40 C44 34 39 31 32 31 C25 31 20 34 20 40 Z" fill="#b8a8dc"/>
+  <circle cx="25" cy="41" r="5" fill="#fff"/>
+  <circle cx="39" cy="41" r="5" fill="#fff"/>
+  <circle cx="26" cy="42" r="2.4" fill="#2b2140"/>
+  <circle cx="38" cy="42" r="2.4" fill="#2b2140"/>
+  <path d="M28 50 q4 3 8 0" stroke="#2b2140" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="50" cy="18" r="7" fill="#3d3260"/>
+  <circle cx="47" cy="15" r="1.5" fill="#b8a8dc"/>
+  <path d="M44 24 q-4 4 -8 4" stroke="#9a86c8" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

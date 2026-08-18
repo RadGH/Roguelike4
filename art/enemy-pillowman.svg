@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Pillowman: palace muscle, soft on the outside only -->
+  <ellipse cx="32" cy="57" rx="16" ry="4" fill="#00000026"/>
+  <rect x="14" y="20" width="36" height="34" rx="12" fill="#8a7fb5"/>
+  <rect x="18" y="24" width="28" height="12" rx="8" fill="#a89dd4"/>
+  <path d="M14 28 q-6 -2 -6 -8 q5 -2 9 2 Z" fill="#8a7fb5"/>
+  <path d="M50 28 q6 -2 6 -8 q-5 -2 -9 2 Z" fill="#8a7fb5"/>
+  <circle cx="25" cy="36" r="5" fill="#fff"/>
+  <circle cx="39" cy="36" r="5" fill="#fff"/>
+  <circle cx="26" cy="37" r="2.4" fill="#2b2140"/>
+  <circle cx="38" cy="37" r="2.4" fill="#2b2140"/>
+  <path d="M27 47 l10 0" stroke="#2b2140" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20 14 q2 -6 8 -5 M44 14 q-2 -6 -8 -5" stroke="#a89dd4" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="17" cy="50" r="2" fill="#d9c8ef"/>
+  <circle cx="47" cy="50" r="2" fill="#d9c8ef"/>
+</svg>
