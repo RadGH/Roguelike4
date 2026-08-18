@@ -14,6 +14,10 @@ import dandelionPopperUrl from '../../../art/enemy-dandelion-popper.svg?url';
 
 export const PX_PER_UNIT = 32;
 
+/** Party identity colors: P1 gold, P2 sky, P3 pink, P4 mint (colorblind-checked hues). */
+export const PLAYER_COLORS = [0xffd97a, 0x6ec6ff, 0xff9ad5, 0x8ce68c];
+export const PLAYER_COLORS_CSS = ['#ffd97a', '#6ec6ff', '#ff9ad5', '#8ce68c'];
+
 const ENEMY_ART: Record<string, string> = {
   snuffling: snufflingUrl,
   puffball: puffballUrl,
@@ -34,6 +38,7 @@ export type RenderSnapshot = {
     dashing: boolean;
     alive: boolean;
     hpFrac: number;
+    reviveFrac: number;
   }[];
   enemies: {
     instance: number;
@@ -63,6 +68,7 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
       dashing: p.dashTimer > 0,
       alive: p.alive,
       hpFrac: Math.max(0, p.hp) / Math.max(1, p.stats.maxHp ?? 10),
+      reviveFrac: p.alive ? 0 : Math.min(1, p.reviveProgress / 3),
     })),
     enemies: sim.state.enemies
       .filter((e) => e.alive)
@@ -177,11 +183,6 @@ export class GameRenderer {
     return { root, sprite, hpBar, baseScaleX: sprite.scale.x, baseScaleY: sprite.scale.y };
   }
 
-  private drawHpBar(v: SpriteVisual, frac: number, widthPx: number): void {
-    v.hpBar.clear();
-    this.drawHpBarKeep(v, frac, widthPx);
-  }
-
   /** Draw without clearing (caller may have drawn a ring first). */
   private drawHpBarKeep(v: SpriteVisual, frac: number, widthPx: number): void {
     if (frac >= 1 || frac <= 0) return;
@@ -199,6 +200,10 @@ export class GameRenderer {
     // Players
     let cx = 0;
     let cy = 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
     for (let i = 0; i < curr.players.length; i++) {
       const p0 = prev.players[i] ?? curr.players[i]!;
       const p1 = curr.players[i]!;
@@ -210,6 +215,17 @@ export class GameRenderer {
       const y = lerp(p0.y, p1.y) * PX_PER_UNIT;
       v.root.position.set(x, y);
       v.root.alpha = p1.alive ? 1 : 0.35;
+      // Identity ring (and revive channel arc when snuffed)
+      v.hpBar.clear();
+      const ringColor = PLAYER_COLORS[i % PLAYER_COLORS.length]!;
+      v.hpBar
+        .ellipse(0, 18, 16, 7)
+        .stroke({ color: ringColor, width: 2.5, alpha: p1.alive ? 0.9 : 0.5 });
+      if (!p1.alive && p1.reviveFrac > 0) {
+        v.hpBar
+          .arc(0, -18, 14, -Math.PI / 2, -Math.PI / 2 + p1.reviveFrac * Math.PI * 2)
+          .stroke({ color: 0xffd97a, width: 4 });
+      }
       const wob = p1.moving || p1.dashing ? Math.sin(lerp(p0.squishPhase, p1.squishPhase)) * 0.08 : 0;
       const sx = (1 + wob) * (p1.dashing ? 1.12 : 1);
       const sy = (1 - wob) * (p1.dashing ? 0.88 : 1);
@@ -217,9 +233,13 @@ export class GameRenderer {
       const prevSign = v.sprite.scale.x < 0 ? -1 : 1;
       const sign = Math.abs(facingX) > 0.15 ? (facingX < 0 ? -1 : 1) : prevSign;
       v.sprite.scale.set(sign * v.baseScaleX * sx, v.baseScaleY * sy);
-      this.drawHpBar(v, p1.hpFrac, 40);
+      this.drawHpBarKeep(v, p1.hpFrac, 40);
       cx += x;
       cy += y;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
     }
 
     // Enemies — match visuals by instance id, pool the rest
@@ -296,11 +316,18 @@ export class GameRenderer {
 
     this.tickDamageNumbers(this.app.ticker.deltaMS);
 
-    // Camera
+    // Camera: fit the whole party with margin; zoom clamped to the raster budget
     const n = Math.max(1, curr.players.length);
     cx /= n;
     cy /= n;
     const { width, height } = this.app.renderer;
+    const ZOOM_MAX = 1.4;
+    const ZOOM_MIN = 0.55;
+    const marginPx = 7 * PX_PER_UNIT;
+    const spanX = Math.max(1, maxX - minX) + marginPx * 2;
+    const spanY = Math.max(1, maxY - minY) + marginPx * 2;
+    const targetZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, width / spanX, height / spanY));
+    this.zoom += (targetZoom - this.zoom) * 0.08;
     this.world.scale.set(this.zoom);
     this.world.position.set(width / 2 - cx * this.zoom, height / 2 - cy * this.zoom);
   }

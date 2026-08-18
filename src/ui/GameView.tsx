@@ -1,12 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from '@game/shell/engine';
+import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { IntermissionOverlay } from './IntermissionOverlay';
 import { RunEndOverlay } from './RunEndOverlay';
 
 type Hud = ReturnType<Engine['hud']>;
 type IntermissionData = ReturnType<Engine['intermission']>;
 
-export function GameView({ seed, onExit }: { seed: number; onExit: () => void }) {
+const CORNERS: React.CSSProperties[] = [
+  { left: 12, bottom: 12 },
+  { right: 12, bottom: 12, textAlign: 'right' },
+  { left: 12, top: 52 },
+  { right: 12, top: 52, textAlign: 'right' },
+];
+
+export function GameView({
+  seed,
+  playerCount,
+  onExit,
+}: {
+  seed: number;
+  playerCount: number;
+  onExit: () => void;
+}) {
   const mountRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const [hud, setHud] = useState<Hud | null>(null);
@@ -15,7 +31,7 @@ export function GameView({ seed, onExit }: { seed: number; onExit: () => void })
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
-    const engine = new Engine(seed, 1);
+    const engine = new Engine(seed, playerCount);
     engineRef.current = engine;
     let disposed = false;
     void engine.mount(el).catch((err) => {
@@ -33,31 +49,63 @@ export function GameView({ seed, onExit }: { seed: number; onExit: () => void })
       engineRef.current = null;
       engine.dispose();
     };
-  }, [seed]);
+  }, [seed, playerCount]);
 
   return (
     <div ref={mountRef} style={{ position: 'fixed', inset: 0, overflow: 'hidden' }} data-screen="arena">
-      {hud && (
+      {hud?.players.map((p) => (
         <div
+          key={p.index}
+          data-player-hud={p.index}
           style={{
             position: 'absolute',
-            left: 12,
-            bottom: 12,
+            ...CORNERS[p.index],
             color: '#fff',
             fontFamily: 'system-ui',
             fontWeight: 700,
             textShadow: '0 1px 3px #0009',
             pointerEvents: 'none',
-            lineHeight: 1.5,
+            lineHeight: 1.45,
+            borderLeft: p.index % 2 === 0 ? `4px solid ${PLAYER_COLORS_CSS[p.index]}` : undefined,
+            borderRight: p.index % 2 === 1 ? `4px solid ${PLAYER_COLORS_CSS[p.index]}` : undefined,
+            padding: '2px 8px',
           }}
         >
-          <div style={{ fontSize: 18 }}>
-            ❤️ {hud.hp}/{hud.maxHp} · Lv {hud.level} {!hud.alive && '— snuffed!'}
+          <div style={{ fontSize: 16 }}>
+            <span style={{ color: PLAYER_COLORS_CSS[p.index] }}>P{p.index + 1}</span> ❤️ {p.hp}/{p.maxHp} · Lv{' '}
+            {p.level}
+            {!p.alive && ' 💨'}
           </div>
-          <div>
-            💰 {hud.gold} ✨ {hud.xp} ⚔️ {hud.kills}
-            {hud.chests > 0 && <> 🧰 {hud.chests}</>}
+          <div style={{ fontSize: 13 }}>
+            ⚔️ {p.kills}
+            {p.chests > 0 && <> 🧰 {p.chests}</>}
           </div>
+        </div>
+      ))}
+      {hud && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            color: '#fff',
+            fontFamily: 'system-ui',
+            fontWeight: 800,
+            textAlign: 'center',
+            textShadow: '0 1px 3px #0009',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ fontSize: 20 }}>Wave {hud.wave} · 💰 {hud.gold}</div>
+          <div style={{ fontSize: 13, opacity: 0.85 }}>
+            {hud.cleared ? 'wave cleared! ✨' : `${hud.enemies} foes about`}
+          </div>
+          {hud.combo >= 5 && (
+            <div style={{ fontSize: 22, color: hud.combo >= 20 ? '#ff5c5c' : hud.combo >= 10 ? '#ffb347' : '#ffee66' }}>
+              ×{hud.combo} COMBO!
+            </div>
+          )}
         </div>
       )}
       {hud?.boss && (
@@ -67,7 +115,7 @@ export function GameView({ seed, onExit }: { seed: number; onExit: () => void })
             bottom: 24,
             left: '50%',
             transform: 'translateX(-50%)',
-            width: 'min(620px, 80vw)',
+            width: 'min(620px, 70vw)',
             textAlign: 'center',
             fontFamily: 'system-ui',
             pointerEvents: 'none',
@@ -106,32 +154,6 @@ export function GameView({ seed, onExit }: { seed: number; onExit: () => void })
       )}
       {hud?.runState === 'playing' && intermission && engineRef.current && (
         <IntermissionOverlay data={intermission} engine={engineRef.current} />
-      )}
-      {hud && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            color: '#fff',
-            fontFamily: 'system-ui',
-            fontWeight: 800,
-            textAlign: 'center',
-            textShadow: '0 1px 3px #0009',
-            pointerEvents: 'none',
-          }}
-        >
-          <div style={{ fontSize: 20 }}>Wave {hud.wave}</div>
-          <div style={{ fontSize: 13, opacity: 0.85 }}>
-            {hud.cleared ? 'wave cleared! ✨' : `${hud.enemies} foes about`}
-          </div>
-          {hud.combo >= 5 && (
-            <div style={{ fontSize: 22, color: hud.combo >= 20 ? '#ff5c5c' : hud.combo >= 10 ? '#ffb347' : '#ffee66' }}>
-              ×{hud.combo} COMBO!
-            </div>
-          )}
-        </div>
       )}
     </div>
   );

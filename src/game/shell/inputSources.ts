@@ -13,7 +13,6 @@ export class InputSampler {
   private mouseX = 0;
   private mouseY = 0;
   private dashLatch = false;
-  private interactLatch = false;
   private abilityLatch = false;
   private prevPadButtons: boolean[][] = [];
   private detach: (() => void) | null = null;
@@ -31,7 +30,6 @@ export class InputSampler {
         this.dashLatch = true;
         e.preventDefault();
       }
-      if (e.code === 'KeyE') this.interactLatch = true;
       if (e.code === 'KeyQ') this.abilityLatch = true;
     };
     const onKeyUp = (e: KeyboardEvent) => this.keys.delete(e.code);
@@ -89,7 +87,7 @@ export class InputSampler {
     }
     p1.fire = this.mouseDown;
     p1.dash = this.dashLatch;
-    p1.interact = this.interactLatch;
+    p1.interact = this.keys.has('KeyE'); // held (revives are hold-to-channel)
     p1.ability = this.abilityLatch;
 
     // Gamepads: pad i → player i (pad 0 merges into player 0)
@@ -113,15 +111,14 @@ export class InputSampler {
       }
       const btn = (n: number) => pad.buttons[n]?.pressed ?? false;
       const prev = this.prevPadButtons[i] ?? [];
-      if (btn(0) && !prev[0]) f.dash = true; // A
-      if (btn(2) && !prev[2]) f.interact = true; // X
-      if (btn(1) && !prev[1]) f.ability = true; // B
+      if (btn(0) && !prev[0]) f.dash = true; // A (edge)
+      if (btn(2)) f.interact = true; // X (held — revives channel)
+      if (btn(1) && !prev[1]) f.ability = true; // B (edge)
       if (btn(7)) f.fire = true; // RT
       this.prevPadButtons[i] = [btn(0), btn(1), btn(2), btn(3), false, false, false, btn(7)];
     }
 
     this.dashLatch = false;
-    this.interactLatch = false;
     this.abilityLatch = false;
     return frames;
   }

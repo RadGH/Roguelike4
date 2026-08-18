@@ -30,6 +30,12 @@
     "base": 10,
     "perLevel": 6
   },
+  "coop": {
+    "spawnMultPerExtraPlayer": 0.7,
+    "reviveHoldSeconds": 3,
+    "reviveHpFrac": 0.4,
+    "reviveRange": 1.8
+  },
   "waves": {
     "hpGrowthPerWave": 0.1,
     "dmgGrowthPerWave": 0.08,

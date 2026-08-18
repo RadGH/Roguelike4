@@ -54,6 +54,8 @@ export type PlayerState = {
   squishPhase: number;
   moving: boolean;
   contactHitCooldown: number;
+  reviveProgress: number; // seconds of Interact held near this player's wisp
+  revivedThisWave: boolean;
 };
 
 export type ChargeState = {
@@ -132,6 +134,7 @@ export type SimState = {
   projectiles: ProjectileState[];
   pickups: PickupState[];
   combo: { count: number; decay: number; best: number };
+  lootRotation: number; // next player index to receive a chest (round-robin)
   spawning: {
     queue: { defId: string; count: number; atSecond: number; elite: boolean }[];
     elapsed: number;
@@ -151,6 +154,7 @@ export type SimEvent =
   | { type: 'damageNumber'; x: number; y: number; amount: number; crit: boolean; onPlayer: boolean }
   | { type: 'bossSpawned'; instance: number; defId: string }
   | { type: 'bossPhase'; instance: number; phase: number }
+  | { type: 'playerRevived'; player: number; by: number }
   | { type: 'runOver' };
 
 const MAX_PROJECTILES = 512;
@@ -193,6 +197,7 @@ export class Sim {
       projectiles,
       pickups,
       combo: { count: 0, decay: 0, best: 0 },
+      lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
     };
   }
@@ -230,7 +235,28 @@ export class Sim {
       squishPhase: 0,
       moving: false,
       contactHitCooldown: 0,
+      reviveProgress: 0,
+      revivedThisWave: false,
     };
+  }
+
+  /** Hot-join: add a player mid-run with a level catch-up to the party average. */
+  addPlayer(): PlayerState {
+    if (this.state.players.length >= 4) throw new Error('Party is full');
+    const avgLevel = Math.max(
+      1,
+      Math.floor(
+        this.state.players.reduce((a, p) => a + p.level, 0) / this.state.players.length,
+      ),
+    );
+    const p = this.createPlayer(this.state.players.length, this.state.players.length + 1, this.state.arena);
+    p.level = avgLevel;
+    p.pendingBoons = Math.min(6, avgLevel - 1); // catch-up picks, capped so the panel stays sane
+    p.gold = this.state.players[0]?.gold ?? 0; // gold is mirrored — joiners share the pool
+    this.state.players.push(p);
+    this.recomputeStats(p);
+    p.hp = stat(p.stats, 'maxHp');
+    return p;
   }
 
   // ---- boons ----
@@ -286,13 +312,21 @@ export class Sim {
 
   // ---- wave control ----
 
-  /** Start the given wave of the current act from wave data. */
+  /** Start the given wave of the current act from wave data. Spawn counts scale
+   *  with party size; per-player XP is divided so leveling stays flat vs solo. */
   startWaveNumber(wave: number): void {
     const w = getWave(this.registry, this.state.act, wave);
+    const coopMult =
+      1 + this.registry.balance.coop.spawnMultPerExtraPlayer * (this.state.players.length - 1);
     this.state.wave = wave;
     this.state.phase = 'fighting';
     this.state.spawning = {
-      queue: w.entries.map((e) => ({ defId: e.defId, count: e.count, atSecond: e.atSecond, elite: e.elite })),
+      queue: w.entries.map((e) => ({
+        defId: e.defId,
+        count: Math.round(e.count * coopMult),
+        atSecond: e.atSecond,
+        elite: e.elite,
+      })),
       elapsed: 0,
       done: false,
     };
@@ -388,6 +422,8 @@ export class Sim {
       this.tickPlayerMovement(p, inputs[p.index] ?? neutralInput(), dt);
     }
 
+    this.tickRevives(inputs, dt);
+
     this.spatial.clear();
     for (const e of s.enemies) {
       if (!e.alive) continue;
@@ -424,6 +460,8 @@ export class Sim {
           p.alive = true;
           p.hp = Math.max(1, Math.round(stat(p.stats, 'maxHp') * 0.4));
         }
+        p.revivedThisWave = false;
+        p.reviveProgress = 0;
       }
     }
 
@@ -485,6 +523,36 @@ export class Sim {
     p.x = Math.min(this.state.arena.width - r, Math.max(r, p.x));
     p.y = Math.min(this.state.arena.height - r, Math.max(r, p.y));
     if (p.moving || p.dashTimer > 0) p.squishPhase = (p.squishPhase + dt * 9) % (Math.PI * 2);
+  }
+
+  /** Hold Interact near a snuffed teammate's wisp to relight them (once per wave). */
+  private tickRevives(inputs: readonly InputFrame[], dt: number): void {
+    const coop = this.registry.balance.coop;
+    for (const down of this.state.players) {
+      if (down.alive || down.revivedThisWave) continue;
+      let helper: PlayerState | null = null;
+      for (const p of this.state.players) {
+        if (!p.alive || p.index === down.index) continue;
+        const input = inputs[p.index];
+        if (!input?.interact) continue;
+        if (Math.hypot(p.x - down.x, p.y - down.y) <= coop.reviveRange) {
+          helper = p;
+          break;
+        }
+      }
+      if (helper) {
+        down.reviveProgress += dt;
+        if (down.reviveProgress >= coop.reviveHoldSeconds) {
+          down.alive = true;
+          down.hp = Math.max(1, Math.round(stat(down.stats, 'maxHp') * coop.reviveHpFrac));
+          down.revivedThisWave = true;
+          down.reviveProgress = 0;
+          this.eventsThisTick.push({ type: 'playerRevived', player: down.index, by: helper.index });
+        }
+      } else {
+        down.reviveProgress = Math.max(0, down.reviveProgress - dt * 2);
+      }
+    }
   }
 
   private tickWeapons(p: PlayerState, input: InputFrame, dt: number): void {
@@ -1164,9 +1232,14 @@ export class Sim {
           // Mirrored gold: every non-retired player receives it (snuffed included)
           for (const other of this.state.players) other.gold += pk.amount;
         } else if (pk.kind === 'xp') {
-          for (const other of this.state.players) this.grantXp(other, pk.amount);
+          // Equal-share XP, normalized by party size (co-op levels stay ~flat vs solo)
+          const share = Math.max(1, Math.round(pk.amount / this.state.players.length));
+          for (const other of this.state.players) this.grantXp(other, share);
         } else {
-          p.pendingChests += pk.amount;
+          // Chests are dealt round-robin regardless of who touched them
+          const owner = this.state.players[this.state.lootRotation % this.state.players.length]!;
+          owner.pendingChests += pk.amount;
+          this.state.lootRotation = (this.state.lootRotation + 1) % this.state.players.length;
         }
         this.tracker.push({
           type: 'pickup',

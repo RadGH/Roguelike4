@@ -196,6 +196,14 @@ export const BalanceSchema = z
     leveling: z
       .object({ base: z.number(), perLevel: z.number() })
       .strict(),
+    coop: z
+      .object({
+        spawnMultPerExtraPlayer: z.number(),
+        reviveHoldSeconds: z.number(),
+        reviveHpFrac: z.number(),
+        reviveRange: z.number(),
+      })
+      .strict(),
     waves: z
       .object({
         hpGrowthPerWave: z.number(),

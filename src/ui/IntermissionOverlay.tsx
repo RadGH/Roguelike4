@@ -1,213 +1,213 @@
 import { useEffect, useState } from 'react';
 import type { Engine } from '@game/shell/engine';
+import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { MeterTable } from './MeterTable';
 
 type IntermissionData = NonNullable<ReturnType<Engine['intermission']>>;
+type Panel = IntermissionData['panels'][number];
 
-const panelStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  background: 'rgba(43, 33, 64, 0.94)',
-  border: '3px solid #ffd97a',
-  borderRadius: 16,
+const cardBtn: React.CSSProperties = {
+  background: '#3b2f57',
   color: '#fff4d6',
-  fontFamily: 'system-ui',
-  padding: '20px 28px',
-  minWidth: 320,
-  maxWidth: '90vw',
-  textAlign: 'center',
-  boxShadow: '0 8px 40px #0008',
+  border: '2px solid #b88ae0',
+  borderRadius: 10,
+  padding: '10px 10px',
+  minWidth: 110,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
 };
 
-export function IntermissionOverlay({
-  data,
-  engine,
-}: {
-  data: IntermissionData;
-  engine: Engine;
-}) {
-  const choices = data.boonChoices;
+function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; solo: boolean }) {
   const [showMeters, setShowMeters] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (choices) {
-        const n = Number(e.key);
-        if (n >= 1 && n <= choices.length) engine.chooseBoon(choices[n - 1]!.id);
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        engine.continueToNextWave();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [choices, engine]);
+  const pi = panel.player;
+  const color = PLAYER_COLORS_CSS[pi];
 
   return (
-    <div style={panelStyle} data-screen="intermission">
-      <h2 style={{ margin: '0 0 4px', color: '#ffd97a' }}>Wave {data.wave} cleared! ✨</h2>
-      <div style={{ display: 'flex', gap: 16, justifyContent: 'center', opacity: 0.9, fontSize: 14, marginBottom: 4 }}>
-        <span>⚔️ {data.recap.kills} kills</span>
-        <span>💥 {data.recap.damageDealt} dealt</span>
-        <span>💔 {data.recap.damageTaken} taken</span>
-        <span>⭐ Lv {data.recap.level}</span>
+    <div
+      data-player-panel={pi}
+      style={{
+        border: `2px solid ${color}`,
+        borderRadius: 12,
+        padding: '10px 14px',
+        background: 'rgba(43,33,64,0.6)',
+        minWidth: solo ? 300 : 250,
+        maxWidth: solo ? 460 : 340,
+        flex: '1 1 250px',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+        <span style={{ color, fontWeight: 800 }}>P{pi + 1} · Lv {panel.level}</span>
+        <span style={{ opacity: 0.85 }}>⚔️ {panel.kills} · 💔 {panel.damageTaken}</span>
       </div>
+      {panel.chest ? (
+        panel.chest.pendingEquip ? (
+          <>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+              Equip <span style={{ color: '#ffd97a' }}>{panel.chest.pendingEquip.name}</span> — replace what?
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {panel.chest.currentWeapons.map((w) => (
+                <button
+                  key={w.slot}
+                  onClick={() => engine.equipReplace(pi, w.slot)}
+                  data-replace-slot={`${pi}-${w.slot}`}
+                  style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f' }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{w.name}</div>
+                  <div style={{ fontSize: 10, opacity: 0.85 }}>{w.desc}</div>
+                </button>
+              ))}
+              <button
+                onClick={() => engine.cancelEquip(pi)}
+                data-action={`cancel-equip-${pi}`}
+                style={{ ...cardBtn, border: '2px solid #666', background: 'transparent', minWidth: 60 }}
+              >
+                ←
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+              🧰 Chest{panel.pendingChests > 1 ? ` ×${panel.pendingChests}` : ''} — take a weapon?
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {panel.chest.choices.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => engine.chooseChestWeapon(pi, c.id)}
+                  data-chest-weapon={`${pi}-${c.id}`}
+                  style={{ ...cardBtn, border: '2px solid #ffd97a' }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
+                  <div style={{ fontSize: 10, opacity: 0.9 }}>{c.desc}</div>
+                </button>
+              ))}
+              <button
+                onClick={() => engine.salvageChest(pi)}
+                data-action={`salvage-${pi}`}
+                style={{ ...cardBtn, border: '2px dashed #ffd97a88', background: 'transparent', color: '#ffd97a' }}
+              >
+                Salvage
+                <div style={{ fontSize: 10, opacity: 0.8 }}>+15 gold</div>
+              </button>
+            </div>
+          </>
+        )
+      ) : panel.boonChoices ? (
+        <>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+            Choose a boon{panel.pendingBoons > 1 ? ` (${panel.pendingBoons} left)` : ''}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {panel.boonChoices.map((c, i) => (
+              <button
+                key={c.id}
+                onClick={() => engine.chooseBoon(pi, c.id)}
+                data-boon={`${pi}-${c.id}`}
+                style={cardBtn}
+              >
+                <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
+                <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>{c.desc}</div>
+                {pi === 0 && <div style={{ fontSize: 9, opacity: 0.5, marginTop: 4 }}>[{i + 1}]</div>}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div style={{ fontSize: 13, opacity: 0.8, textAlign: 'center', padding: '8px 0' }}>ready ✓</div>
+      )}
       <button
         onClick={() => setShowMeters(!showMeters)}
-        data-action="toggle-meters"
+        data-action={`toggle-meters-${pi}`}
         style={{
           background: 'transparent',
           color: '#b88ae0',
           border: 'none',
           cursor: 'pointer',
           fontFamily: 'inherit',
-          fontSize: 12,
-          marginBottom: 8,
+          fontSize: 11,
+          marginTop: 6,
         }}
       >
-        {showMeters ? '▲ hide details' : '▼ damage details'}
+        {showMeters ? '▲ hide' : '▼ damage details'}
       </button>
-      {showMeters && <MeterTable meters={engine.meters()} />}
-      {data.chest ? (
-        data.chest.pendingEquip ? (
-          <>
-            <p style={{ margin: '4px 0 10px', fontWeight: 700 }}>
-              Equip <span style={{ color: '#ffd97a' }}>{data.chest.pendingEquip.name}</span> — replace which weapon?
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {data.chest.currentWeapons.map((w) => (
-                <button
-                  key={w.slot}
-                  onClick={() => engine.equipReplace(w.slot)}
-                  data-replace-slot={w.slot}
-                  style={{
-                    background: '#57302f',
-                    color: '#fff4d6',
-                    border: '2px solid #e8a020',
-                    borderRadius: 10,
-                    padding: '12px 14px',
-                    width: 140,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <div style={{ fontWeight: 800 }}>{w.name}</div>
-                  <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4 }}>{w.desc}</div>
-                </button>
-              ))}
-              <button
-                onClick={() => engine.cancelEquip()}
-                data-action="cancel-equip"
-                style={{
-                  background: 'transparent',
-                  color: '#fff4d6',
-                  border: '2px solid #666',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                ← Back
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p style={{ margin: '4px 0 10px', fontWeight: 700 }}>
-              🧰 A chest creaks open {data.pendingChests > 1 ? `(${data.pendingChests} chests)` : ''} — take a weapon?
-            </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {data.chest.choices.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => engine.chooseChestWeapon(c.id)}
-                  data-chest-weapon={c.id}
-                  style={{
-                    background: '#3d3260',
-                    color: '#fff4d6',
-                    border: '2px solid #ffd97a',
-                    borderRadius: 10,
-                    padding: '12px 14px',
-                    width: 140,
-                    minHeight: 84,
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  <div style={{ fontWeight: 800 }}>{c.name}</div>
-                  <div style={{ fontSize: 11, opacity: 0.9, marginTop: 6 }}>{c.desc}</div>
-                </button>
-              ))}
-              <button
-                onClick={() => engine.salvageChest()}
-                data-action="salvage"
-                style={{
-                  background: 'transparent',
-                  color: '#ffd97a',
-                  border: '2px dashed #ffd97a88',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                Salvage
-                <div style={{ fontSize: 11, opacity: 0.8 }}>+15 gold</div>
-              </button>
-            </div>
-          </>
-        )
-      ) : choices ? (
-        <>
-          <p style={{ margin: '4px 0 10px', fontWeight: 700 }}>
-            Choose a boon {data.pendingBoons > 1 ? `(${data.pendingBoons} picks left)` : ''}
-          </p>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {choices.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => engine.chooseBoon(c.id)}
-                data-boon={c.id}
-                style={{
-                  background: '#3b2f57',
-                  color: '#fff4d6',
-                  border: '2px solid #b88ae0',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                  width: 130,
-                  minHeight: 84,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                <div style={{ fontWeight: 800 }}>{c.name}</div>
-                <div style={{ fontSize: 12, opacity: 0.9, marginTop: 6 }}>{c.desc}</div>
-                <div style={{ fontSize: 11, opacity: 0.5, marginTop: 6 }}>[{i + 1}]</div>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : (
+      {showMeters && <MeterTable meters={engine.meters(pi)} />}
+    </div>
+  );
+}
+
+export function IntermissionOverlay({ data, engine }: { data: IntermissionData; engine: Engine }) {
+  // Keyboard shortcuts drive P1's panel only (pads get menu nav in a later chunk)
+  const p1 = data.panels[0];
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!p1) return;
+      if (p1.boonChoices && !p1.chest) {
+        const n = Number(e.key);
+        if (n >= 1 && n <= p1.boonChoices.length) engine.chooseBoon(0, p1.boonChoices[n - 1]!.id);
+      } else if (data.allDone && (e.key === 'Enter' || e.key === ' ')) {
+        engine.continueToNextWave();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [p1, data.allDone, engine]);
+
+  return (
+    <div
+      data-screen="intermission"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'grid',
+        placeItems: 'center',
+        fontFamily: 'system-ui',
+        color: '#fff4d6',
+        background: 'rgba(20,14,34,0.45)',
+      }}
+    >
+      <div
+        style={{
+          background: 'rgba(43,33,64,0.94)',
+          border: '3px solid #ffd97a',
+          borderRadius: 16,
+          padding: '16px 22px',
+          maxWidth: '94vw',
+          maxHeight: '88vh',
+          overflowY: 'auto',
+          textAlign: 'center',
+          boxShadow: '0 8px 40px #0008',
+        }}
+      >
+        <h2 style={{ margin: '0 0 8px', color: '#ffd97a' }}>
+          Wave {data.wave} cleared! ✨ <span style={{ fontSize: 14, opacity: 0.8 }}>💰 {data.gold}</span>
+        </h2>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+          {data.panels.map((panel) => (
+            <PlayerPanel key={panel.player} panel={panel} engine={engine} solo={data.panels.length === 1} />
+          ))}
+        </div>
         <button
           onClick={() => engine.continueToNextWave()}
+          disabled={!data.allDone}
           data-action="continue"
           style={{
-            background: '#ffd97a',
+            marginTop: 14,
+            background: data.allDone ? '#ffd97a' : '#665c44',
             color: '#2b2140',
             border: 'none',
             borderRadius: 10,
             padding: '10px 26px',
             fontWeight: 800,
             fontSize: 16,
-            cursor: 'pointer',
+            cursor: data.allDone ? 'pointer' : 'default',
             fontFamily: 'inherit',
           }}
         >
-          {data.lastWaveOfAct ? 'Restart Act (more acts coming!)' : 'Next wave ▶'}
+          {data.lastWaveOfAct ? 'Finish' : data.allDone ? 'Next wave ▶' : 'Waiting for picks…'}
         </button>
-      )}
+      </div>
     </div>
   );
 }

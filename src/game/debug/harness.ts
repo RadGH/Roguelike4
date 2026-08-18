@@ -13,10 +13,10 @@ export type DebugApi = {
   pause(): void;
   resume(): void;
   paused(): boolean;
-  /** Advance N ticks while paused, using the injected input (debug only). */
+  /** Advance N ticks while paused, using the injected inputs (debug only). */
   step(ticks: number): void;
-  /** Set the injected input frame used for player 0 while stepping/paused. */
-  setInput(partial: Partial<InputFrame>): void;
+  /** Set the injected input frame for a player (default 0) while stepping/paused. */
+  setInput(partial: Partial<InputFrame>, playerIndex?: number): void;
   /** Structured game state snapshot. */
   snapshot(): unknown;
   /** Current screen name (title, arena, ...). */
@@ -45,7 +45,7 @@ export function isDebugMode(): boolean {
 export type DebugHooks = {
   snapshot: () => unknown;
   screen: () => string;
-  step: (ticks: number, input: InputFrame) => void;
+  step: (ticks: number, inputs: InputFrame[]) => void;
   setPaused: (paused: boolean) => void;
   cheat: (action: string) => void;
 };
@@ -53,7 +53,7 @@ export type DebugHooks = {
 export function createDebugApi(hooks: DebugHooks, version: string): DebugApi {
   const errors: DebugApi['errors'] = [];
   installErrorCapture(errors);
-  let injected = neutralInput();
+  const injected: InputFrame[] = [neutralInput(), neutralInput(), neutralInput(), neutralInput()];
   let pausedFlag = false;
   const debug = isDebugMode();
 
@@ -75,8 +75,8 @@ export function createDebugApi(hooks: DebugHooks, version: string): DebugApi {
       if (!debug) return;
       hooks.step(ticks, injected);
     },
-    setInput: (partial) => {
-      injected = { ...injected, ...partial };
+    setInput: (partial, playerIndex = 0) => {
+      injected[playerIndex] = { ...(injected[playerIndex] ?? neutralInput()), ...partial };
     },
     snapshot: () => hooks.snapshot(),
     screen: () => hooks.screen(),
