@@ -98,6 +98,27 @@ export function App() {
           couch co-op: connect up to 4 controllers before setting out — or join between waves
         </p>
         <p style={{ opacity: 0.4, fontSize: '0.8rem' }}>v{GAME_VERSION}</p>
+        <p style={{ fontSize: '0.85rem' }}>
+          {/* stopPropagation: following a link must not also start the game */}
+          <a
+            href="guide/index.html"
+            target="_blank"
+            rel="noreferrer"
+            onPointerDown={(e) => e.stopPropagation()}
+            style={{ color: '#ffd97a', opacity: 0.75, marginRight: '1.25rem' }}
+          >
+            Player Guide
+          </a>
+          <a
+            href="manual/index.html"
+            target="_blank"
+            rel="noreferrer"
+            onPointerDown={(e) => e.stopPropagation()}
+            style={{ color: '#ffd97a', opacity: 0.75 }}
+          >
+            Manual
+          </a>
+        </p>
       </div>
     </main>
   );

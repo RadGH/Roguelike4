@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && npm run manual && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "sim": "tsx --tsconfig tsconfig.app.json scripts/sim.ts",
-    "validate-data": "tsx scripts/validate-data.ts"
+    "validate-data": "tsx scripts/validate-data.ts",
+    "manual": "tsx --tsconfig tsconfig.app.json scripts/build-manual.ts"
   },
   "dependencies": {
     "pixi.js": "^8.6.6",

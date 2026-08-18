@@ -70,7 +70,8 @@ export function TownScreen({
         .map((s) => unlockedClasses[Math.min(s, unlockedClasses.length - 1)]?.id ?? 'hero'),
     });
   const classFocus = [0, 1, 2, 3].map((i) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks -- fixed-length array, stable order
+    // hooks in a fixed-length map: array length and order never change, so hook
+    // order is stable across renders
     useMenuNav({
       player: i,
       count: unlockedClasses.length,
@@ -92,7 +93,6 @@ export function TownScreen({
       });
       return changed ? next : prev;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classFocus[0], classFocus[1], classFocus[2], classFocus[3]]);
 
   // Number keys pick the destination act
