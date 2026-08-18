@@ -5,12 +5,8 @@ build from a public release:
 
 ## Blocked on the user (flagged repeatedly, not forgotten)
 
-- [ ] **GitHub Pages deploy.** The repo token lacks `workflow`/admin scope, so the
-  parked workflow (`docs/dev/pending-deploy-workflow.yml`) can't be pushed and Pages
-  can't be enabled via API. Either:
-  - Option A: add `~/.ssh/roguelike4_deploy_key.pub` as a write deploy key + enable
-    Pages (Settings → Pages → deploy from branch or actions), or
-  - Option B: reissue `ROGUELIKE4_GITHUB_TOKEN` with `workflow` + admin:pages scope.
+- [x] **GitHub Pages deploy — LIVE at https://radgh.github.io/Roguelike4/**
+  (deploy key added 2026-08-18; gh-pages branch + Actions workflow deploy on main).
 - [ ] **Human playtest.** Every balance number was calibrated against bot pilots
   (design 13's honesty clause). Known bot-vs-human gaps, in the order they'll matter:
   - Lone-melee classes (Tycoon, Chef, Paladin, and to a degree Engineer/Bard) sweep
