@@ -23,7 +23,8 @@ export function App() {
     };
   }, [screen.name]);
 
-  if (screen.name === 'arena') return <GameView seed={screen.seed} />;
+  if (screen.name === 'arena')
+    return <GameView seed={screen.seed} onExit={() => setScreen({ name: 'title' })} />;
 
   return (
     <main

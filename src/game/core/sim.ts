@@ -150,7 +150,8 @@ export type SimEvent =
   | { type: 'chargeTelegraph'; instance: number }
   | { type: 'damageNumber'; x: number; y: number; amount: number; crit: boolean; onPlayer: boolean }
   | { type: 'bossSpawned'; instance: number; defId: string }
-  | { type: 'bossPhase'; instance: number; phase: number };
+  | { type: 'bossPhase'; instance: number; phase: number }
+  | { type: 'runOver' };
 
 const MAX_PROJECTILES = 512;
 const MAX_PICKUPS = 1024;
@@ -413,10 +414,17 @@ export class Sim {
       }
     }
 
-    // Wave clear detection
+    // Wave clear detection (only reachable while someone is alive)
     if (s.phase === 'fighting' && s.spawning.done && s.enemies.length === 0) {
       s.phase = 'cleared';
       this.eventsThisTick.push({ type: 'waveCleared', wave: s.wave });
+      // Co-op rule: snuffed players auto-revive at wave end
+      for (const p of s.players) {
+        if (!p.alive) {
+          p.alive = true;
+          p.hp = Math.max(1, Math.round(stat(p.stats, 'maxHp') * 0.4));
+        }
+      }
     }
 
     s.tick++;
@@ -1067,6 +1075,9 @@ export class Sim {
       p.alive = false;
       p.hp = 0;
       this.eventsThisTick.push({ type: 'playerDown', player: p.index });
+      if (this.state.players.every((pl) => !pl.alive)) {
+        this.eventsThisTick.push({ type: 'runOver' });
+      }
     }
   }
 

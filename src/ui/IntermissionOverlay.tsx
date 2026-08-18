@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Engine } from '@game/shell/engine';
+import { MeterTable } from './MeterTable';
 
 type IntermissionData = NonNullable<ReturnType<Engine['intermission']>>;
 
@@ -28,6 +29,7 @@ export function IntermissionOverlay({
   engine: Engine;
 }) {
   const choices = data.boonChoices;
+  const [showMeters, setShowMeters] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -45,12 +47,28 @@ export function IntermissionOverlay({
   return (
     <div style={panelStyle} data-screen="intermission">
       <h2 style={{ margin: '0 0 4px', color: '#ffd97a' }}>Wave {data.wave} cleared! ✨</h2>
-      <div style={{ display: 'flex', gap: 16, justifyContent: 'center', opacity: 0.9, fontSize: 14, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 16, justifyContent: 'center', opacity: 0.9, fontSize: 14, marginBottom: 4 }}>
         <span>⚔️ {data.recap.kills} kills</span>
         <span>💥 {data.recap.damageDealt} dealt</span>
         <span>💔 {data.recap.damageTaken} taken</span>
         <span>⭐ Lv {data.recap.level}</span>
       </div>
+      <button
+        onClick={() => setShowMeters(!showMeters)}
+        data-action="toggle-meters"
+        style={{
+          background: 'transparent',
+          color: '#b88ae0',
+          border: 'none',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          fontSize: 12,
+          marginBottom: 8,
+        }}
+      >
+        {showMeters ? '▲ hide details' : '▼ damage details'}
+      </button>
+      {showMeters && <MeterTable meters={engine.meters()} />}
       {data.chest ? (
         data.chest.pendingEquip ? (
           <>

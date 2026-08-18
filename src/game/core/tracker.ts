@@ -58,6 +58,7 @@ export class Tracker {
   byPlayerItem = new Map<number, Map<string, DamageAggregate>>();
   killsByPlayer = new Map<number, number>();
   damageTakenByPlayer = new Map<number, number>();
+  dodgeSavesByPlayer = new Map<number, number>();
   goldByPlayer = new Map<number, number>();
   xpByPlayer = new Map<number, number>();
   private nextHitId = 1;
@@ -106,6 +107,13 @@ export class Tracker {
     } else if (ev.type === 'pickup') {
       const map = ev.what === 'gold' ? this.goldByPlayer : this.xpByPlayer;
       map.set(ev.player, (map.get(ev.player) ?? 0) + ev.amount);
+    } else if (ev.type === 'dodgeSave') {
+      if (ev.target.kind === 'player') {
+        this.dodgeSavesByPlayer.set(
+          ev.target.index,
+          (this.dodgeSavesByPlayer.get(ev.target.index) ?? 0) + 1,
+        );
+      }
     }
   }
 }

@@ -55,6 +55,17 @@ export class Engine {
           } else if (action === 'stopSpawns') {
             this.sim.state.spawning.queue.forEach((q) => (q.count = 0));
             this.sim.state.spawning.done = true;
+          } else if (action === 'gotoBossWave') {
+            this.intermissionActive = false;
+            this.boonChoices = null;
+            this.chestChoices = null;
+            this.startWave(10);
+          } else if (action === 'snuffParty') {
+            for (const p of this.sim.state.players) {
+              p.hp = 0;
+              p.alive = false;
+            }
+            this.runState = 'gameOver';
           }
         },
       },
@@ -88,11 +99,12 @@ export class Engine {
   private pendingEquip: string | null = null;
 
   private weaponInfo(id: string) {
-    const w = this.sim.registry.weapons.get(id)!;
     const name = id
       .split('-')
-      .map((s) => s[0]!.toUpperCase() + s.slice(1))
+      .map((s) => (s ? s[0]!.toUpperCase() + s.slice(1) : s))
       .join(' ');
+    const w = this.sim.registry.weapons.get(id);
+    if (!w) return { id, name, desc: '' };
     const effects = w.effects.map((e) => e.kind).join(', ');
     return {
       id,
@@ -192,7 +204,7 @@ export class Engine {
     this.chestChoices = null;
     this.pendingEquip = null;
     if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
-    else this.startWave(1); // act loop placeholder until acts 2-4 land
+    // No next wave: runState is already 'victory' — nothing to start.
   }
 
   /** Small HUD summary for the React overlay (polled at low frequency). */
@@ -218,6 +230,7 @@ export class Engine {
       chests: p.pendingChests,
       wave: this.sim.state.wave,
       cleared: this.sim.state.phase === 'cleared',
+      runState: this.runState,
       enemies: this.sim.aliveEnemyCount(),
       combo: this.sim.state.combo.count,
       alive: p.alive,
@@ -225,15 +238,46 @@ export class Engine {
     };
   }
 
+  /** playing → gameOver (party snuffed) | victory (act's last wave cleared) */
+  runState: 'playing' | 'gameOver' | 'victory' = 'playing';
+
   private stepOnce(inputs: readonly InputFrame[]): void {
     this.prevSnap = this.currSnap;
     const events = this.sim.tick(inputs);
     for (const ev of events) {
       if (ev.type === 'damageNumber' && this.renderer.isReady) {
         this.renderer.spawnDamageNumber(ev.x, ev.y, ev.amount, ev.crit, ev.onPlayer);
+      } else if (ev.type === 'runOver') {
+        this.runState = 'gameOver';
+      } else if (ev.type === 'waveCleared' && !this.sim.hasNextWave()) {
+        this.runState = 'victory';
       }
     }
     this.currSnap = takeSnapshot(this.sim);
+  }
+
+  /** Damage-meter drill-down for the recap panels (player 0 until M2 co-op). */
+  meters() {
+    const items = this.sim.tracker.byPlayerItem.get(0);
+    const rows = items
+      ? [...items.entries()]
+          .map(([itemId, agg]) => ({
+            itemId,
+            name: this.weaponInfo(itemId).name,
+            total: Math.round(agg.total),
+            hits: agg.hits,
+            crits: agg.crits,
+            max: Math.round(agg.max),
+          }))
+          .sort((a, b) => b.total - a.total)
+      : [];
+    const grandTotal = rows.reduce((a, r) => a + r.total, 0) || 1;
+    return {
+      rows: rows.map((r) => ({ ...r, share: r.total / grandTotal })),
+      damageTaken: Math.round(this.sim.tracker.damageTakenByPlayer.get(0) ?? 0),
+      dodgeSaves: this.sim.tracker.dodgeSavesByPlayer.get(0) ?? 0,
+      kills: this.sim.tracker.killsByPlayer.get(0) ?? 0,
+    };
   }
 
   private frame(): void {
@@ -252,7 +296,7 @@ export class Engine {
       }
       // Wave cleared → open the intermission (chests → boons → continue). The sim
       // keeps running so players can stroll and vacuum leftover pickups.
-      if (this.sim.state.phase === 'cleared' && !this.intermissionActive) {
+      if (this.sim.state.phase === 'cleared' && !this.intermissionActive && this.runState === 'playing') {
         this.intermissionActive = true;
         this.refreshIntermissionOffers();
       }

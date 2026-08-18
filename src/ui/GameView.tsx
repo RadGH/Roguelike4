@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from '@game/shell/engine';
 import { IntermissionOverlay } from './IntermissionOverlay';
+import { RunEndOverlay } from './RunEndOverlay';
 
 type Hud = ReturnType<Engine['hud']>;
 type IntermissionData = ReturnType<Engine['intermission']>;
 
-export function GameView({ seed }: { seed: number }) {
+export function GameView({ seed, onExit }: { seed: number; onExit: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const [hud, setHud] = useState<Hud | null>(null);
@@ -96,7 +97,14 @@ export function GameView({ seed }: { seed: number }) {
           </div>
         </div>
       )}
-      {intermission && engineRef.current && (
+      {hud && hud.runState !== 'playing' && engineRef.current && (
+        <RunEndOverlay
+          kind={hud.runState as 'gameOver' | 'victory'}
+          engine={engineRef.current}
+          onExit={onExit}
+        />
+      )}
+      {hud?.runState === 'playing' && intermission && engineRef.current && (
         <IntermissionOverlay data={intermission} engine={engineRef.current} />
       )}
       {hud && (
