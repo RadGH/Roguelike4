@@ -50,7 +50,7 @@
     ],
     "attackCooldown": 0.8,
     "chargeWindup": 0.8,
-    "chargeSpeedMult": 4.5,
+    "chargeSpeedMult": 4.0,
     "chargeDuration": 0.6,
     "chargeCooldown": 3.0,
     "chargeTriggerRange": 6,
@@ -197,7 +197,7 @@
     "archetype": "charger",
     "radius": 0.9,
     "maxHp": 90,
-    "damage": 6,
+    "damage": 5,
     "damageTypes": [
       "melee"
     ],

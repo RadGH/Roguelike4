@@ -91,7 +91,7 @@ export type RenderSnapshot = {
     asleep: boolean;
   }[];
   projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
-  pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' }[];
+  pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' | 'heart' }[];
   pools: { x: number; y: number; radius: number }[];
   pets: { instance: number; defId: string; owner: number; x: number; y: number; squishPhase: number }[];
 };
@@ -431,6 +431,12 @@ export class GameRenderer {
         this.pickupGfx.circle(x, y, 5).fill({ color: 0xffd97a }).stroke({ color: 0xc89020, width: 1.5 });
       } else if (pk.kind === 'xp') {
         this.pickupGfx.star(x, y, 4, 5, 2).fill({ color: 0x9be8ff });
+      } else if (pk.kind === 'heart') {
+        this.pickupGfx
+          .circle(x - 2.4, y - 1.5, 3)
+          .circle(x + 2.4, y - 1.5, 3)
+          .fill({ color: 0xff7f9e });
+        this.pickupGfx.poly([x - 5, y - 0.4, x + 5, y - 0.4, x, y + 5.5]).fill({ color: 0xff7f9e });
       } else {
         // chest: little golden box with a lid line
         this.pickupGfx

@@ -26,5 +26,5 @@
     },
     "baseUrl": "."
   },
-  "include": ["src", "data"]
+  "include": ["src", "data", "scripts"]
 }

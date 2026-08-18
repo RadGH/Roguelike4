@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "lint": "eslint .",
-    "sim": "tsx scripts/sim.ts",
+    "sim": "tsx --tsconfig tsconfig.app.json scripts/sim.ts",
     "validate-data": "tsx scripts/validate-data.ts"
   },
   "dependencies": {

@@ -378,6 +378,9 @@ export const BalanceSchema = z
         pickupBaseRadius: z.number(),
         goldValue: z.number(),
         xpValue: z.number(),
+        heartChance: z.number(),
+        heartHeal: z.number(),
+        waveClearHearts: z.number(),
       })
       .strict(),
   })

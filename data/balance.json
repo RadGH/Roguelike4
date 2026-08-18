@@ -51,7 +51,7 @@
     "dmgGrowthPerWave": 0.08,
     "elite": {
       "hpMult": 1.5,
-      "dmgMult": 1.4,
+      "dmgMult": 1.25,
       "speedMult": 1.1,
       "xpMult": 1.5,
       "chestChance": 0.5
@@ -60,6 +60,9 @@
   "drops": {
     "pickupBaseRadius": 1.5,
     "goldValue": 1,
-    "xpValue": 1
+    "xpValue": 1,
+    "heartChance": 0.1,
+    "heartHeal": 4,
+    "waveClearHearts": 1
   }
 }

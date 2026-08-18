@@ -187,7 +187,7 @@ export type PetState = {
   squishPhase: number;
 };
 
-export type PickupKind = 'gold' | 'xp' | 'chest';
+export type PickupKind = 'gold' | 'xp' | 'chest' | 'heart';
 export type PickupState = { active: boolean; x: number; y: number; kind: PickupKind; amount: number };
 
 export type Arena = { width: number; height: number };
@@ -975,6 +975,12 @@ export class Sim {
       if (s.players.some((p) => p.alive && p.hp / (stat(p.stats, 'maxHp') || 1) < 0.25)) {
         this.eventsThisTick.push({ type: 'lowHpWaveClear' });
       }
+      // A breather heart per player at every wave end
+      for (const p of s.players) {
+        for (let i = 0; i < this.registry.balance.drops.waveClearHearts; i++) {
+          this.dropPickup(p.x + 1, p.y + 1, 'heart', this.registry.balance.drops.heartHeal);
+        }
+      }
       // Co-op rule: snuffed players auto-revive at wave end
       for (const p of s.players) {
         if (!p.alive) {
@@ -1411,6 +1417,10 @@ export class Sim {
       bal.evil.bellowsGold * this.evilCount('evilBellows');
     const goldAmount = Math.round(this.rng.drops.int(def.gold[0], def.gold[1]) * goldEvil);
     for (let i = 0; i < goldAmount; i++) this.dropPickup(enemy.x, enemy.y, 'gold', 1);
+    // Hearts: the meadow provides (personal heal for whoever grabs it)
+    if (this.rng.drops.chance(bal.drops.heartChance)) {
+      this.dropPickup(enemy.x, enemy.y, 'heart', bal.drops.heartHeal);
+    }
     // Mimics telegraph their prize — and pay up honestly when defeated
     if (def.mimicDrop === 'chest') this.dropPickup(enemy.x, enemy.y, 'chest', 1);
     const comboMult = Math.min(
@@ -1547,10 +1557,12 @@ export class Sim {
         continue;
       }
 
-      // Mimics play dead-chest until someone reaches for the latch
+      // Mimics play dead-chest until someone reaches for the latch — but their
+      // patience runs out after ~25s so a cautious party can't stall the wave.
       if (def.archetype === 'mimic') {
         if (!e.mimicAwake) {
-          if (dist <= (def.mimicTriggerRange ?? 2.5)) {
+          e.wanderTimer += dt; // repurposed as a patience clock while asleep
+          if (dist <= (def.mimicTriggerRange ?? 2.5) || e.wanderTimer > 25) {
             e.mimicAwake = true;
             this.eventsThisTick.push({ type: 'chargeTelegraph', instance: e.instance });
           }
@@ -2228,6 +2240,8 @@ export class Sim {
         if (pk.kind === 'gold') {
           // Mirrored gold: every non-retired player receives it (snuffed included)
           this.collectGold(p, pk.amount, null);
+        } else if (pk.kind === 'heart') {
+          this.healPlayer(p, pk.amount, 'heart');
         } else if (pk.kind === 'xp') {
           // Equal-share XP, normalized by party size (co-op levels stay ~flat vs solo)
           const share = Math.max(1, Math.round(pk.amount / this.state.players.length));
