@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Engine } from '@game/shell/engine';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
+import { MeterTable } from './MeterTable';
 import { useMenuNav } from './useMenuNav';
 
 export function PauseOverlay({
@@ -15,10 +16,13 @@ export function PauseOverlay({
   onQuit: () => void;
 }) {
   const [muted, setMuted] = useState(engine.audio.muted);
-  const items = ['Resume', muted ? 'Sound: off' : 'Sound: on', 'Quit to title'];
+  const [tab, setTab] = useState<'menu' | 'details' | 'damage'>('menu');
+  const items = ['Resume', 'Details', 'Damage report', muted ? 'Sound: off' : 'Sound: on', 'Quit to title'];
   const activate = (i: number) => {
     if (i === 0) engine.togglePause();
-    else if (i === 1) setMuted(engine.audio.toggleMuted());
+    else if (i === 1) setTab(tab === 'details' ? 'menu' : 'details');
+    else if (i === 2) setTab(tab === 'damage' ? 'menu' : 'damage');
+    else if (i === 3) setMuted(engine.audio.toggleMuted());
     else onQuit();
   };
   const focus = useMenuNav({
@@ -91,6 +95,67 @@ export function PauseOverlay({
             </span>
           ))}
         </div>
+
+        {tab === 'details' && (() => {
+          const d = engine.pauseDetails();
+          return (
+            <div data-pause-details style={{ marginTop: 10, textAlign: 'left', maxHeight: '46vh', overflowY: 'auto' }}>
+              <div style={{ fontSize: 13, marginBottom: 8, opacity: 0.9 }}>
+                {d.endless ? '🌒 Endless' : `Act ${d.act}`} · Wave {d.wave} · 🪙 {d.gold} · ✨ {d.glimmers} glimmers ·
+                📜 {d.deedsDone}/{d.deedsTotal} deeds
+              </div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {d.players.map((p) => (
+                  <div
+                    key={p.index}
+                    style={{ border: `2px solid ${PLAYER_COLORS_CSS[p.index]}`, borderRadius: 10, padding: '8px 12px', minWidth: 230, flex: '1 1 230px' }}
+                  >
+                    <div style={{ color: PLAYER_COLORS_CSS[p.index], fontWeight: 800, fontSize: 13 }}>
+                      P{p.index + 1} {p.className} · Lv {p.level} · {p.hp} HP · {p.boonCount} boons · 🔩 {p.bits}
+                    </div>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      <b>Weapons:</b>{' '}
+                      {p.weapons.length ? p.weapons.map((w) => w.name).join(', ') : 'bare hands'}
+                    </div>
+                    {p.satchel.length > 0 && (
+                      <div style={{ fontSize: 12 }}>
+                        <b>Satchel:</b> {p.satchel.map((w) => w.name).join(', ')}
+                      </div>
+                    )}
+                    {p.passives.length > 0 && (
+                      <div style={{ fontSize: 12 }}>
+                        <b>Items:</b> {p.passives.map((w) => w.name).join(', ')}
+                      </div>
+                    )}
+                    {p.feats.length > 0 && (
+                      <div style={{ fontSize: 12 }}>
+                        <b>Feats:</b> {p.feats.map((f) => f.name).join(', ')}
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 10px', fontSize: 11.5, marginTop: 6, opacity: 0.92 }}>
+                      {p.stats.map((st) => (
+                        <div key={st.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ opacity: 0.75 }}>{st.label}</span>
+                          <b>{st.value}</b>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+        {tab === 'damage' && (
+          <div data-pause-damage style={{ marginTop: 10, textAlign: 'left', maxHeight: '46vh', overflowY: 'auto' }}>
+            {Array.from({ length: playerCount }, (_, i) => (
+              <div key={i} style={{ marginBottom: 8 }}>
+                <div style={{ color: PLAYER_COLORS_CSS[i], fontWeight: 800, fontSize: 13 }}>P{i + 1}</div>
+                <MeterTable meters={engine.meters(i)} />
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ marginTop: 6, fontSize: 11, opacity: 0.5 }}>Esc / Start resumes · any player can act</div>
       </div>
     </div>

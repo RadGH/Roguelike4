@@ -132,7 +132,7 @@ describe('projectile mods', () => {
     const sim = new Sim(8, 1);
     sim.addPassive(0, 'splitter-prism');
     const p = sim.state.players[0]!;
-    p.weapons = [{ itemId: 'sling', cooldownLeft: 0, quality: 'standard', variant: null, holo: false, seedTag: 0 }];
+    p.weapons = [{ itemId: 'sling', cooldownLeft: 0, quality: 'standard', variant: null, holo: false, seedTag: 0, aimAngle: 0, targetInstance: -1, retargetIn: 0, fireAnim: 0 }];
     sim.recomputeStats(p);
     p.iframeTimer = 9999;
     sim.spawnEnemy('grand-snuff', p.x + 5, p.y);

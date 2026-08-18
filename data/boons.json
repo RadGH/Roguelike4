@@ -44,31 +44,11 @@
   {
     "id": "bright-spark",
     "name": "Bright Spark",
-    "desc": "+1 magic damage (all schools) (+12% each)",
+    "desc": "+2 magic damage (+12% each)",
     "grants": [
       {
-        "stat": "fireDamage",
-        "flat": 1,
-        "pct": 0.12
-      },
-      {
-        "stat": "lightningDamage",
-        "flat": 1,
-        "pct": 0.12
-      },
-      {
-        "stat": "iceDamage",
-        "flat": 1,
-        "pct": 0.12
-      },
-      {
-        "stat": "poisonDamage",
-        "flat": 1,
-        "pct": 0.12
-      },
-      {
-        "stat": "arcaneDamage",
-        "flat": 1,
+        "stat": "magicDamage",
+        "flat": 2,
         "pct": 0.12
       }
     ],
@@ -92,8 +72,8 @@
     "desc": "+15% crit damage",
     "grants": [
       {
-        "stat": "critDamage",
-        "flat": 0.15
+        "stat": "critChance",
+        "flat": 0.03
       }
     ],
     "weight": 1
@@ -204,7 +184,8 @@
         "flat": 2,
         "pct": 0.12
       }
-    ]
+    ],
+    "weight": 0.5
   },
   {
     "id": "static-affinity",
@@ -216,7 +197,8 @@
         "flat": 2,
         "pct": 0.12
       }
-    ]
+    ],
+    "weight": 0.5
   },
   {
     "id": "frost-affinity",
@@ -228,7 +210,8 @@
         "flat": 2,
         "pct": 0.12
       }
-    ]
+    ],
+    "weight": 0.5
   },
   {
     "id": "venom-affinity",
@@ -240,7 +223,8 @@
         "flat": 2,
         "pct": 0.12
       }
-    ]
+    ],
+    "weight": 0.5
   },
   {
     "id": "arcane-affinity",
@@ -252,7 +236,8 @@
         "flat": 2,
         "pct": 0.12
       }
-    ]
+    ],
+    "weight": 0.5
   },
   {
     "id": "beast-bond",
@@ -269,10 +254,10 @@
   {
     "id": "red-sip",
     "name": "Red Sip",
-    "desc": "+3% physical lifesteal",
+    "desc": "+3% lifesteal \u2014 every point of damage you cause feeds you",
     "grants": [
       {
-        "stat": "lifestealPhys",
+        "stat": "lifesteal",
         "flat": 0.03
       }
     ],
@@ -281,11 +266,11 @@
   {
     "id": "violet-sip",
     "name": "Violet Sip",
-    "desc": "+3% magical lifesteal",
+    "desc": "+0.4 HP per second \u2014 slow sips, steady flame",
     "grants": [
       {
-        "stat": "lifestealMagic",
-        "flat": 0.03
+        "stat": "hpRegen",
+        "flat": 0.4
       }
     ],
     "weight": 0.8
@@ -478,13 +463,13 @@
     "weight": 0.9
   },
   {
-    "id": "heavy-crits",
-    "name": "Heavy Crits",
-    "desc": "+20% critical damage",
+    "id": "sharper-eye",
+    "name": "Sharper Eye",
+    "desc": "+3% crit chance",
     "grants": [
       {
-        "stat": "critDamage",
-        "flat": 0.2
+        "stat": "critChance",
+        "flat": 0.03
       }
     ],
     "weight": 0.8
@@ -500,28 +485,28 @@
         "pct": 0.12
       }
     ],
-    "weight": 0.6
+    "weight": 0.5
   },
   {
     "id": "red-drop",
     "name": "Red Drop",
-    "desc": "+2% lifesteal on physical hits",
+    "desc": "+2% lifesteal \u2014 every point of damage you cause feeds you",
     "grants": [
       {
-        "stat": "lifestealPhys",
+        "stat": "lifesteal",
         "flat": 0.02
       }
     ],
     "weight": 0.7
   },
   {
-    "id": "violet-drop",
-    "name": "Violet Drop",
-    "desc": "+2% lifesteal on magical hits",
+    "id": "four-leaf",
+    "name": "Four Leaf",
+    "desc": "+1 luck",
     "grants": [
       {
-        "stat": "lifestealMagic",
-        "flat": 0.02
+        "stat": "luck",
+        "flat": 1
       }
     ],
     "weight": 0.7

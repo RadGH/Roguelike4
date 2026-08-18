@@ -80,7 +80,7 @@ describe('variants', () => {
   it('corrupted melee kills count as fire kills (deed chain works)', () => {
     const sim = new Sim(3, 1);
     const p = sim.state.players[0]!;
-    p.weapons = [{ ...inst({ variant: 'corrupted' }), cooldownLeft: 0 }];
+    p.weapons = [{ ...inst({ variant: 'corrupted' }), cooldownLeft: 0, aimAngle: 0, targetInstance: -1, retargetIn: 0, fireAnim: 0 }];
     sim.recomputeStats(p);
     p.iframeTimer = 9999;
     sim.spawnEnemy('snuffling', p.x + 1.3, p.y);
@@ -111,7 +111,7 @@ describe('drops & tinkering', () => {
   it('salvage bits buy quality upgrades with rising costs', () => {
     const sim = new Sim(6, 1);
     const p = sim.state.players[0]!;
-    p.weapons = [{ ...standardInstance('shortsword'), cooldownLeft: 0 }];
+    p.weapons = [{ ...standardInstance('shortsword'), cooldownLeft: 0, aimAngle: 0, targetInstance: -1, retargetIn: 0, fireAnim: 0 }];
     sim.recomputeStats(p);
     p.bits = 5;
     expect(sim.tinker(0, 0)).toBe(true); // standard→fine costs 2

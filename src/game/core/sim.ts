@@ -46,7 +46,13 @@ import {
   type WeaponInstance,
 } from './items';
 
-export type WeaponSlot = WeaponInstance & { cooldownLeft: number };
+export type WeaponSlot = WeaponInstance & {
+  cooldownLeft: number;
+  aimAngle: number; // where this weapon is pointing (renderer + firing)
+  targetInstance: number; // current auto-target (-1 = none)
+  retargetIn: number; // staggered target acquisition timer
+  fireAnim: number; // 1 → 0 after firing (melee lunge / recoil)
+};
 
 export type ChestOffer =
   | { kind: 'weapon'; inst: WeaponInstance }
@@ -146,6 +152,8 @@ export type EnemyState = {
   attackCooldown: number;
   summonTimer: number;
   mimicAwake: boolean;
+  portalTimer: number; // last-enemy mimic: escape portal charge (damage breaks it)
+  nukeTimer: number; // bosses: seconds until the next telegraphed slam
   targetPlayer: number;
   wanderAngle: number;
   wanderTimer: number;
@@ -212,9 +220,10 @@ export type PickupKind = 'gold' | 'xp' | 'chest' | 'heart';
 export type PickupState = { active: boolean; x: number; y: number; kind: PickupKind; amount: number };
 
 export type Arena = { width: number; height: number };
-export type Phase = 'fighting' | 'cleared';
+export type Phase = 'fighting' | 'collecting' | 'cleared';
 
 export type SimState = {
+  seed: number; // the run's seed (resume snapshots reuse it)
   tick: number;
   act: number;
   wave: number;
@@ -228,7 +237,10 @@ export type SimState = {
   pickups: PickupState[];
   pools: PoolState[];
   decoys: { x: number; y: number; ttl: number }[];
+  collectTimer: number; // wave-end vacuum: seconds spent gathering leftovers
+  chestBudget: number; // items left to drop this wave (hard fights ≠ more loot)
   cages: { x: number; y: number; discoveryId: string; progress: number; rescued: boolean }[];
+  telegraphs: { x: number; y: number; radius: number; timer: number; total: number; damage: number; defId: string }[];
   combo: { count: number; decay: number; best: number };
   lootRotation: number; // next player index to receive a chest (round-robin)
   spawning: {
@@ -312,6 +324,7 @@ export class Sim {
       act: 1,
       wave: 0,
       endless: false,
+      seed,
       phase: 'cleared',
       arena,
       players,
@@ -322,6 +335,9 @@ export class Sim {
       pools,
       decoys: [],
       cages: [],
+      telegraphs: [],
+      collectTimer: 0,
+      chestBudget: 2,
       combo: { count: 0, decay: 0, best: 0 },
       lootRotation: 0,
       spawning: { queue: [], elapsed: 0, done: true },
@@ -350,7 +366,11 @@ export class Sim {
     const bal = this.registry.balance;
     const cls = this.classDef(classId);
     // Starting kit is Rusty quality — the town's "starting weapon" upgrade shines later
-    const weapons: WeaponSlot[] = cls.startingWeapons.map((id) => ({
+    const weapons: WeaponSlot[] = cls.startingWeapons.map((id, wi) => ({
+      aimAngle: 0,
+      targetInstance: -1,
+      retargetIn: wi * 0.15,
+      fireAnim: 0,
       ...rustyInstance(id),
       cooldownLeft: 0,
     }));
@@ -589,10 +609,18 @@ export class Sim {
       ...p.weapons.map((w) => resolveWeapon(this.registry, w).grants),
       ...p.passives.map((id) => this.registry.passives.get(id)?.grants ?? []),
       ...p.feats.map((id) => this.registry.feats.get(id)?.grants ?? []),
-      ...p.boonIds.map((id) => {
-        const b = this.registry.boons.get(id);
+      ...p.boonIds.map((entry) => {
+        const [id, tierStr] = entry.split('@');
+        const b = this.registry.boons.get(id!);
         if (!b) throw new Error(`Unknown boon "${id}"`);
-        return b.grants;
+        const tier = Math.max(1, Number(tierStr) || 1);
+        if (tier === 1) return b.grants;
+        return b.grants.map((g) => ({
+          stat: g.stat,
+          ...(g.flat !== undefined ? { flat: g.flat * tier } : {}),
+          ...(g.pct !== undefined ? { pct: g.pct * tier } : {}),
+          ...(g.mult !== undefined ? { mult: g.mult } : {}),
+        }));
       }),
     ];
     p.stats = buildStats(bal.player.baseStats as StatSheet, grantSets);
@@ -630,9 +658,21 @@ export class Sim {
   }
 
   /** Weighted 1-of-N boon choices (no duplicates within one offer). */
-  rollBoonChoices(count = 4): string[] {
+  /** Boon tiers: 1 white · 2 blue · 3 yellow · 4 green · 5 red. Values scale
+   *  ×tier. Luck multiplies the odds of the rare colors. */
+  rollBoonTier(luck = 0): number {
+    const f = 1 + 0.15 * Math.max(0, luck);
+    const r = this.rng.drops.next();
+    if (r < 0.008 * f) return 5;
+    if (r < 0.028 * f) return 4;
+    if (r < 0.085 * f) return 3;
+    if (r < 0.22 * f) return 2;
+    return 1;
+  }
+
+  rollBoonChoices(count = 4, luck = 0): { id: string; tier: number }[] {
     const pool = [...this.registry.boons.values()];
-    const out: string[] = [];
+    const out: { id: string; tier: number }[] = [];
     for (let i = 0; i < count && pool.length > 0; i++) {
       const totalWeight = pool.reduce((a, b) => a + b.weight, 0);
       let roll = this.rng.drops.next() * totalWeight;
@@ -644,17 +684,17 @@ export class Sim {
           break;
         }
       }
-      out.push(pool[picked]!.id);
+      out.push({ id: pool[picked]!.id, tier: this.rollBoonTier(luck) });
       pool.splice(picked, 1);
     }
     return out;
   }
 
-  applyBoon(playerIndex: number, boonId: string): void {
+  applyBoon(playerIndex: number, boonId: string, tier = 1): void {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
     if (!this.registry.boons.has(boonId)) throw new Error(`Unknown boon "${boonId}"`);
-    p.boonIds.push(boonId);
+    p.boonIds.push(tier > 1 ? `${boonId}@${tier}` : boonId);
     if (p.pendingBoons > 0) p.pendingBoons--;
     this.recomputeStats(p);
   }
@@ -671,6 +711,12 @@ export class Sim {
     const evilMult = 1 + bal.evil.candleSpawn * this.evilCount('evilCandle');
     this.state.wave = wave;
     this.state.phase = 'fighting';
+    this.state.telegraphs.length = 0;
+    // Loot discipline: a wave carries 1-2 chests, 3-4 only when the dice smile.
+    // Difficulty does NOT buy luck — the budget is rolled, not earned.
+    const partyLuck = Math.max(...this.state.players.map((p) => stat(p.stats, 'luck')), 0);
+    const lucky = this.rng.drops.chance(Math.min(0.5, 0.12 * (1 + 0.15 * partyLuck)));
+    this.state.chestBudget = 1 + (this.rng.drops.chance(0.5) ? 1 : 0) + (lucky ? 2 : 0);
     // Discovery cages: someone needs rescuing out there (waves 3-8, once per run)
     const waveInAct = ((wave - 1) % 10) + 1;
     if (waveInAct >= 3 && waveInAct <= 8) {
@@ -696,7 +742,7 @@ export class Sim {
       if (mech === 'wheelOfWhee') {
         const ids = [...this.registry.boons.keys()];
         const pick = ids[this.rng.drops.int(0, ids.length - 1)]!;
-        this.applyBoon(p.index, pick);
+        this.applyBoon(p.index, pick, this.rollBoonTier(stat(p.stats, 'luck')));
       }
       // Warlock's Pact: the contract collects, but never the last flicker
       if (mech === 'pact' && p.hp > 1) {
@@ -758,6 +804,61 @@ export class Sim {
         p.pendingBoons = level - 1;
         p.gold += 75 * (act - 1);
         p.pendingChests += 2 * (act - 1); // chests per skipped act keep loadouts on-curve
+      }
+    }
+  }
+
+  /** Rebuild a run from a resume snapshot: loadouts, levels, and pending
+   *  rewards return exactly; meters and enemy positions start fresh. */
+  restoreRun(snap: {
+    act: number;
+    endless: boolean;
+    players: {
+      classId: string;
+      level: number;
+      xp: number;
+      xpIntoLevel: number;
+      hp: number;
+      gold: number;
+      bits: number;
+      weapons: import('./items').WeaponInstance[];
+      satchel: import('./items').WeaponInstance[];
+      passives: string[];
+      feats: string[];
+      boonIds: string[];
+      pendingBoons: number;
+      pendingChests: number;
+      pendingFeats: number;
+      pendingClassItems: string[][];
+    }[];
+  }): void {
+    this.state.act = Math.min(4, Math.max(1, snap.act));
+    this.state.endless = snap.endless;
+    for (let i = 0; i < this.state.players.length && i < snap.players.length; i++) {
+      const p = this.state.players[i]!;
+      const sp = snap.players[i]!;
+      p.classId = sp.classId;
+      p.level = sp.level;
+      p.xp = sp.xp;
+      p.xpIntoLevel = sp.xpIntoLevel;
+      p.gold = sp.gold;
+      p.bits = sp.bits;
+      p.weapons = sp.weapons.map((w, wi) => ({ ...w, cooldownLeft: 0, aimAngle: 0, targetInstance: -1, retargetIn: wi * 0.15, fireAnim: 0 }));
+      p.satchel = [...sp.satchel];
+      p.passives = [...sp.passives];
+      p.feats = [...sp.feats];
+      p.boonIds = [...sp.boonIds];
+      p.pendingBoons = sp.pendingBoons;
+      p.pendingChests = sp.pendingChests;
+      p.pendingFeats = sp.pendingFeats;
+      p.pendingClassItems = sp.pendingClassItems.map((o) => [...o]);
+      this.recomputeStats(p);
+      p.hp = Math.min(sp.hp, stat(p.stats, 'maxHp'));
+      // permanent class pets come back (temporary zombies do not)
+      for (const petId of this.classDef(p.classId).startingPets) {
+        if (!this.state.pets.some((pet) => pet.owner === i && pet.defId === petId)) {
+          this.spawnPet(petId, i, p.classId, p.x + 1, p.y + 1);
+        }
       }
     }
   }
@@ -839,6 +940,8 @@ export class Sim {
       charge: { phase: 'none', timer: 0, dirX: 0, dirY: 0 },
       summonTimer: 0,
       mimicAwake: false,
+      portalTimer: 0,
+      nukeTimer: 5,
       boss:
         def.archetype === 'boss'
           ? { phaseIdx: 0, cooldown: 1.5, stage: 'idle', stageTimer: 0, targetX: x, targetY: y, fromX: x, fromY: y }
@@ -928,7 +1031,14 @@ export class Sim {
       const holding = p.weapons.some((w) => getWeapon(this.registry, w.itemId).tags.includes('shield'));
       if (holding) return false;
     }
-    p.weapons.push({ ...inst, cooldownLeft: 0 });
+    p.weapons.push({
+      ...inst,
+      cooldownLeft: 0,
+      aimAngle: 0,
+      targetInstance: -1,
+      retargetIn: p.weapons.length * 0.15,
+      fireAnim: 0,
+    });
     this.recomputeStats(p);
     return true;
   }
@@ -975,14 +1085,15 @@ export class Sim {
   }
 
   /** Drop-time rolls: quality odds improve with the wave; variants are rare spice. */
-  rollWeaponInstance(itemId: string): WeaponInstance {
+  rollWeaponInstance(itemId: string, luck = 0): WeaponInstance {
     const wave = this.state.wave;
+    const lucky = 1 + 0.15 * Math.max(0, luck); // luck tilts the odds upward
     const weights: [Quality, number][] = [
-      ['rusty', Math.max(0, 12 - wave)],
+      ['rusty', Math.max(0, 12 - wave) / lucky],
       ['standard', 50],
-      ['fine', 12 + wave * 0.8],
-      ['superb', 4 + wave * 0.5],
-      ['masterwork', 1 + wave * 0.25],
+      ['fine', (12 + wave * 0.8) * lucky],
+      ['superb', (4 + wave * 0.5) * lucky],
+      ['masterwork', (1 + wave * 0.25) * lucky],
     ];
     const total = weights.reduce((a, [, w]) => a + w, 0);
     let roll = this.rng.variants.next() * total;
@@ -1027,7 +1138,7 @@ export class Sim {
       out.push(
         this.registry.passives.has(id)
           ? { kind: 'passive', id }
-          : { kind: 'weapon', inst: this.rollWeaponInstance(id) },
+          : { kind: 'weapon', inst: this.rollWeaponInstance(id, stat(p.stats, 'luck')) },
       );
     }
     return out;
@@ -1117,18 +1228,36 @@ export class Sim {
     return out;
   }
 
-  replaceWeapon(playerIndex: number, slotIndex: number, weapon: string | WeaponInstance): void {
+  /** Swap a slot's weapon. Returns false (nothing changed) when the swap is
+   *  illegal — callers must NOT consume the incoming item on false. */
+  replaceWeapon(playerIndex: number, slotIndex: number, weapon: string | WeaponInstance): boolean {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
     const inst = typeof weapon === 'string' ? standardInstance(weapon) : weapon;
     if (!this.registry.weapons.has(inst.itemId)) throw new Error(`Unknown weapon "${inst.itemId}"`);
     if (slotIndex < 0 || slotIndex >= p.weapons.length) throw new Error(`Bad slot ${slotIndex}`);
+    if (!this.classCanUse(p.classId, inst.itemId)) return false;
+    const def = getWeapon(this.registry, inst.itemId);
     // Capacity must still fit after the swap (e.g. 1H → 2H on a full loadout)
-    const newCost = getWeapon(this.registry, inst.itemId).hands;
     const oldCost = getWeapon(this.registry, p.weapons[slotIndex]!.itemId).hands;
-    if (this.handPointsUsed(p) - oldCost + newCost > this.handPointsMax(p)) return;
-    p.weapons[slotIndex] = { ...inst, cooldownLeft: 0 };
+    if (this.handPointsUsed(p) - oldCost + def.hands > this.handPointsMax(p)) return false;
+    // One-shield rule holds through swaps too (Paladin's Aegis exempt)
+    if (def.tags.includes('shield') && this.classDef(p.classId).mechanic !== 'aegis') {
+      const otherShield = p.weapons.some(
+        (w, i) => i !== slotIndex && getWeapon(this.registry, w.itemId).tags.includes('shield'),
+      );
+      if (otherShield) return false;
+    }
+    p.weapons[slotIndex] = {
+      ...inst,
+      cooldownLeft: 0,
+      aimAngle: 0,
+      targetInstance: -1,
+      retargetIn: slotIndex * 0.15,
+      fireAnim: 0,
+    };
     this.recomputeStats(p);
+    return true;
   }
 
   tick(inputs: readonly InputFrame[]): SimEvent[] {
@@ -1184,6 +1313,21 @@ export class Sim {
         cage.progress = Math.max(0, cage.progress - dt * 2);
       }
     }
+    for (let i = this.state.telegraphs.length - 1; i >= 0; i--) {
+      if (this.state.phase !== 'fighting') break;
+      const tg = this.state.telegraphs[i]!;
+      tg.timer -= dt;
+      if (tg.timer <= 0) {
+        const def = this.registry.enemies.get(tg.defId);
+        for (const p of this.state.players) {
+          if (!p.alive) continue;
+          if (Math.hypot(p.x - tg.x, p.y - tg.y) <= tg.radius && def) {
+            this.damagePlayer(p, tg.damage, def, 'explosion');
+          }
+        }
+        this.state.telegraphs.splice(i, 1);
+      }
+    }
     for (let i = this.state.decoys.length - 1; i >= 0; i--) {
       const d = this.state.decoys[i]!;
       d.ttl -= dt;
@@ -1201,10 +1345,13 @@ export class Sim {
       }
     }
 
-    // Wave clear detection (only reachable while someone is alive)
+    // Wave clear detection (only reachable while someone is alive).
+    // The wave isn't DONE yet: leftovers vacuum to the players first, so every
+    // point of XP and gold is banked before any reward dialog appears.
     if (s.phase === 'fighting' && s.spawning.done && s.enemies.length === 0) {
-      s.phase = 'cleared';
-      this.eventsThisTick.push({ type: 'waveCleared', wave: s.wave });
+      s.phase = 'collecting';
+      s.collectTimer = 0;
+      s.telegraphs.length = 0; // a dead boss's promises don't land
       // Deed hook: someone finished the wave dangerously low (checked pre-revive)
       if (s.players.some((p) => p.alive && p.hp / (stat(p.stats, 'maxHp') || 1) < 0.25)) {
         this.eventsThisTick.push({ type: 'lowHpWaveClear' });
@@ -1227,6 +1374,26 @@ export class Sim {
         }
         p.revivedThisWave = false;
         p.reviveProgress = 0;
+      }
+    }
+
+    // Vacuum finished (or the 5s safety valve fires): NOW the wave is cleared
+    if (s.phase === 'collecting') {
+      s.collectTimer += dt;
+      const anyLeft = s.pickups.some((pk) => pk.active);
+      if (!anyLeft) {
+        s.phase = 'cleared';
+        this.eventsThisTick.push({ type: 'waveCleared', wave: s.wave });
+      } else if (s.collectTimer > 5) {
+        // Safety valve: teleport stragglers onto a player — collected next tick,
+        // never lost (losing banked XP is exactly the bug this phase fixes)
+        const home = s.players.find((p) => p.alive) ?? s.players[0]!;
+        for (const pk of s.pickups) {
+          if (pk.active) {
+            pk.x = home.x;
+            pk.y = home.y;
+          }
+        }
       }
     }
 
@@ -1422,43 +1589,82 @@ export class Sim {
 
   private fistCooldown = new Map<number, number>();
 
-  private tickWeapons(p: PlayerState, input: InputFrame, dt: number): void {
+  /** Pick a target for one weapon: nearest living enemy inside the weapon's
+   *  real range; an active aim stick biases toward enemies in that direction. */
+  private acquireTarget(p: PlayerState, range: number, input: InputFrame): EnemyState | null {
     const aiming = Math.hypot(input.aimX, input.aimY) > 0.25;
+    const aimDir = aiming ? Math.atan2(input.aimY, input.aimX) : 0;
+    let best: EnemyState | null = null;
+    let bestScore = Infinity;
+    for (const e of this.state.enemies) {
+      if (!e.alive) continue;
+      // sleeping mimics keep their disguise — weapons don't auto-blow the reveal
+      if (!e.mimicAwake && this.registry.enemies.get(e.defId)?.archetype === 'mimic') continue;
+      const d = Math.hypot(e.x - p.x, e.y - p.y);
+      if (d > range) continue;
+      let score = d;
+      if (aiming) {
+        let diff = Math.abs(Math.atan2(e.y - p.y, e.x - p.x) - aimDir);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+        score += diff * 4; // the stick says "over there" — listen
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        best = e;
+      }
+    }
+    return best;
+  }
+
+  /** Weapons run themselves: each picks its own target (staggered so they
+   *  spread across the crowd) and fires ONLY when something is actually in
+   *  range — no more spraying at nothing. */
+  private tickWeapons(p: PlayerState, input: InputFrame, dt: number): void {
     // Monk's Hundred Palms: empty hands are never unarmed
     if (p.weapons.length === 0 && this.classDef(p.classId).mechanic === 'hundredPalms') {
       const cd = this.fistCooldown.get(p.index) ?? 0;
       const left = Math.max(0, cd - dt);
       this.fistCooldown.set(p.index, left);
       if (left <= 0) {
-        let dir: number | null = null;
-        if (aiming) dir = Math.atan2(input.aimY, input.aimX);
-        else {
-          const nearest = this.nearestEnemy(p.x, p.y, 12);
-          if (nearest) dir = Math.atan2(nearest.y - p.y, nearest.x - p.x);
-        }
-        if (dir !== null) {
-          const fists = this.monkFists(p);
+        const fists = this.monkFists(p);
+        const reach = fists.delivery.type === 'meleeArc' ? fists.delivery.reach * (1 + stat(p.stats, 'area')) : 2;
+        const target = this.acquireTarget(p, reach + 0.4, input);
+        if (target) {
           const rate = 1 + stat(p.stats, 'cooldownRate');
           this.fistCooldown.set(p.index, 0.32 / Math.max(0.1, rate));
-          this.fireWeapon(p, fists, dir);
+          this.fireWeapon(p, fists, Math.atan2(target.y - p.y, target.x - p.x));
         }
       }
     }
     for (const slot of p.weapons) {
       if (slot.cooldownLeft > 0) slot.cooldownLeft = Math.max(0, slot.cooldownLeft - dt);
-      if (slot.cooldownLeft > 0) continue;
+      if (slot.fireAnim > 0) slot.fireAnim = Math.max(0, slot.fireAnim - dt * 4);
       const weapon = resolveWeapon(this.registry, slot);
       if (weapon.delivery.type === 'none') continue; // shields defend, they don't swing
-      let dir: number | null = null;
-      if (aiming) dir = Math.atan2(input.aimY, input.aimX);
-      else {
-        const nearest = this.nearestEnemy(p.x, p.y, 12);
-        if (nearest) dir = Math.atan2(nearest.y - p.y, nearest.x - p.x);
+      const range =
+        weapon.delivery.type === 'meleeArc'
+          ? weapon.delivery.reach * (1 + stat(p.stats, 'area')) + 0.4
+          : weapon.delivery.range;
+      // Staggered retargeting: weapons re-scan on offset clocks so they don't
+      // all pile onto the same enemy the same instant
+      slot.retargetIn -= dt;
+      let target = this.enemyByInstance.get(slot.targetInstance);
+      const targetValid =
+        !!target && target.alive && Math.hypot(target.x - p.x, target.y - p.y) <= range;
+      if (!targetValid || slot.retargetIn <= 0) {
+        target = this.acquireTarget(p, range, input) ?? undefined;
+        slot.targetInstance = target ? target.instance : -1;
+        slot.retargetIn = 0.35;
       }
-      if (dir === null) continue;
+      if (target && target.alive) {
+        slot.aimAngle = Math.atan2(target.y - p.y, target.x - p.x);
+      }
+      if (slot.cooldownLeft > 0) continue;
+      if (!target || !target.alive) continue; // hold fire until something's in range
       const rate = 1 + stat(p.stats, 'cooldownRate');
       slot.cooldownLeft = weapon.delivery.cooldown / Math.max(0.1, rate);
-      this.fireWeapon(p, weapon, dir);
+      slot.fireAnim = 1;
+      this.fireWeapon(p, weapon, slot.aimAngle);
     }
   }
 
@@ -1626,9 +1832,8 @@ export class Sim {
         }
       }
     }
-    // Lifesteal (physical for attacks, magical for spells)
-    const frac = stat(p.stats, weapon.kind === 'attack' ? 'lifestealPhys' : 'lifestealMagic');
-    if (frac > 0 && dealt > 0) this.healPlayer(p, dealt * frac, 'lifesteal');
+    // (lifesteal now lives centrally in applyDamageToEnemy — ALL player-caused
+    // damage feeds it, including triggers, pools, coins, and pets)
     if (enemy.alive) {
       for (const eff of weapon.effects) {
         if (this.rng.combat.chance(eff.chance)) {
@@ -1747,6 +1952,19 @@ export class Sim {
     const overkill = Math.max(0, hit.amount - enemy.hp);
     enemy.hp -= hit.amount;
     enemy.hitFlash = 0.12;
+    if (enemy.portalTimer > 0) enemy.portalTimer = -1.5; // the portal shatters; brief grace
+
+    // Lifesteal: every point of damage a player CAUSES feeds them — direct hits,
+    // procs, pools, coins, and their pets alike (never a teammate's damage)
+    {
+      const ownerIdx =
+        source.actor.kind === 'player' ? source.actor.index : source.actor.kind === 'pet' ? source.actor.owner : -1;
+      const owner = this.state.players[ownerIdx];
+      if (owner && source.grantedBy !== 'frostfire') {
+        const frac = stat(owner.stats, 'lifesteal');
+        if (frac > 0 && hit.amount > 0) this.healPlayer(owner, hit.amount * frac, 'lifesteal');
+      }
+    }
     this.eventsThisTick.push({
       type: 'damageNumber',
       x: enemy.x,
@@ -1898,14 +2116,26 @@ export class Sim {
       this.dropPickup(enemy.x, enemy.y, 'heart', bal.drops.heartHeal);
     }
     // Mimics telegraph their prize — and pay up honestly when defeated
-    if (def.mimicDrop === 'chest') this.dropPickup(enemy.x, enemy.y, 'chest', 1);
+    if (def.mimicDrop === 'chest') {
+      if (this.state.chestBudget > 0) {
+        this.state.chestBudget--;
+        this.dropPickup(enemy.x, enemy.y, 'chest', 1);
+      } else {
+        for (let i = 0; i < 8; i++) this.dropPickup(enemy.x, enemy.y, 'gold', 1); // consolation hoard
+      }
+    }
     const comboMult = Math.min(
       this.registry.balance.combo.maxMult,
       1 + combo.count * this.registry.balance.combo.xpPerStack,
     );
     this.dropPickup(enemy.x, enemy.y, 'xp', Math.round(enemy.xp * comboMult));
     if (enemy.chestChance > 0 && this.rng.drops.chance(enemy.chestChance)) {
-      this.dropPickup(enemy.x, enemy.y, 'chest', 1);
+      if (this.state.chestBudget > 0) {
+        this.state.chestBudget--;
+        this.dropPickup(enemy.x, enemy.y, 'chest', 1);
+      } else {
+        for (let i = 0; i < 5; i++) this.dropPickup(enemy.x, enemy.y, 'gold', 1); // consolation
+      }
     }
   }
 
@@ -1943,6 +2173,14 @@ export class Sim {
     const sp = this.state.spawning;
     if (sp.done) return;
     sp.elapsed += dt;
+    // Pacing: a cleared field skips the wait — the next batch is already coming
+    if (!this.state.enemies.some((e) => e.alive)) {
+      let nextAt = Infinity;
+      for (const entry of sp.queue) {
+        if (entry.count > 0 && entry.atSecond > sp.elapsed) nextAt = Math.min(nextAt, entry.atSecond);
+      }
+      if (Number.isFinite(nextAt) && nextAt - sp.elapsed > 0.75) sp.elapsed = nextAt - 0.75;
+    }
     let allSpawned = true;
     for (const entry of sp.queue) {
       if (entry.count <= 0) continue;
@@ -2052,9 +2290,44 @@ export class Sim {
         continue;
       }
 
+      // Bosses periodically slam a telegraphed zone — a big red promise you must
+      // not be standing in when it lands
+      if (def.archetype === 'boss') {
+        e.nukeTimer -= dt;
+        if (e.nukeTimer <= 0) {
+          e.nukeTimer = 6 + this.rng.waves.next() * 3;
+          const targets = this.state.players.filter((p) => p.alive);
+          if (targets.length > 0) {
+            const t = targets[this.rng.waves.int(0, targets.length - 1)]!;
+            this.state.telegraphs.push({
+              x: t.x,
+              y: t.y,
+              radius: 3.4,
+              timer: 1.35,
+              total: 1.35,
+              damage: e.damage * 2,
+              defId: e.defId,
+            });
+            this.eventsThisTick.push({ type: 'chargeTelegraph', instance: e.instance });
+          }
+        }
+      }
+
       // Mimics play dead-chest until someone reaches for the latch — but their
       // patience runs out after ~25s so a cautious party can't stall the wave.
       if (def.archetype === 'mimic') {
+        // The last enemy on the field opens an escape portal — find it and hit
+        // it before it hops through, or the wave simply ends without its loot
+        const lastOne = this.state.spawning.done && !this.state.enemies.some((o) => o.alive && o !== e);
+        if (lastOne) {
+          e.portalTimer += dt;
+          if (e.portalTimer >= 3) {
+            e.alive = false; // gone — no drops, no kill credit, no hard feelings
+            continue;
+          }
+        } else if (e.portalTimer > 0) {
+          e.portalTimer = Math.max(0, e.portalTimer - dt * 2);
+        }
         if (!e.mimicAwake) {
           e.wanderTimer += dt; // repurposed as a patience clock while asleep
           if (dist <= (def.mimicTriggerRange ?? 2.5) || e.wanderTimer > 25) {
@@ -2641,6 +2914,8 @@ export class Sim {
           }
           if (pr.pierceLeft > 0 && pr.blastRadius === 0) pr.pierceLeft--;
           else {
+            // Impact pools (flasks) splash where the shot LANDS, not only where it fizzles
+            if (pr.poolRadius > 0) this.spawnPool(pr);
             pr.active = false;
             break;
           }
@@ -2760,7 +3035,7 @@ export class Sim {
               deliveryTag: 'projectile',
               hitId: this.tracker.newHitId(),
             },
-            { rawOverride: 3 + collector.gold / 60, noCrit: true },
+            { rawOverride: (3 + collector.gold / 60) * (1 + 0.15 * stat(collector.stats, 'luck')), noCrit: true },
           );
         }
       }
@@ -2783,7 +3058,8 @@ export class Sim {
   }
 
   private tickPickups(dt: number): void {
-    const MAGNET_SPEED = 9;
+    const vacuum = this.state.phase === 'collecting';
+    const MAGNET_SPEED = vacuum ? 18 : 9;
     const COLLECT_DIST = 0.5;
     for (const pk of this.state.pickups) {
       if (!pk.active) continue;
@@ -2791,7 +3067,9 @@ export class Sim {
       let pullerDist = Infinity;
       for (const p of this.state.players) {
         if (!p.alive) continue;
-        const radius = stat(p.stats, 'pickupRadius') || this.registry.balance.drops.pickupBaseRadius;
+        const radius = vacuum
+          ? Infinity // wave over: everything left belongs to somebody
+          : stat(p.stats, 'pickupRadius') || this.registry.balance.drops.pickupBaseRadius;
         const d = Math.hypot(p.x - pk.x, p.y - pk.y);
         if (d <= radius && d < pullerDist) {
           puller = p;

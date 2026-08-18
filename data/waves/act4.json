@@ -233,17 +233,17 @@
           "count": 1
         },
         {
-          "atSecond": 30,
+          "atSecond": 9,
           "defId": "night-light-snatcher",
           "count": 8
         },
         {
-          "atSecond": 55,
+          "atSecond": 16,
           "defId": "velvet-archer",
           "count": 4
         },
         {
-          "atSecond": 80,
+          "atSecond": 24,
           "defId": "pillowman",
           "count": 4
         }

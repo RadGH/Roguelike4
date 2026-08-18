@@ -128,7 +128,7 @@
     },
     "grants": [
       {
-        "stat": "fireDamage",
+        "stat": "magicDamage",
         "flat": 2
       }
     ],
@@ -240,7 +240,7 @@
     },
     "grants": [
       {
-        "stat": "lightningDamage",
+        "stat": "magicDamage",
         "flat": 3
       }
     ],
@@ -283,7 +283,7 @@
     },
     "grants": [
       {
-        "stat": "iceDamage",
+        "stat": "magicDamage",
         "flat": 3
       }
     ],
@@ -369,7 +369,7 @@
     },
     "grants": [
       {
-        "stat": "fireDamage",
+        "stat": "magicDamage",
         "flat": 3
       }
     ],
@@ -411,7 +411,7 @@
     },
     "grants": [
       {
-        "stat": "fireDamage",
+        "stat": "magicDamage",
         "flat": 3
       }
     ],
@@ -432,7 +432,7 @@
       "ranged2h",
       "physical"
     ],
-    "hands": 2,
+    "hands": 1,
     "kind": "attack",
     "damage": {
       "types": [
@@ -469,7 +469,7 @@
       "melee2h",
       "physical"
     ],
-    "hands": 2,
+    "hands": 1,
     "kind": "attack",
     "damage": {
       "types": [
@@ -605,24 +605,8 @@
     },
     "grants": [
       {
-        "stat": "fireDamage",
-        "flat": 3
-      },
-      {
-        "stat": "lightningDamage",
-        "flat": 3
-      },
-      {
-        "stat": "iceDamage",
-        "flat": 3
-      },
-      {
-        "stat": "poisonDamage",
-        "flat": 3
-      },
-      {
-        "stat": "arcaneDamage",
-        "flat": 3
+        "stat": "magicDamage",
+        "flat": 15
       }
     ],
     "rarity": "common"
@@ -761,7 +745,7 @@
     },
     "grants": [
       {
-        "stat": "arcaneDamage",
+        "stat": "magicDamage",
         "flat": 2
       }
     ],
@@ -892,7 +876,7 @@
     ],
     "grants": [
       {
-        "stat": "poisonDamage",
+        "stat": "magicDamage",
         "flat": 2
       }
     ],
@@ -974,7 +958,7 @@
       "giantShield",
       "physical"
     ],
-    "hands": 2,
+    "hands": 1,
     "kind": "shield",
     "damage": {
       "types": [
@@ -1082,7 +1066,7 @@
       "melee2h",
       "physical"
     ],
-    "hands": 2,
+    "hands": 1,
     "kind": "attack",
     "damage": {
       "types": [
@@ -1117,7 +1101,7 @@
       "melee2h",
       "physical"
     ],
-    "hands": 2,
+    "hands": 1,
     "kind": "attack",
     "damage": {
       "types": [
@@ -1791,7 +1775,7 @@
     },
     "grants": [
       {
-        "stat": "lifestealMagic",
+        "stat": "lifesteal",
         "flat": 0.05
       }
     ],
@@ -2106,7 +2090,154 @@
       "range": 10,
       "cooldown": 0.5
     },
-    "rarity": "common",
-    "unlockDeed": "stun-100"
+    "rarity": "common"
+  },
+  {
+    "id": "storm-blade",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "magical",
+      "lightning"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "lightning"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.2,
+      "arcDeg": 100,
+      "cooldown": 0.45
+    },
+    "effects": [
+      {
+        "kind": "stun",
+        "duration": 0.3,
+        "chance": 0.12
+      }
+    ],
+    "grants": [
+      {
+        "stat": "magicDamage",
+        "flat": 1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "fang-of-mold",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "poison"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        2,
+        3
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 1.9,
+      "arcDeg": 90,
+      "cooldown": 0.35
+    },
+    "effects": [
+      {
+        "kind": "poison",
+        "amount": 3,
+        "chance": 0.8
+      }
+    ],
+    "grants": [
+      {
+        "stat": "magicDamage",
+        "flat": 1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "glimmer-edge",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "arcane"
+      ],
+      "multiplier": 1.0,
+      "flat": [
+        3,
+        4
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.3,
+      "arcDeg": 80,
+      "cooldown": 0.5
+    },
+    "grants": [
+      {
+        "stat": "magicDamage",
+        "flat": 1
+      }
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "umbral-claw",
+    "category": "weapon",
+    "tags": [
+      "melee1h",
+      "magical"
+    ],
+    "hands": 1,
+    "kind": "spell",
+    "damage": {
+      "types": [
+        "void"
+      ],
+      "multiplier": 1.1,
+      "flat": [
+        3,
+        5
+      ]
+    },
+    "delivery": {
+      "type": "meleeArc",
+      "reach": 2.0,
+      "arcDeg": 90,
+      "cooldown": 0.5
+    },
+    "grants": [
+      {
+        "stat": "voidDamage",
+        "flat": 2
+      }
+    ],
+    "rarity": "rare",
+    "unlockDeed": "mimic-kills-13"
   }
 ]

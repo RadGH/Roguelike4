@@ -56,5 +56,5 @@ test('glimmer shops: buy a class at Flick, an item at Cinder, an upgrade from th
   // The bought class is pickable at the Bellhop
   await page.locator('[data-action="back-to-town"]').click();
   await page.locator('[data-npc="bellhop"]').click();
-  await expect(page.locator('[data-class-pick="0-fighter"]')).toBeVisible();
+  await expect(page.locator('[data-class-pick="fighter"]')).toBeVisible();
 });

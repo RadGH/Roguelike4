@@ -30,7 +30,7 @@ test('reaching level 3 offers a 1-of-4 feat pick in the intermission', async ({ 
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('grantXp:30'); // level 3 → one feat owed
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
   await expect(page.locator('[data-screen="intermission"]')).toBeVisible();

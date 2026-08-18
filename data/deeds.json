@@ -16,7 +16,7 @@
         "id": "fireball"
       }
     ],
-    "glimmerBonus": 1
+    "glimmerBonus": 2
   },
   {
     "id": "burn-kills-25",
@@ -42,7 +42,7 @@
         "id": "brimstone-boots"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "explosion-multikill-5",
@@ -68,7 +68,7 @@
         "id": "splitting-headache"
       }
     ],
-    "glimmerBonus": 3
+    "glimmerBonus": 6
   },
   {
     "id": "melee-damage-1000",
@@ -95,7 +95,7 @@
         "id": "warhammer"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "magic-damage-500",
@@ -125,7 +125,7 @@
         "id": "storm-anklet"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "low-hp-clear",
@@ -143,7 +143,7 @@
         "id": "berserker"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "lifesteal-500",
@@ -165,7 +165,7 @@
         "id": "void-siphon"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "gold-hoard-500",
@@ -195,7 +195,7 @@
         "id": "piggy-bank"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "dash-through-25",
@@ -217,7 +217,7 @@
         "id": "rogue"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "ranged-kills-50",
@@ -240,7 +240,7 @@
         "id": "shotgun-bow"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "pet-kills-50",
@@ -267,7 +267,7 @@
         "id": "hornet-jar"
       }
     ],
-    "glimmerBonus": 3
+    "glimmerBonus": 6
   },
   {
     "id": "mimic-kills-13",
@@ -287,9 +287,13 @@
       {
         "type": "weapon",
         "id": "null-rod"
+      },
+      {
+        "type": "weapon",
+        "id": "umbral-claw"
       }
     ],
-    "glimmerBonus": 5
+    "glimmerBonus": 10
   },
   {
     "id": "burn-kills-100",
@@ -311,7 +315,7 @@
         "id": "meteor"
       }
     ],
-    "glimmerBonus": 3
+    "glimmerBonus": 6
   },
   {
     "id": "stun-100",
@@ -338,7 +342,7 @@
         "id": "stormcloud-in-a-jar"
       }
     ],
-    "glimmerBonus": 3
+    "glimmerBonus": 6
   },
   {
     "id": "freeze-100",
@@ -361,7 +365,7 @@
         "id": "blizzard-core"
       }
     ],
-    "glimmerBonus": 3
+    "glimmerBonus": 6
   },
   {
     "id": "gold-hoard-5000",
@@ -379,7 +383,7 @@
         "id": "tycoon"
       }
     ],
-    "glimmerBonus": 5
+    "glimmerBonus": 10
   },
   {
     "id": "snuffed-10",
@@ -401,7 +405,7 @@
         "id": "jesters-die"
       }
     ],
-    "glimmerBonus": 2
+    "glimmerBonus": 4
   },
   {
     "id": "block-500",
@@ -419,7 +423,7 @@
         "id": "paladin"
       }
     ],
-    "glimmerBonus": 3
+    "glimmerBonus": 6
   },
   {
     "id": "damage-taken-10000",
@@ -437,7 +441,7 @@
         "id": "snail-knight"
       }
     ],
-    "glimmerBonus": 5
+    "glimmerBonus": 10
   },
   {
     "id": "flawless-wave",
@@ -455,6 +459,6 @@
         "id": "ninja"
       }
     ],
-    "glimmerBonus": 4
+    "glimmerBonus": 8
   }
 ]

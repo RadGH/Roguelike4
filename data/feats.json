@@ -14,28 +14,12 @@
         "pct": 0.3
       },
       {
-        "stat": "fireDamage",
-        "pct": 0.3
-      },
-      {
-        "stat": "iceDamage",
-        "pct": 0.3
-      },
-      {
-        "stat": "lightningDamage",
-        "pct": 0.3
-      },
-      {
-        "stat": "poisonDamage",
-        "pct": 0.3
-      },
-      {
-        "stat": "arcaneDamage",
-        "pct": 0.3
-      },
-      {
         "stat": "maxHp",
         "pct": -0.25
+      },
+      {
+        "stat": "magicDamage",
+        "pct": 1.5
       }
     ]
   },
@@ -217,12 +201,12 @@
   {
     "id": "executioner",
     "category": "feat",
-    "name": "Executioner",
-    "desc": "+40% critical damage. Make the important ones count.",
+    "name": "Deadeye",
+    "desc": "+6% critical chance. Make the important ones count.",
     "grants": [
       {
-        "stat": "critDamage",
-        "flat": 0.4
+        "stat": "critChance",
+        "flat": 0.06
       }
     ]
   },
@@ -230,31 +214,11 @@
     "id": "elementalist",
     "category": "feat",
     "name": "Elementalist",
-    "desc": "+1 to every damage school. A generalist with sparks.",
+    "desc": "+2 magic damage. A generalist with sparks.",
     "grants": [
       {
-        "stat": "fireDamage",
-        "flat": 1
-      },
-      {
-        "stat": "lightningDamage",
-        "flat": 1
-      },
-      {
-        "stat": "iceDamage",
-        "flat": 1
-      },
-      {
-        "stat": "poisonDamage",
-        "flat": 1
-      },
-      {
-        "stat": "arcaneDamage",
-        "flat": 1
-      },
-      {
-        "stat": "voidDamage",
-        "flat": 1
+        "stat": "magicDamage",
+        "flat": 2
       }
     ]
   },
@@ -350,14 +314,10 @@
     "id": "vampiric-hint",
     "category": "feat",
     "name": "Vampiric Hint",
-    "desc": "+4% lifesteal on everything. Just a taste.",
+    "desc": "+4% lifesteal on everything you cause. Just a taste.",
     "grants": [
       {
-        "stat": "lifestealPhys",
-        "flat": 0.04
-      },
-      {
-        "stat": "lifestealMagic",
+        "stat": "lifesteal",
         "flat": 0.04
       }
     ]
@@ -399,6 +359,18 @@
       {
         "stat": "armor",
         "flat": 3
+      }
+    ]
+  },
+  {
+    "id": "fortunes-friend",
+    "category": "feat",
+    "name": "Fortune's Friend",
+    "desc": "+2 luck. The dice remember your birthday.",
+    "grants": [
+      {
+        "stat": "luck",
+        "flat": 2
       }
     ]
   }

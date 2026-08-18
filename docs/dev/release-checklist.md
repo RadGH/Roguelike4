@@ -21,8 +21,7 @@ build from a public release:
 
 ## Pre-release polish that can happen anytime
 
-- [ ] Code-split the bundle (index chunk is 780 kB min / 228 kB gzip — fine for
-  Pages, but a `manualChunks` split of PixiJS would drop first-paint).
+- [x] Code-split the bundle: pixi/react/app chunks (161/45/87 kB gzip).
 - [ ] The boons-vs-feats interpretation question in design 06 (flagged for the user;
   current build implements both: boons every level, feats every 3rd).
 - [ ] Rename pass: pick the real title, update `data/branding.json` (title/saveSlug),

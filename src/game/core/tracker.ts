@@ -48,6 +48,8 @@ export type DamageAggregate = {
   hits: number;
   crits: number;
   max: number;
+  min: number;
+  overkill: number; // damage past the killing blow (wasted on corpses)
 };
 
 /** Aggregation tree: playerKey → itemKey → total. Incremental — no rescans. */
@@ -85,13 +87,15 @@ export class Tracker {
         const key = ev.source.itemId ?? 'unknown';
         let agg = items.get(key);
         if (!agg) {
-          agg = { total: 0, hits: 0, crits: 0, max: 0 };
+          agg = { total: 0, hits: 0, crits: 0, max: 0, min: Infinity, overkill: 0 };
           items.set(key, agg);
         }
         agg.total += ev.amount;
         agg.hits++;
         if (ev.crit) agg.crits++;
         if (ev.amount > agg.max) agg.max = ev.amount;
+        if (ev.amount < agg.min) agg.min = ev.amount;
+        agg.overkill += ev.overkill ?? 0;
       }
       if (ev.target.kind === 'player') {
         this.damageTakenByPlayer.set(

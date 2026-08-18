@@ -5,10 +5,12 @@ import { Sim, type ChestOffer, type PeddlerOffer } from '@game/core/sim';
 import { resolveWeapon, TINKER_COST, nextQuality, type WeaponInstance } from '@game/core/items';
 import { TICK_SECONDS } from '@game/core/constants';
 import { neutralInput, type InputFrame } from '@game/core/input';
+import { stat } from '@game/core/stats';
 import { DeedEngine } from '@game/core/deeds';
 import { loadProfile, saveProfile, type KeyValueStorage, type Profile } from '@game/meta/profile';
 import { townBonuses } from '@game/meta/shop';
 import { recordRun } from '@game/meta/history';
+import { saveRun, loadRunSave, clearRunSave, type RunSave } from '@game/meta/runsave';
 import { GameRenderer, takeSnapshot, type RenderSnapshot } from './renderer';
 import { AudioEngine } from './audio';
 import { InputSampler } from './inputSources';
@@ -37,6 +39,7 @@ export class Engine {
   private slot = 1;
   private runStartMs = performance.now();
   private runRecorded = false;
+  private resumeWave: number | null = null;
   private toasts: { id: number; text: string; until: number }[] = [];
   private nextToastId = 1;
 
@@ -44,10 +47,18 @@ export class Engine {
     seed: number,
     playerCount = 1,
     storage: KeyValueStorage = window.localStorage,
-    opts: { slot?: number; startAct?: number; classIds?: string[] } = {},
+    opts: { slot?: number; startAct?: number; classIds?: string[]; resume?: boolean } = {},
   ) {
-    this.sim = new Sim(seed, playerCount, undefined, opts.classIds ?? []);
-    if (opts.startAct && opts.startAct > 1) this.sim.setStartingAct(opts.startAct);
+    // Resuming? The snapshot overrides seed/party — the run continues as saved.
+    const snap = opts.resume ? loadRunSave(storage, opts.slot ?? 1) : null;
+    if (snap) {
+      this.sim = new Sim(snap.seed, snap.players.length, undefined, snap.players.map((p) => p.classId));
+      this.sim.restoreRun(snap);
+      this.resumeWave = snap.wave;
+    } else {
+      this.sim = new Sim(seed, playerCount, undefined, opts.classIds ?? []);
+      if (opts.startAct && opts.startAct > 1) this.sim.setStartingAct(opts.startAct);
+    }
     this.profileStorage = storage;
     this.slot = opts.slot ?? 1;
     this.profile = loadProfile(storage, this.slot);
@@ -139,7 +150,7 @@ export class Engine {
     this.renderer.buildArena(this.sim.state.arena.width, this.sim.state.arena.height, this.sim.state.act);
     this.input.attach(el);
     this.input.playerScreenPos = (i) => this.renderer.playerScreenPos(i, this.currSnap);
-    this.startWave(this.sim.firstWaveOfCurrentAct());
+    this.startWave(this.resumeWave ?? this.sim.firstWaveOfCurrentAct());
     window.addEventListener('gamepadconnected', this.onPadConnected);
     window.addEventListener('gamepaddisconnected', this.onPadDisconnected);
     // Browsers hold audio hostage until a gesture — free it on the first one
@@ -159,12 +170,45 @@ export class Engine {
   private startWave(n: number): void {
     this.sim.startWaveNumber(n);
     this.audio.setAct(this.sim.state.act);
+    this.persistRun();
+  }
+
+  /** Write the resume snapshot — a reload lands at the top of the current wave. */
+  private persistRun(): void {
+    if (this.runState !== 'playing') return;
+    const save: RunSave = {
+      schemaVersion: 1,
+      slot: this.slot,
+      seed: this.sim.state.seed,
+      wave: this.sim.state.wave,
+      act: this.sim.state.act,
+      endless: this.sim.state.endless,
+      players: this.sim.state.players.map((p) => ({
+        classId: p.classId,
+        level: p.level,
+        xp: p.xp,
+        xpIntoLevel: p.xpIntoLevel,
+        hp: Math.max(1, Math.round(p.hp)),
+        gold: p.gold,
+        bits: p.bits,
+        weapons: p.weapons.map(({ itemId, quality, variant, holo, seedTag }) => ({ itemId, quality, variant, holo, seedTag })),
+        satchel: [...p.satchel],
+        passives: [...p.passives],
+        feats: [...p.feats],
+        boonIds: [...p.boonIds],
+        pendingBoons: p.pendingBoons,
+        pendingChests: p.pendingChests,
+        pendingFeats: p.pendingFeats,
+        pendingClassItems: p.pendingClassItems.map((o) => [...o]),
+      })),
+    };
+    saveRun(this.profileStorage as unknown as Pick<Storage, 'setItem'>, save);
   }
 
   // ---- intermission (between waves) — per-player panels ----
 
   private intermissionActive = false;
-  private boonChoices = new Map<number, string[]>();
+  private boonChoices = new Map<number, { id: string; tier: number }[]>();
   private featChoices = new Map<number, string[]>();
   private chestChoices = new Map<number, ChestOffer[]>();
   private pendingEquip = new Map<number, WeaponInstance>();
@@ -182,10 +226,27 @@ export class Engine {
       id: inst.itemId,
       name: `${r.label ? r.label + ' ' : ''}${base.name}`,
       desc:
-        `${r.hands}H ${r.kind} · ${Math.round(r.multiplier * 100)}% ${r.types.join('/')}` +
+        `${r.kind} · ${Math.round(r.multiplier * 100)}% ${r.types.join('/')}` +
         (effects ? ` · ${effects}` : ''),
       kind: 'weapon' as const,
     };
+  }
+
+  /** Would swapping this slot for the pending item be legal? Mirrors
+   *  sim.replaceWeapon's checks without mutating anything. */
+  private canReplaceSlot(playerIndex: number, slotIndex: number, inst: WeaponInstance): boolean {
+    const p = this.sim.state.players[playerIndex]!;
+    const reg = this.sim.registry;
+    if (!this.sim.classCanUse(p.classId, inst.itemId)) return false;
+    const def = reg.weapons.get(inst.itemId);
+    const old = reg.weapons.get(p.weapons[slotIndex]?.itemId ?? '');
+    if (!def || !old) return false;
+    if (this.sim.handPointsUsed(p) - old.hands + def.hands > this.sim.handPointsMax(p)) return false;
+    if (def.tags.includes('shield') && this.sim.classDef(p.classId).mechanic !== 'aegis') {
+      if (p.weapons.some((w, i) => i !== slotIndex && reg.weapons.get(w.itemId)?.tags.includes('shield')))
+        return false;
+    }
+    return true;
   }
 
   /** Equip-decision context: how a weapon offer compares to the current kit.
@@ -222,7 +283,7 @@ export class Engine {
       id,
       name,
       desc:
-        `${w.hands}H ${w.kind} · ${Math.round(w.damage.multiplier * 100)}% ${w.damage.types.join('/')}` +
+        `${w.kind} · ${Math.round(w.damage.multiplier * 100)}% ${w.damage.types.join('/')}` +
         (effects ? ` · ${effects}` : ''),
       kind: 'weapon' as const,
     };
@@ -255,7 +316,8 @@ export class Engine {
       } else if (p.pendingBoons > 0) {
         this.featChoices.delete(playerIndex);
         if (!this.boonChoices.has(playerIndex)) {
-          this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex)));
+          const luck = stat(p.stats, 'luck');
+          this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex), luck));
         }
       } else {
         this.featChoices.delete(playerIndex);
@@ -287,6 +349,7 @@ export class Engine {
 
   private openIntermission(): void {
     this.intermissionActive = true;
+    this.persistRun();
     for (const p of this.sim.state.players) {
       this.refreshIntermissionOffers(p.index);
       if (this.sim.peddlerVisiting()) {
@@ -305,6 +368,7 @@ export class Engine {
     this.peddlerStock.clear();
     this.peddlerEquipPending.clear();
     this.rerollsUsed.clear();
+    this.keystoneCeremony = null; // the ceremony played; the road goes on
   }
 
   /** Chest reroll fee: grows with each reroll this intermission (gold sink). */
@@ -418,7 +482,8 @@ export class Engine {
   equipReplace(playerIndex: number, slotIndex: number): void {
     const weaponId = this.pendingEquip.get(playerIndex);
     if (!this.intermissionActive || !weaponId) return;
-    this.sim.replaceWeapon(playerIndex, slotIndex, weaponId);
+    // An illegal swap keeps the picker open — the item must never vanish
+    if (!this.sim.replaceWeapon(playerIndex, slotIndex, weaponId)) return;
     if (this.peddlerEquipPending.has(playerIndex)) {
       this.peddlerEquipPending.delete(playerIndex);
       this.pendingEquip.delete(playerIndex);
@@ -449,11 +514,12 @@ export class Engine {
   }
 
   chooseBoon(playerIndex: number, boonId: string): void {
-    if (!this.intermissionActive || !this.boonChoices.get(playerIndex)?.includes(boonId)) return;
-    this.sim.applyBoon(playerIndex, boonId);
+    const choice = this.boonChoices.get(playerIndex)?.find((c) => c.id === boonId);
+    if (!this.intermissionActive || !choice) return;
+    this.sim.applyBoon(playerIndex, boonId, choice.tier);
     const p = this.sim.state.players[playerIndex]!;
     if (p.pendingBoons > 0)
-      this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex)));
+      this.boonChoices.set(playerIndex, this.sim.rollBoonChoices(this.boonCount(playerIndex), stat(p.stats, 'luck')));
     else this.boonChoices.delete(playerIndex);
   }
 
@@ -463,13 +529,15 @@ export class Engine {
     return {
       wave: this.sim.state.wave,
       lastWaveOfAct: !this.sim.hasNextWave(),
+      ceremony: this.keystoneCeremony, // act just relit — show the key rising
       gold: shared.gold, // mirrored — same for everyone
       allDone: this.sim.state.players.every(
         (p) =>
           p.pendingBoons === 0 &&
           p.pendingChests === 0 &&
           p.pendingFeats === 0 &&
-          p.pendingClassItems.length === 0,
+          p.pendingClassItems.length === 0 &&
+          !this.pendingEquip.has(p.index),
       ),
       panels: this.sim.state.players.map((p) => {
         const chest = this.chestChoices.get(p.index);
@@ -485,10 +553,14 @@ export class Engine {
             classOptions && !this.classEquipPending.has(p.index)
               ? { options: classOptions.map((id) => this.weaponInfo(id)) }
               : null,
-          classEquip: this.classEquipPending.has(p.index)
+          classEquip: this.classEquipPending.has(p.index) || this.peddlerEquipPending.has(p.index)
             ? {
                 pendingEquip: this.instanceInfo(this.pendingEquip.get(p.index)!),
-                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.instanceInfo(w) })),
+                currentWeapons: p.weapons.map((w, slot) => ({
+                  slot,
+                  ...this.instanceInfo(w),
+                  replaceable: this.canReplaceSlot(p.index, slot, this.pendingEquip.get(p.index)!),
+                })),
               }
             : null,
           kills: this.sim.tracker.killsByPlayer.get(p.index) ?? 0,
@@ -499,7 +571,8 @@ export class Engine {
             p.pendingBoons === 0 &&
             p.pendingChests === 0 &&
             p.pendingFeats === 0 &&
-            p.pendingClassItems.length === 0,
+            p.pendingClassItems.length === 0 &&
+            !this.pendingEquip.has(p.index),
           chest: chest
             ? {
                 choices: chest.map((offer, idx) =>
@@ -508,7 +581,11 @@ export class Engine {
                     : { idx, ...this.instanceInfo(offer.inst), compare: this.compareOffer(p.index, offer.inst) },
                 ),
                 pendingEquip: equip ? this.instanceInfo(equip) : null,
-                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.instanceInfo(w) })),
+                currentWeapons: p.weapons.map((w, slot) => ({
+                  slot,
+                  ...this.instanceInfo(w),
+                  replaceable: equip ? this.canReplaceSlot(p.index, slot, equip) : true,
+                })),
               }
             : null,
           bits: p.bits,
@@ -536,9 +613,9 @@ export class Engine {
               return { id, name: f.name, desc: f.desc };
             }) ?? null,
           boonChoices:
-            boons?.map((id) => {
+            boons?.map(({ id, tier }) => {
               const b = this.sim.registry.boons.get(id)!;
-              return { id, name: b.name, desc: b.desc };
+              return { id, tier, name: b.name, desc: b.desc };
             }) ?? null,
           rerollCost: chest ? this.rerollCost(p.index) : null,
           gold: p.gold,
@@ -565,13 +642,23 @@ export class Engine {
         p.pendingBoons === 0 &&
         p.pendingChests === 0 &&
         p.pendingFeats === 0 &&
-        p.pendingClassItems.length === 0,
+        p.pendingClassItems.length === 0 &&
+        !this.pendingEquip.has(p.index),
     );
     if (!allDone) return; // resolve every player's rewards first
     this.clearIntermission();
-    if (this.sim.state.endless) this.sim.startEndlessWave(this.sim.state.wave + 1);
-    else if (this.sim.hasNextWave()) this.startWave(this.sim.state.wave + 1);
-    // No next wave: runState is already 'victory' — nothing to start.
+    if (this.sim.state.endless) {
+      this.sim.startEndlessWave(this.sim.state.wave + 1);
+    } else if (this.sim.hasNextWave()) {
+      this.startWave(this.sim.state.wave + 1);
+    } else if (this.sim.state.act < 4) {
+      // The road continues: next act, same run, same candle
+      this.sim.advanceAct();
+      this.renderer.setActTheme(this.sim.state.act);
+      this.audio.setAct(this.sim.state.act);
+      this.persistRun();
+    }
+    // Act 4 cleared: runState is 'victory' — nothing to start.
   }
 
   /** Small HUD summary for the React overlay (polled at low frequency). */
@@ -662,10 +749,16 @@ export class Engine {
       } else if (ev.type === 'levelUp') {
         this.audio.play('levelUp');
       } else if (ev.type === 'waveCleared') {
-        if (!this.sim.hasNextWave()) {
-          this.runState = 'victory';
+        if (!this.sim.hasNextWave() && !this.sim.state.endless) {
+          // Act boss down: bank the Emberkey. Acts 1-3 roll straight on into the
+          // next act — only the act 4 clear ends the run in victory.
           this.recordActClear(this.sim.state.act);
-          this.audio.play('victory');
+          if (this.sim.state.act >= 4) {
+            this.runState = 'victory';
+            this.audio.play('victory');
+          } else {
+            this.audio.play('victory');
+          }
         } else {
           this.audio.play('waveClear');
         }
@@ -752,10 +845,9 @@ export class Engine {
     } else {
       this.profile.glimmers += 8; // repeat-clear bounty
     }
-    // Continue rules (design): first-time clears end the run; a re-cleared act lets
-    // the party press on. Endless entry likewise requires it was unlocked BEFORE.
-    if (act < 4) this.continueOption = wasCleared ? 'nextAct' : null;
-    else this.continueOption = wasCleared && this.profile.endlessUnlocked ? 'endless' : null;
+    // Runs flow through acts automatically now; the only choice left is whether
+    // to press into the endless dark after the act 4 clear (if unlocked BEFORE).
+    if (act >= 4) this.continueOption = wasCleared && this.profile.endlessUnlocked ? 'endless' : null;
     this.persistProfile();
   }
 
@@ -778,6 +870,7 @@ export class Engine {
     this.profile.lifetime.kills += [...this.sim.tracker.killsByPlayer.values()].reduce((a, b) => a + b, 0);
     this.profile.lifetime.deepestWave = Math.max(this.profile.lifetime.deepestWave, this.sim.state.wave);
     this.persistProfile();
+    clearRunSave(this.profileStorage as unknown as Pick<Storage, 'removeItem'>, this.slot);
     if (this.runRecorded) return; // one chronicle entry per run
     this.runRecorded = true;
     // Party-wide top damage items for the chronicle drill-down
@@ -820,6 +913,53 @@ export class Engine {
   }
 
   /** Damage-meter drill-down for the recap panels. */
+  /** Everything the pause screen wants to show, per player. */
+  pauseDetails() {
+    const fmtPct = (v: number) => `${Math.round(v * 100)}%`;
+    return {
+      wave: this.sim.state.wave,
+      act: this.sim.state.act,
+      endless: this.sim.state.endless,
+      gold: this.sim.state.players[0]?.gold ?? 0,
+      glimmers: this.profile.glimmers,
+      deedsDone: this.profile.deedsCompleted.length,
+      deedsTotal: this.sim.registry.deeds.size,
+      players: this.sim.state.players.map((p) => ({
+        index: p.index,
+        className: this.sim.registry.classes.get(p.classId)?.name ?? p.classId,
+        level: p.level,
+        hp: Math.round(p.hp),
+        weapons: p.weapons.map((w) => this.instanceInfo(w)),
+        satchel: p.satchel.map((w) => this.instanceInfo(w)),
+        passives: p.passives.map((id) => this.weaponInfo(id)),
+        feats: p.feats.map((id) => {
+          const f = this.sim.registry.feats.get(id);
+          return { name: f?.name ?? id, desc: f?.desc ?? '' };
+        }),
+        boonCount: p.boonIds.length,
+        bits: p.bits,
+        stats: [
+          { label: 'Max HP', value: String(Math.round(stat(p.stats, 'maxHp'))) },
+          { label: 'Melee dmg', value: `+${Math.round(stat(p.stats, 'meleeDamage'))}` },
+          { label: 'Ranged dmg', value: `+${Math.round(stat(p.stats, 'rangedDamage'))}` },
+          { label: 'Magic dmg', value: `+${Math.round(stat(p.stats, 'magicDamage'))}` },
+          { label: 'Pet dmg', value: `+${Math.round(stat(p.stats, 'petDamage'))}` },
+          { label: 'Crit chance', value: fmtPct(stat(p.stats, 'critChance')) },
+          { label: 'Attack speed', value: `+${fmtPct(stat(p.stats, 'cooldownRate'))}` },
+          { label: 'Move speed', value: `+${fmtPct(stat(p.stats, 'moveSpeed'))}` },
+          { label: 'Armor', value: String(Math.round(stat(p.stats, 'armor'))) },
+          { label: 'Dodge', value: fmtPct(stat(p.stats, 'dodge')) },
+          { label: 'Block', value: String(Math.round(stat(p.stats, 'blockPhys'))) },
+          { label: 'Lifesteal', value: fmtPct(stat(p.stats, 'lifesteal')) },
+          { label: 'HP regen', value: `${Math.round(stat(p.stats, 'hpRegen') * 10) / 10}/s` },
+          { label: 'Luck', value: String(Math.round(stat(p.stats, 'luck'))) },
+          { label: 'Gold gain', value: `+${fmtPct(stat(p.stats, 'goldGain'))}` },
+          { label: 'XP gain', value: `+${fmtPct(stat(p.stats, 'xpGain'))}` },
+        ],
+      })),
+    };
+  }
+
   meters(playerIndex = 0) {
     const items = this.sim.tracker.byPlayerItem.get(playerIndex);
     const rows = items
@@ -831,6 +971,9 @@ export class Engine {
             hits: agg.hits,
             crits: agg.crits,
             max: Math.round(agg.max),
+            min: Number.isFinite(agg.min) ? Math.round(agg.min) : 0,
+            avg: agg.hits > 0 ? Math.round((agg.total / agg.hits) * 10) / 10 : 0,
+            overkill: Math.round(agg.overkill),
           }))
           .sort((a, b) => b.total - a.total)
       : [];

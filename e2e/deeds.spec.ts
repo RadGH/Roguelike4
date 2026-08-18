@@ -23,7 +23,7 @@ test('fire kill pops the unlock toast and persists to the save profile', async (
     window.__debug.cheat('stopSpawns');
     window.__debug.step(200); // enemies close in, candlestick burns them down
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
   // The toast may have fired during stepping; check the profile instead — it's the truth.
@@ -43,7 +43,7 @@ test('profile persists across reloads', async ({ page }) => {
     window.__debug.cheat('stopSpawns');
     window.__debug.step(200);
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
   });
   await page.reload();
   await page.waitForFunction(() => window.__debug?.snapshot().tick > 0);

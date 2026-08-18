@@ -34,7 +34,7 @@ test('wave clear opens the intermission and advances to the next wave', async ({
   await page.evaluate(() => {
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
   });
   await page.waitForFunction(() => window.__debug.snapshot().phase === 'cleared');
 
@@ -63,7 +63,7 @@ test('boon pick actually raises player stats', async ({ page }) => {
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('grantXp:15'); // deterministic level-up → boons pending
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
   await expect(page.locator('[data-screen="intermission"]')).toBeVisible();

@@ -19,6 +19,9 @@ export default defineConfig({
   server: {
     host: true, // expose on LAN so the user can test from other devices
     port: 8300,
+    // No hot-reload: mid-run reloads were interrupting play sessions while the
+    // code is being worked on. Reload the page manually to pick up changes.
+    hmr: false,
   },
   build: {
     target: 'es2022',

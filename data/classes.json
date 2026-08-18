@@ -156,12 +156,8 @@
     ],
     "statMods": [
       {
-        "stat": "lifestealPhys",
-        "flat": 0.08
-      },
-      {
-        "stat": "lifestealMagic",
-        "flat": 0.08
+        "stat": "lifesteal",
+        "flat": 0.16
       }
     ],
     "startingWeapons": [
@@ -344,6 +340,10 @@
       {
         "stat": "moveSpeed",
         "pct": 0.05
+      },
+      {
+        "stat": "luck",
+        "flat": 1
       }
     ],
     "mechanic": "wheelOfWhee",

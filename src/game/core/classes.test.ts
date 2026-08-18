@@ -59,15 +59,14 @@ describe('hand points', () => {
     expect(sim.equipWeapon(1, 'dagger')).toBe(false);
   });
 
-  it('replace cannot overflow points (1H → 2H on a full fighter)', () => {
+  it('every weapon is one slot: swaps always fit, extras never overflow', () => {
     const sim = new Sim(4, 1, undefined, ['fighter']);
     sim.equipWeapon(0, 'dagger');
-    sim.equipWeapon(0, 'hatchet'); // 4/4 used
+    sim.equipWeapon(0, 'hatchet'); // 4/4 slots used
     const p = sim.state.players[0]!;
-    sim.replaceWeapon(0, 0, 'greatclub'); // 2H over cap → refused
-    expect(p.weapons[0]!.itemId).toBe('shortsword');
-    sim.replaceWeapon(0, 0, 'dagger'); // 1H↔1H fine
-    expect(p.weapons[0]!.itemId).toBe('dagger');
+    expect(sim.equipWeapon(0, 'greatclub')).toBe(false); // full is full
+    expect(sim.replaceWeapon(0, 0, 'greatclub')).toBe(true); // slot-for-slot always fits
+    expect(p.weapons[0]!.itemId).toBe('greatclub');
   });
 });
 

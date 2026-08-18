@@ -33,8 +33,10 @@ test('pause menu: arrow to Quit, Enter exits to title', async ({ page }) => {
   await page.waitForFunction(() => window.__debug?.snapshot().tick > 0);
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-screen="pause"]')).toBeVisible();
-  await page.keyboard.press('ArrowDown'); // focus Sound toggle
-  await page.keyboard.press('ArrowDown'); // focus Quit
+  await page.keyboard.press('ArrowDown'); // Details
+  await page.keyboard.press('ArrowDown'); // Damage report
+  await page.keyboard.press('ArrowDown'); // Sound toggle
+  await page.keyboard.press('ArrowDown'); // Quit
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-screen="title"]')).toBeVisible();
 });
@@ -48,7 +50,7 @@ test('keyboard menu nav picks a boon with arrows + Enter', async ({ page }) => {
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('grantXp:15'); // deterministic level-up → boons pending
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
   await expect(page.locator('[data-screen="intermission"]')).toBeVisible();

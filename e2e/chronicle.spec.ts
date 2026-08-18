@@ -22,13 +22,13 @@ test('first act clear plays the keystone ceremony and lands in the chronicle', a
   await page.evaluate(() => {
     window.__debug.pause();
     window.__debug.cheat('gotoBossWave');
-    window.__debug.step(90);
+    window.__debug.step(40); // brief — bosses now punish idlers, as requested
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
-  await expect(page.locator('[data-screen="victory"]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-screen="intermission"]')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-ceremony]')).toBeVisible();
   await expect(page.locator('[data-ceremony]')).toContainText('EMBERKEY');
 });

@@ -3,7 +3,7 @@
 
 import type { RngStream } from './rng';
 import { stat, type StatSheet } from './stats';
-import { DAMAGE_STAT, RESIST_STAT, type DamageType } from '../data/stats';
+import { DAMAGE_STAT, MAGIC_TYPES, RESIST_STAT, type DamageType } from '../data/stats';
 import type { BalanceDef } from '../data/schemas';
 import type { Mitigation } from './tracker';
 
@@ -51,9 +51,14 @@ export function rollAttack(
   rng: RngStream,
   balance: BalanceDef,
 ): { raw: number; crit: boolean } {
-  // Scaling stat: highest among the attack's types (multi-type weapons use the best).
+  // Scaling stat: highest among the attack's types (multi-type weapons use the
+  // best). Magic schools scale from generic magicDamage PLUS their school stat.
   let scale = 0;
-  for (const t of attack.types) scale = Math.max(scale, stat(attacker, DAMAGE_STAT[t]));
+  for (const t of attack.types) {
+    const school = stat(attacker, DAMAGE_STAT[t]);
+    const magic = MAGIC_TYPES.includes(t) ? stat(attacker, 'magicDamage') : 0;
+    scale = Math.max(scale, school + magic);
+  }
   const flat = attack.flat[0] + rng.next() * (attack.flat[1] - attack.flat[0]);
   let raw = attack.multiplier * scale + flat;
   let crit = false;

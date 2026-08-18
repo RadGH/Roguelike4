@@ -17,6 +17,18 @@ import petZombieUrl from '../../../art/pet-zombie.svg?url';
 import petBeeUrl from '../../../art/pet-bee.svg?url';
 import petBoneChumUrl from '../../../art/pet-bone-chum.svg?url';
 import petTurretUrl from '../../../art/pet-turret.svg?url';
+// Generated art (scripts/gen-weapon-art.mjs): one icon per weapon, one bolt per school
+const WEAPON_ART_URLS = import.meta.glob('../../../art/weapons/*.svg', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+const PROJECTILE_ART_URLS = import.meta.glob('../../../art/projectiles/*.svg', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+const artKey = (path: string) => path.split('/').pop()!.replace('.svg', '');
 // Act 2 — Sogbottom Marsh
 import soggunUrl from '../../../art/enemy-soggun.svg?url';
 import bubblimUrl from '../../../art/enemy-bubblim.svg?url';
@@ -132,6 +144,7 @@ export type RenderSnapshot = {
     alive: boolean;
     hpFrac: number;
     reviveFrac: number;
+    weapons: { itemId: string; angle: number; fireAnim: number; melee: boolean; reach: number }[];
   }[];
   enemies: {
     instance: number;
@@ -147,11 +160,13 @@ export type RenderSnapshot = {
     stunned: boolean;
     telegraphing: boolean;
     asleep: boolean;
+    portalT: number; // 0..1 escape portal charge (mimics fleeing an empty field)
   }[];
-  projectiles: { x: number; y: number; radius: number; friendly: boolean }[];
+  projectiles: { x: number; y: number; radius: number; friendly: boolean; school: string; angle: number }[];
   pickups: { x: number; y: number; kind: 'gold' | 'xp' | 'chest' | 'heart' }[];
   pools: { x: number; y: number; radius: number }[];
   cages: { x: number; y: number; progress: number }[];
+  telegraphs: { x: number; y: number; radius: number; frac: number }[];
   pets: { instance: number; defId: string; owner: number; x: number; y: number; squishPhase: number }[];
 };
 
@@ -167,6 +182,16 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
       alive: p.alive,
       hpFrac: Math.max(0, p.hp) / Math.max(1, p.stats.maxHp ?? 10),
       reviveFrac: p.alive ? 0 : Math.min(1, p.reviveProgress / 3),
+      weapons: p.weapons.map((w) => {
+        const def = sim.registry.weapons.get(w.itemId);
+        return {
+          itemId: w.itemId,
+          angle: w.aimAngle,
+          fireAnim: w.fireAnim,
+          melee: def?.delivery.type === 'meleeArc',
+          reach: def?.delivery.type === 'meleeArc' ? def.delivery.reach : 0,
+        };
+      }),
     })),
     enemies: sim.state.enemies
       .filter((e) => e.alive)
@@ -186,11 +211,27 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
           stunned: e.status.stunLeft > 0,
           telegraphing: e.charge.phase === 'windup',
           asleep: def?.archetype === 'mimic' && !e.mimicAwake,
+          portalT: Math.max(0, e.portalTimer) / 3,
         };
       }),
     projectiles: sim.state.projectiles
       .filter((p) => p.active)
-      .map((p) => ({ x: p.x, y: p.y, radius: p.radius, friendly: p.fromPlayer >= 0 })),
+      .map((p) => {
+        const types = p.fromPlayer >= 0 ? (sim.registry.weapons.get(p.itemId ?? '')?.damage.types ?? []) : [];
+        const school =
+          p.fromPlayer < 0
+            ? 'enemy'
+            : (['fire', 'ice', 'lightning', 'poison', 'arcane', 'void'].find((s) => types.includes(s as never)) ??
+              'physical');
+        return {
+          x: p.x,
+          y: p.y,
+          radius: p.radius,
+          friendly: p.fromPlayer >= 0,
+          school,
+          angle: Math.atan2(p.vy, p.vx),
+        };
+      }),
     pickups: sim.state.pickups
       .filter((p) => p.active)
       .map((p) => ({ x: p.x, y: p.y, kind: p.kind })),
@@ -200,6 +241,12 @@ export function takeSnapshot(sim: Sim): RenderSnapshot {
     cages: sim.state.cages
       .filter((c) => !c.rescued)
       .map((c) => ({ x: c.x, y: c.y, progress: c.progress / 2 })),
+    telegraphs: sim.state.telegraphs.map((t) => ({
+      x: t.x,
+      y: t.y,
+      radius: t.radius,
+      frac: 1 - t.timer / t.total,
+    })),
     pets: sim.state.pets.map((pt) => ({
       instance: pt.instance,
       defId: pt.defId,
@@ -223,6 +270,9 @@ export class GameRenderer {
   readonly app = new Application();
   private world = new Container();
   private playerVisuals: SpriteVisual[] = [];
+  private weaponSprites: Sprite[][] = []; // [player][slot]
+  private projectileSprites: Sprite[] = []; // pooled, hidden when unused
+  private animClock = 0;
   private enemyVisuals = new Map<number, SpriteVisual>();
   private enemyPool: SpriteVisual[] = [];
   private petVisuals = new Map<number, SpriteVisual>();
@@ -257,6 +307,8 @@ export class GameRenderer {
       ...Object.entries(ENEMY_ART).map(([k, u]) => load(k, u)),
       ...Object.entries(ARCHETYPE_FALLBACK_ART).map(([k, u]) => load(`arch:${k}`, u)),
       ...Object.entries(PET_ART).map(([k, u]) => load(`pet:${k}`, u)),
+      ...Object.entries(WEAPON_ART_URLS).map(([p, u]) => load(`weapon:${artKey(p)}`, u)),
+      ...Object.entries(PROJECTILE_ART_URLS).map(([p, u]) => load(`proj:${artKey(p)}`, u)),
     ]);
     if (this.disposed) {
       this.app.destroy(true, { children: true });
@@ -377,6 +429,40 @@ export class GameRenderer {
       const sign = Math.abs(facingX) > 0.15 ? (facingX < 0 ? -1 : 1) : prevSign;
       v.sprite.scale.set(sign * v.baseScaleX * sx, v.baseScaleY * sy);
       this.drawHpBarKeep(v, p1.hpFrac, 40);
+      // Hovering weapons: each slot floats beside the candle, points at its
+      // target, and lunges out (melee) or kicks back (ranged) when it fires
+      while (this.weaponSprites.length <= i) this.weaponSprites.push([]);
+      const ws = this.weaponSprites[i]!;
+      for (let k = 0; k < p1.weapons.length; k++) {
+        const wSnap = p1.weapons[k]!;
+        if (!ws[k]) {
+          const tex = this.textures.get(`weapon:${wSnap.itemId}`) ?? Texture.WHITE;
+          const spr = new Sprite(tex);
+          spr.anchor.set(0.35, 0.5);
+          spr.width = 30;
+          spr.height = 30;
+          this.world.addChild(spr);
+          ws[k] = spr;
+        }
+        const spr = ws[k]!;
+        const wantTex = this.textures.get(`weapon:${wSnap.itemId}`);
+        if (wantTex && spr.texture !== wantTex) spr.texture = wantTex;
+        spr.visible = p1.alive;
+        // side seats: alternate left/right, stack outward, gentle bob
+        const side = k % 2 === 0 ? -1 : 1;
+        const ring = 1 + Math.floor(k / 2);
+        const bob = Math.sin(this.animClock * 2.4 + k * 1.7) * 2.5;
+        const baseX = x + side * (20 + ring * 8);
+        const baseY = y - 6 + bob + (ring - 1) * 6;
+        // fire animation: melee lunges toward the target and returns; ranged recoils
+        const lunge = Math.sin(Math.min(1, wSnap.fireAnim) * Math.PI);
+        const dist = wSnap.melee ? lunge * wSnap.reach * PX_PER_UNIT * 0.8 : -lunge * 5;
+        spr.position.set(baseX + Math.cos(wSnap.angle) * dist, baseY + Math.sin(wSnap.angle) * dist);
+        spr.rotation = wSnap.angle;
+        // flip vertically when aiming left so blades don't hang upside down
+        spr.scale.y = Math.abs(spr.scale.y) * (Math.cos(wSnap.angle) < 0 ? -1 : 1);
+      }
+      for (let k = p1.weapons.length; k < ws.length; k++) ws[k]!.visible = false;
       cx += x;
       cy += y;
       minX = Math.min(minX, x);
@@ -466,13 +552,30 @@ export class GameRenderer {
       }
     }
 
-    // Projectiles
+    // Projectiles: school-flavored sprites that spin (physical) or pulse (magic)
     this.projectileGfx.clear();
-    for (const pr of curr.projectiles) {
-      this.projectileGfx
-        .circle(pr.x * PX_PER_UNIT, pr.y * PX_PER_UNIT, pr.radius * PX_PER_UNIT)
-        .fill({ color: pr.friendly ? 0xfff3c4 : 0xb88ae0 })
-        .stroke({ color: pr.friendly ? 0xe8a020 : 0x5d4d85, width: 2 });
+    this.animClock += 1 / 60;
+    for (let i = 0; i < curr.projectiles.length; i++) {
+      const pr = curr.projectiles[i]!;
+      if (!this.projectileSprites[i]) {
+        const spr = new Sprite(Texture.WHITE);
+        spr.anchor.set(0.5);
+        this.world.addChild(spr);
+        this.projectileSprites[i] = spr;
+      }
+      const spr = this.projectileSprites[i]!;
+      const tex = this.textures.get(`proj:${pr.school}`) ?? this.textures.get('proj:physical') ?? Texture.WHITE;
+      if (spr.texture !== tex) spr.texture = tex;
+      spr.visible = true;
+      const size = Math.max(14, pr.radius * PX_PER_UNIT * 3.4);
+      const pulse = pr.school === 'physical' ? 1 : 1 + 0.14 * Math.sin(this.animClock * 11 + i * 2.1);
+      spr.width = size * pulse;
+      spr.height = size * pulse;
+      spr.position.set(pr.x * PX_PER_UNIT, pr.y * PX_PER_UNIT);
+      spr.rotation = pr.school === 'physical' ? this.animClock * 9 + i : pr.angle;
+    }
+    for (let i = curr.projectiles.length; i < this.projectileSprites.length; i++) {
+      this.projectileSprites[i]!.visible = false;
     }
 
     // Ground pools (hazards)
@@ -482,6 +585,31 @@ export class GameRenderer {
         .circle(pool.x * PX_PER_UNIT, pool.y * PX_PER_UNIT, pool.radius * PX_PER_UNIT)
         .fill({ color: 0x7fbf68, alpha: 0.3 })
         .stroke({ color: 0x5f9e4a, width: 2, alpha: 0.5 });
+    }
+
+    // Boss slam telegraphs: a red promise filling in — move.
+    for (const tg of curr.telegraphs) {
+      const x = tg.x * PX_PER_UNIT;
+      const y = tg.y * PX_PER_UNIT;
+      const R = tg.radius * PX_PER_UNIT;
+      this.poolGfx
+        .circle(x, y, R)
+        .fill({ color: 0xff5c5c, alpha: 0.12 + tg.frac * 0.1 })
+        .stroke({ color: 0xff5c5c, width: 3, alpha: 0.7 });
+      this.poolGfx.circle(x, y, R * tg.frac).fill({ color: 0xff5c5c, alpha: 0.22 });
+    }
+
+    // Mimic escape portals: a swirl growing beside the would-be deserter
+    for (const e of curr.enemies) {
+      if (e.portalT <= 0) continue;
+      const x = (e.x + 1.2) * PX_PER_UNIT;
+      const y = e.y * PX_PER_UNIT;
+      const R = 6 + e.portalT * 22;
+      this.poolGfx
+        .circle(x, y, R)
+        .fill({ color: 0x8a5fc0, alpha: 0.35 + e.portalT * 0.3 })
+        .stroke({ color: 0xb88ae0, width: 2 });
+      this.poolGfx.circle(x, y, R * 0.55).fill({ color: 0x2b2140, alpha: 0.8 });
     }
 
     // Discovery cages: a little prisoner and a rescue ring
@@ -600,6 +728,8 @@ export class GameRenderer {
     this.disposed = true;
     if (this.initialized) this.app.destroy(true, { children: true });
     this.playerVisuals = [];
+    this.weaponSprites = [];
+    this.projectileSprites = [];
     this.enemyVisuals.clear();
     this.enemyPool = [];
     this.initialized = false;

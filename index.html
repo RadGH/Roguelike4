@@ -6,6 +6,16 @@
     <!-- Title is set at runtime from data/branding.json -->
     <title>Loading…</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      /* Kill the browser's default body margin (the white frame on the title
+         screen) and match the page to the game's night palette. */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #211a35;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

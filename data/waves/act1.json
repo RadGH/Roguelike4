@@ -244,12 +244,12 @@
           "count": 1
         },
         {
-          "atSecond": 20,
+          "atSecond": 6,
           "defId": "snuffling",
           "count": 6
         },
         {
-          "atSecond": 40,
+          "atSecond": 12,
           "defId": "puffball",
           "count": 5
         }

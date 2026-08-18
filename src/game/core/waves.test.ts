@@ -99,7 +99,7 @@ describe('burn kills attribute to the burning weapon', () => {
   it('candlestick burn DoT can finish a snuffling and credit the player', () => {
     const sim = new Sim(23, 1);
     const p = sim.state.players[0]!;
-    p.weapons = [{ itemId: 'candlestick', cooldownLeft: 0, quality: 'standard', variant: null, holo: false, seedTag: 0 }];
+    p.weapons = [{ itemId: 'candlestick', cooldownLeft: 0, quality: 'standard', variant: null, holo: false, seedTag: 0, aimAngle: 0, targetInstance: -1, retargetIn: 0, fireAnim: 0 }];
     sim.spawnEnemy('snuffling', p.x + 1.2, p.y);
     for (let t = 0; t < TICK_RATE * 15 && sim.aliveEnemyCount() > 0; t++) sim.tick([neutralInput()]);
     expect(sim.aliveEnemyCount()).toBe(0);

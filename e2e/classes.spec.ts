@@ -33,7 +33,7 @@ test('mage level 2 offers the signature-spell choice in the intermission', async
     window.__debug.cheat('grantXp:10'); // level 2 → class choice queued
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
   await expect(page.locator('[data-screen="intermission"]')).toBeVisible();

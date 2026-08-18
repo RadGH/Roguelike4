@@ -519,7 +519,7 @@
     "id": "hot-sauce",
     "category": "passive",
     "desc": "+2 fire damage. For food, allegedly.",
-    "rarity": "common",
+    "rarity": "uncommon",
     "grants": [
       {
         "stat": "fireDamage",
@@ -531,7 +531,7 @@
     "id": "static-comb",
     "category": "passive",
     "desc": "+2 lightning damage. Your hair is a weather system.",
-    "rarity": "common",
+    "rarity": "uncommon",
     "grants": [
       {
         "stat": "lightningDamage",
@@ -543,7 +543,7 @@
     "id": "everfrost-cube",
     "category": "passive",
     "desc": "+2 ice damage. It never melts and never explains.",
-    "rarity": "common",
+    "rarity": "uncommon",
     "grants": [
       {
         "stat": "iceDamage",
@@ -555,7 +555,7 @@
     "id": "dubious-mushroom",
     "category": "passive",
     "desc": "+2 poison damage. The vendor seemed sure it was fine.",
-    "rarity": "common",
+    "rarity": "uncommon",
     "grants": [
       {
         "stat": "poisonDamage",
@@ -567,7 +567,7 @@
     "id": "polished-focus",
     "category": "passive",
     "desc": "+2 arcane damage. You can see next week in it, dimly.",
-    "rarity": "common",
+    "rarity": "uncommon",
     "grants": [
       {
         "stat": "arcaneDamage",
@@ -610,5 +610,17 @@
         "pct": -0.04
       }
     ]
+  },
+  {
+    "id": "rabbits-foot",
+    "category": "passive",
+    "desc": "+1 luck. It was very lucky for someone, once.",
+    "grants": [
+      {
+        "stat": "luck",
+        "flat": 1
+      }
+    ],
+    "rarity": "uncommon"
   }
 ]

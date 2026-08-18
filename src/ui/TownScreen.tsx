@@ -3,6 +3,7 @@ import { loadProfile, saveProfile } from '@game/meta/profile';
 import { buyClass, buyItem, buyUpgrade, SHOPS, upgradeLevel, upgradePrice } from '@game/meta/shop';
 import { loadRegistry } from '@game/data/registry';
 import { listRuns, type RunRecord } from '@game/meta/history';
+import { loadRunSave } from '@game/meta/runsave';
 import { GAME_TITLE, SAVE_SLUG } from '@game/branding';
 import { PLAYER_COLORS_CSS } from '@game/shell/renderer';
 import { cardBtnStyle, COLORS, panelStyle, screenStyle } from './theme';
@@ -34,11 +35,12 @@ export function TownScreen({
   onBack,
 }: {
   slot: number;
-  onStart: (opts: { act: number; players: number; classIds: string[] }) => void;
+  onStart: (opts: { act: number; players: number; classIds: string[]; resume?: boolean }) => void;
   onBack: () => void;
 }) {
   const [view, setView] = useState<TownView>('square');
   const [runHistory, setRunHistory] = useState<RunRecord[] | null>(null);
+  const [unlockInfo, setUnlockInfo] = useState<string | null>(null); // classId being inspected
   const [soundMuted, setSoundMuted] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(`${SAVE_SLUG}.audio`) ?? '{}').muted === true;
@@ -56,14 +58,16 @@ export function TownScreen({
       alive = false;
     };
   }, [view, slot]);
-  const [selectedAct, setSelectedAct] = useState(1);
+
   const [, forceRender] = useState(0);
   const profile = loadProfile(window.localStorage, slot);
   const commit = () => {
     saveProfile(window.localStorage, profile);
     forceRender((n) => n + 1);
   };
-  const unlockedActs = 1 + profile.actsCleared.filter((a) => a < 4).length; // acts 1..N playable
+  // Runs always start at wave 1 and flow through every act — the pillar shows
+  // which act's beacon is next to relight
+  const nextObjectiveAct = [1, 2, 3, 4].find((a) => !profile.actsCleared.includes(a)) ?? null;
   const unlockedClasses = [...registry.classes.values()].filter((c) =>
     profile.unlockedClasses.includes(c.id),
   );
@@ -80,22 +84,48 @@ export function TownScreen({
   // Class rows: pad/keyboard focus drives selection; mouse clicks set it directly.
   // Fixed hook count (max party of 4) — `enabled` gates the live ones.
   const [sel, setSel] = useState([0, 0, 0, 0]);
+  const [ready, setReady] = useState([false, false, false, false]);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const start = () =>
     onStart({
-      act: selectedAct,
+      act: 1,
       players: playerCount,
       classIds: sel
         .slice(0, playerCount)
         .map((s) => unlockedClasses[Math.min(s, unlockedClasses.length - 1)]?.id ?? 'hero'),
     });
+  const toggleReady = (i: number) =>
+    setReady((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+      return next;
+    });
+  // All present players ready → a 3-2-1 countdown, cancelled if anyone unreadies
+  useEffect(() => {
+    const allReady = view === 'bellhop' && ready.slice(0, playerCount).every(Boolean);
+    if (!allReady) {
+      setCountdown(null);
+      return;
+    }
+    setCountdown(3);
+    const t0 = setInterval(() => {
+      setCountdown((c) => (c === null ? null : c - 1));
+    }, 1000);
+    return () => clearInterval(t0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, playerCount, ready.slice(0, playerCount).every(Boolean)]);
+  useEffect(() => {
+    if (countdown === 0) start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countdown]);
   const classFocus = [0, 1, 2, 3].map((i) =>
     // hooks in a fixed-length map: array length and order never change, so hook
     // order is stable across renders
     useMenuNav({
       player: i,
       count: unlockedClasses.length,
-      enabled: view === 'bellhop' && i < playerCount,
-      onConfirm: start, // A / Enter sets out at the selected act
+      enabled: view === 'bellhop' && i < playerCount && !ready[i], // ready locks the pick
+      onConfirm: () => toggleReady(i), // A / Enter readies up (again to cancel)
       onBack: i === 0 ? () => setView('square') : undefined,
       keyboard: i === 0,
     }),
@@ -114,16 +144,6 @@ export function TownScreen({
     });
   }, [classFocus[0], classFocus[1], classFocus[2], classFocus[3]]);
 
-  // Number keys pick the destination act
-  useEffect(() => {
-    if (view !== 'bellhop') return;
-    const onKey = (e: KeyboardEvent) => {
-      const n = Number(e.key);
-      if (n >= 1 && n <= unlockedActs) setSelectedAct(n);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [view, unlockedActs]);
 
   return (
     <div style={screenStyle} data-screen="town">
@@ -138,6 +158,29 @@ export function TownScreen({
 
         {view === 'square' && (
           <>
+            {(() => {
+              const rs = loadRunSave(localStorage, slot);
+              if (!rs) return null;
+              return (
+                <button
+                  data-action="resume-run"
+                  onClick={() => onStart({ act: rs.act, players: rs.players.length, classIds: rs.players.map((p) => p.classId), resume: true })}
+                  style={{
+                    ...cardBtnStyle(false),
+                    width: '100%',
+                    marginBottom: 12,
+                    border: '2px solid #8ce68c',
+                    textAlign: 'left',
+                    padding: '12px 16px',
+                  }}
+                >
+                  <div style={{ fontSize: 18, color: '#8ce68c' }}>▶ Resume run — Act {rs.act}, wave {rs.wave}</div>
+                  <div style={{ fontSize: 12, opacity: 0.8, fontWeight: 500 }}>
+                    {rs.players.map((p) => `${p.classId} Lv${p.level}`).join(' + ')} · the candle never went out
+                  </div>
+                </button>
+              );
+            })()}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
               {NPCS.map((npc, i) => (
                 <button
@@ -163,75 +206,117 @@ export function TownScreen({
           <>
             <h2 style={{ color: COLORS.gold, fontSize: 18, margin: '4px 0 10px' }}>🔔 Where to, Wicklighters?</h2>
 
-            {Array.from({ length: playerCount }, (_, i) => (
-              <div key={i} style={{ margin: '6px 0' }}>
-                <span style={{ color: PLAYER_COLORS_CSS[i], fontWeight: 800, fontSize: 13, marginRight: 8 }}>
-                  P{i + 1}
-                </span>
-                {unlockedClasses.map((c, ci) => {
-                  const selected = sel[i] === ci;
-                  return (
-                    <button
-                      key={c.id}
-                      data-class-pick={`${i}-${c.id}`}
-                      title={c.blurb}
-                      onClick={() =>
-                        setSel((prev) => {
-                          const next = [...prev];
-                          next[i] = ci;
-                          return next;
-                        })
-                      }
-                      style={{
-                        ...cardBtnStyle(selected),
-                        padding: '6px 12px',
-                        fontSize: 13,
-                        marginRight: 6,
-                        borderColor: selected ? PLAYER_COLORS_CSS[i] : undefined,
-                      }}
-                    >
-                      {c.name}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
-            <p style={{ fontSize: 11.5, opacity: 0.65, margin: '4px 0 10px' }}>
-              cycle class with ←/→ (stick or arrows) · more classes unlock through deeds — see the Codex
-            </p>
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {[1, 2, 3, 4].map((act) => {
-                const open = act <= unlockedActs;
+            {/* Player columns: each seat shows its pick and ready state */}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+              {Array.from({ length: playerCount }, (_, i) => {
+                const cls = unlockedClasses[Math.min(sel[i]!, unlockedClasses.length - 1)];
                 return (
-                  <button
-                    key={act}
-                    disabled={!open}
-                    data-start-act={act}
-                    onClick={() => setSelectedAct(act)}
+                  <div
+                    key={i}
+                    data-player-column={i}
                     style={{
-                      ...cardBtnStyle(open && selectedAct === act),
-                      opacity: open ? 1 : 0.4,
-                      cursor: open ? 'pointer' : 'default',
-                      width: 130,
+                      border: `2px solid ${ready[i] ? '#8ce68c' : PLAYER_COLORS_CSS[i]}`,
+                      borderRadius: 12,
+                      padding: '10px 16px',
+                      minWidth: 140,
+                      background: ready[i] ? 'rgba(140,230,140,0.08)' : 'transparent',
                     }}
                   >
-                    <div>Act {act}</div>
-                    <div style={{ fontSize: 11, fontWeight: 500, opacity: 0.85 }}>
-                      {['Guttering Meadows', 'Sogbottom Marsh', 'The Frosted Wick', 'The Snuffed Palace'][act - 1]}
-                    </div>
-                    {!open && <div style={{ fontSize: 11 }}>🔒 needs {act - 1} emberkey{act > 2 ? 's' : ''}</div>}
+                    <div style={{ color: PLAYER_COLORS_CSS[i], fontWeight: 800, fontSize: 13 }}>P{i + 1}</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, margin: '2px 0' }}>{cls?.name ?? 'Hero'}</div>
+                    <div style={{ fontSize: 10.5, opacity: 0.75, minHeight: 28 }}>{cls?.blurb}</div>
+                    <button
+                      onClick={() => toggleReady(i)}
+                      data-ready={i}
+                      style={{
+                        ...cardBtnStyle(!!ready[i]),
+                        padding: '5px 14px',
+                        fontSize: 13,
+                        marginTop: 6,
+                        borderColor: ready[i] ? '#8ce68c' : undefined,
+                      }}
+                    >
+                      {ready[i] ? '✓ Ready' : 'Ready up'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Shared class grid: clicks assign to the first un-ready seat; pads use their stick */}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 640, margin: '0 auto' }}>
+              {unlockedClasses.map((c, ci) => {
+                const pickedBy = sel
+                  .slice(0, playerCount)
+                  .map((s, i) => (Math.min(s, unlockedClasses.length - 1) === ci ? i : -1))
+                  .filter((i) => i >= 0);
+                return (
+                  <button
+                    key={c.id}
+                    data-class-pick={c.id}
+                    title={c.blurb}
+                    onClick={() =>
+                      setSel((prev) => {
+                        const seat = ready.slice(0, playerCount).findIndex((r) => !r);
+                        if (seat < 0) return prev;
+                        const next = [...prev];
+                        next[seat] = ci;
+                        return next;
+                      })
+                    }
+                    style={{
+                      ...cardBtnStyle(pickedBy.length > 0),
+                      padding: '6px 10px',
+                      fontSize: 12.5,
+                      borderColor: pickedBy.length > 0 ? PLAYER_COLORS_CSS[pickedBy[0]!] : undefined,
+                    }}
+                  >
+                    {c.name}
+                    {pickedBy.length > 0 && (
+                      <span style={{ fontSize: 10, marginLeft: 4 }}>
+                        {pickedBy.map((i) => `P${i + 1}`).join(' ')}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
-            <button
-              onClick={start}
-              data-action="set-out"
-              style={{ ...cardBtnStyle(true), marginTop: 12, fontSize: 16, padding: '10px 30px' }}
+            <p style={{ fontSize: 11.5, opacity: 0.65, margin: '6px 0 10px' }}>
+              stick/arrows browse · A / Enter to ready up (again to cancel) · everyone ready → 3-2-1
+            </p>
+            {countdown !== null && countdown > 0 && (
+              <div data-countdown style={{ fontSize: 34, fontWeight: 800, color: '#8ce68c', margin: '4px 0' }}>
+                Setting out in {countdown}…
+              </div>
+            )}
+
+            <div
+              data-objective
+              style={{
+                border: `2px solid ${COLORS.panelBorder}`,
+                borderRadius: 12,
+                padding: '10px 18px',
+                margin: '6px auto',
+                maxWidth: 420,
+                fontSize: 14,
+              }}
             >
-              Set out ▶ (A / Enter)
-            </button>
+              {nextObjectiveAct !== null ? (
+                <>
+                  🎯 <b>Next objective:</b> relight the Act {nextObjectiveAct} beacon —{' '}
+                  <i>{['Guttering Meadows', 'Sogbottom Marsh', 'The Frosted Wick', 'The Snuffed Palace'][nextObjectiveAct - 1]}</i>
+                  <div style={{ fontSize: 11.5, opacity: 0.7, marginTop: 2 }}>
+                    Every run starts at wave 1 and presses through each act in turn — the upgrades
+                    along the way are the whole point.
+                  </div>
+                </>
+              ) : (
+                <>
+                  🌒 <b>All four beacons burn.</b> The endless dark awaits past wave 40.
+                </>
+              )}
+            </div>
+
             <p style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>
               {connectedPads() > 0
                 ? `${Math.min(4, connectedPads())} controller(s) connected — the whole couch sets out together.`
@@ -264,7 +349,13 @@ export function TownScreen({
                         : cls?.blurb}
                     </div>
                     {undiscovered ? (
-                      <div style={{ fontSize: 12, opacity: 0.7 }}>🔒 not yet met</div>
+                      <button
+                        onClick={() => setUnlockInfo(c.id)}
+                        data-unlock-info={c.id}
+                        style={{ background: 'transparent', border: 'none', color: '#b88ae0', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', padding: 0 }}
+                      >
+                        🔒 not yet met — how?
+                      </button>
                     ) : owned ? (
                       <div style={{ fontSize: 12, color: COLORS.gold }}>trained ✓</div>
                     ) : (
@@ -279,11 +370,54 @@ export function TownScreen({
                         ✨ {c.price}
                       </button>
                     )}
+                    {!owned && cls?.unlock.type === 'deed' && (
+                      <button
+                        onClick={() => setUnlockInfo(c.id)}
+                        data-unlock-info={c.id}
+                        style={{ background: 'transparent', border: 'none', color: '#b88ae0', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline', padding: 0, display: 'block', marginTop: 2 }}
+                      >
+                        or earn it free — how?
+                      </button>
+                    )}
                   </div>
                 );
               })}
             </div>
             <p style={{ fontSize: 11, opacity: 0.6, marginTop: 8 }}>Deeds unlock these too — the Codex shows how.</p>
+            {unlockInfo && (() => {
+              const cls = registry.classes.get(unlockInfo);
+              const discovery = [...registry.discoveries.values()].find((d) => d.classId === unlockInfo);
+              const deed = cls?.unlock.type === 'deed' ? registry.deeds.get(cls.unlock.deedId) : null;
+              const progress = deed ? (profile.deedProgress[deed.id] ?? 0) : 0;
+              return (
+                <div
+                  data-unlock-popup
+                  onClick={() => setUnlockInfo(null)}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(20,14,34,0.8)', display: 'grid', placeItems: 'center', zIndex: 50 }}
+                >
+                  <div style={{ ...panelStyle, maxWidth: 380, padding: '18px 24px', textAlign: 'left' }}>
+                    <h3 style={{ margin: '0 0 8px', color: COLORS.gold }}>How to unlock {cls?.name ?? unlockInfo}</h3>
+                    {discovery && !profile.discoveries.includes(discovery.id) && (
+                      <p style={{ fontSize: 13 }}>
+                        🕊️ <b>Rescue someone first.</b> Rumor places a caged soul somewhere in{' '}
+                        <b>Act {discovery.act}</b>, on the middle waves. Stand close and hold interact to
+                        free them — then Flick will happily take your glimmers.
+                      </p>
+                    )}
+                    {deed && (
+                      <p style={{ fontSize: 13 }}>
+                        📜 <b>{deed.desc}</b>
+                        {deed.hint && <><br /><i style={{ opacity: 0.8 }}>{deed.hint}</i></>}
+                        <br />
+                        <span style={{ opacity: 0.8 }}>Progress: {Math.min(progress, deed.target)} / {deed.target}</span>
+                      </p>
+                    )}
+                    {!deed && !discovery && <p style={{ fontSize: 13 }}>Sold for glimmers right here — no deed required.</p>}
+                    <p style={{ fontSize: 11, opacity: 0.6 }}>(click anywhere to close)</p>
+                  </div>
+                </div>
+              );
+            })()}
             <button onClick={() => setView('square')} style={miniLink} data-action="back-to-town">
               ← back to the square
             </button>

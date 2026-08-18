@@ -105,6 +105,6 @@ describe('weapon management', () => {
     sim.replaceWeapon(0, 0, 'candlestick'); // shortsword (+3 melee) → candlestick (+2 fire)
     expect(p.weapons[0]!.itemId).toBe('candlestick');
     expect(p.stats.meleeDamage ?? 0).toBeLessThan(before);
-    expect(p.stats.fireDamage ?? 0).toBeGreaterThan(0);
+    expect(p.stats.magicDamage ?? 0).toBeGreaterThan(0); // candlestick grants generic magic now
   });
 });

@@ -115,8 +115,9 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
               <button
                 key={w.slot}
                 onClick={() => engine.equipReplace(pi, w.slot)}
+                disabled={!w.replaceable}
                 data-replace-slot={`${pi}-${w.slot}`}
-                style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f', ...focusStyle(i) }}
+                style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f', opacity: w.replaceable ? 1 : 0.35, ...focusStyle(i) }}
               >
                 <div style={{ fontWeight: 800, fontSize: 13 }}>{w.name}</div>
                 <div style={{ fontSize: 10, opacity: 0.85 }}>{w.desc}</div>
@@ -161,8 +162,9 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 <button
                   key={w.slot}
                   onClick={() => engine.equipReplace(pi, w.slot)}
+                  disabled={!w.replaceable}
                   data-replace-slot={`${pi}-${w.slot}`}
-                  style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f', ...focusStyle(i) }}
+                  style={{ ...cardBtn, border: '2px solid #e8a020', background: '#57302f', opacity: w.replaceable ? 1 : 0.35, ...focusStyle(i) }}
                 >
                   <div style={{ fontWeight: 800, fontSize: 13 }}>{w.name}</div>
                   <div style={{ fontSize: 10, opacity: 0.85 }}>{w.desc}</div>
@@ -286,18 +288,34 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
             Choose a boon{panel.pendingBoons > 1 ? ` (${panel.pendingBoons} left)` : ''}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {panel.boonChoices.map((c, i) => (
-              <button
-                key={c.id}
-                onClick={() => engine.chooseBoon(pi, c.id)}
-                data-boon={`${pi}-${c.id}`}
-                style={{ ...cardBtn, ...focusStyle(i) }}
-              >
-                <div style={{ fontWeight: 800, fontSize: 13 }}>{c.name}</div>
-                <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>{c.desc}</div>
-                {pi === 0 && <div style={{ fontSize: 9, opacity: 0.5, marginTop: 4 }}>[{i + 1}]</div>}
-              </button>
-            ))}
+            {panel.boonChoices.map((c, i) => {
+              const TIER_COLORS = ['#f5f0ff', '#4da6ff', '#ffd93b', '#6fe26f', '#ff5c5c'];
+              const tierColor = TIER_COLORS[Math.min(4, c.tier - 1)]!;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => engine.chooseBoon(pi, c.id)}
+                  data-boon={`${pi}-${c.id}`}
+                  data-boon-tier={c.tier}
+                  style={{
+                    ...cardBtn,
+                    border: `2px solid ${tierColor}`,
+                    boxShadow: c.tier > 1 ? `0 0 ${4 + c.tier * 3}px ${tierColor}66` : undefined,
+                    ...focusStyle(i),
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 13, color: c.tier > 1 ? tierColor : undefined }}>
+                    {c.name}
+                    {c.tier > 1 && <span style={{ marginLeft: 5, fontSize: 11 }}>×{c.tier}</span>}
+                  </div>
+                  <div style={{ fontSize: 10, opacity: 0.9, marginTop: 4 }}>
+                    {c.desc}
+                    {c.tier > 1 && <span style={{ color: tierColor }}> (all values ×{c.tier})</span>}
+                  </div>
+                  {pi === 0 && <div style={{ fontSize: 9, opacity: 0.5, marginTop: 4 }}>[{i + 1}]</div>}
+                </button>
+              );
+            })}
           </div>
         </>
       ) : panel.peddler ? (
@@ -437,6 +455,26 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
   );
 }
 
+function CeremonyBanner({ act }: { act: number }) {
+  return (
+    <div data-ceremony style={{ textAlign: 'center', marginBottom: 8 }}>
+      <style>{`
+        @keyframes keystone-rise { 0% { transform: translateY(24px) scale(0.6); opacity: 0; }
+          60% { transform: translateY(-6px) scale(1.15); opacity: 1; }
+          100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes keystone-glow { 0%,100% { text-shadow: 0 0 12px #ffd97a88; }
+          50% { text-shadow: 0 0 34px #ffd97aee, 0 0 60px #ffb34766; } }
+      `}</style>
+      <div style={{ fontSize: 44, animation: 'keystone-rise 1.1s ease-out, keystone-glow 2.2s ease-in-out infinite', display: 'inline-block' }}>
+        🔑
+      </div>
+      <div style={{ color: '#ffd97a', fontWeight: 800, letterSpacing: 1, fontSize: 13 }}>
+        A NEW EMBERKEY JOINS THE PILLAR — ACT {act} RELIT
+      </div>
+    </div>
+  );
+}
+
 export function IntermissionOverlay({ data, engine }: { data: IntermissionData; engine: Engine }) {
   // When everyone is done, any pad's A (or Enter) advances the wave.
   useMenuNav({
@@ -486,6 +524,7 @@ export function IntermissionOverlay({ data, engine }: { data: IntermissionData; 
           boxShadow: '0 8px 40px #0008',
         }}
       >
+        {data.ceremony !== null && <CeremonyBanner act={data.ceremony} />}
         <h2 style={{ margin: '0 0 8px', color: '#ffd97a' }}>
           Wave {data.wave} cleared! ✨ <span style={{ fontSize: 14, opacity: 0.8 }}>💰 {data.gold}</span>
         </h2>
@@ -511,7 +550,11 @@ export function IntermissionOverlay({ data, engine }: { data: IntermissionData; 
             fontFamily: 'inherit',
           }}
         >
-          {data.lastWaveOfAct ? 'Finish' : data.allDone ? 'Next wave ▶' : 'Waiting for picks…'}
+          {!data.allDone
+            ? 'Waiting for picks…'
+            : data.lastWaveOfAct
+              ? 'Onward to the next act ▶'
+              : 'Next wave ▶'}
         </button>
       </div>
     </div>

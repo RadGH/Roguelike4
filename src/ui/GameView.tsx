@@ -20,6 +20,7 @@ export function GameView({
   playerCount,
   slot,
   startAct,
+  resume,
   classIds,
   onExit,
 }: {
@@ -27,6 +28,7 @@ export function GameView({
   playerCount: number;
   slot: number;
   startAct: number;
+  resume?: boolean;
   classIds: string[];
   onExit: () => void;
 }) {
@@ -38,7 +40,7 @@ export function GameView({
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
-    const engine = new Engine(seed, playerCount, window.localStorage, { slot, startAct, classIds });
+    const engine = new Engine(seed, playerCount, window.localStorage, { slot, startAct, classIds, resume });
     engineRef.current = engine;
     let disposed = false;
     void engine.mount(el).catch((err) => {

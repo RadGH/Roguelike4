@@ -9,13 +9,14 @@ test('full menu flow: title → slots → town → bellhop → arena', async ({ 
   await expect(page.locator('[data-screen="town"]')).toBeVisible();
   await expect(page.locator('text=Wickburrow')).toBeVisible();
   await page.locator('[data-npc="bellhop"]').click();
-  await expect(page.locator('[data-start-act="1"]')).toBeVisible();
-  // Acts 2-4 locked on a fresh slot; only Hero on a fresh save
-  await expect(page.locator('[data-start-act="2"]')).toBeDisabled();
-  await expect(page.locator('[data-class-pick="0-hero"]')).toBeVisible();
-  await page.locator('[data-start-act="1"]').click();
-  await page.locator('[data-action="set-out"]').click();
-  await expect(page.locator('[data-screen="arena"] canvas')).toBeVisible();
+  // Objective banner replaces act selection; runs always start at wave 1
+  await expect(page.locator('[data-objective]')).toBeVisible();
+  await expect(page.locator('[data-objective]')).toContainText('Act 1');
+  await expect(page.locator('[data-class-pick="hero"]')).toBeVisible();
+  // Ready up → 3-2-1 countdown → arena
+  await page.locator('[data-ready="0"]').click();
+  await expect(page.locator('[data-countdown]')).toBeVisible();
+  await expect(page.locator('[data-screen="arena"] canvas')).toBeVisible({ timeout: 8000 });
 });
 
 test('codex shows deeds with hints and locked weapons as mysteries', async ({ page }) => {

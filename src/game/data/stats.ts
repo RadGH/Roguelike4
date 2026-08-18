@@ -6,12 +6,13 @@ export const STAT_IDS = [
   // pools & sustain
   'maxHp',
   'hpRegen',
-  'lifestealPhys',
-  'lifestealMagic',
+  'lifesteal', // fraction of ALL damage you cause returned as healing
+
   // damage stats (weapons scale off these)
   'meleeDamage',
   'rangedDamage',
   'petDamage',
+  'magicDamage', // scales every magic school; school stats stack on top
   'fireDamage',
   'lightningDamage',
   'iceDamage',
@@ -42,6 +43,7 @@ export const STAT_IDS = [
   'pickupRadius',
   'goldGain',
   'xpGain',
+  'luck', // better tier and quality rolls; some items scale gently off it
 ] as const;
 
 export type StatId = (typeof STAT_IDS)[number];
@@ -71,6 +73,9 @@ export const DAMAGE_STAT: Record<DamageType, StatId> = {
   arcane: 'arcaneDamage',
   void: 'voidDamage',
 };
+
+/** Magic schools: these scale from magicDamage + their own school stat. */
+export const MAGIC_TYPES: readonly DamageType[] = ['fire', 'lightning', 'ice', 'poison', 'arcane', 'void'];
 
 export const RESIST_STAT: Partial<Record<DamageType, StatId>> = {
   fire: 'resistFire',

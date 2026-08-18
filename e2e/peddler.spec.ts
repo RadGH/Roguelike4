@@ -31,17 +31,22 @@ async function clearWave(page: import('@playwright/test').Page): Promise<void> {
   await page.evaluate(() => {
     window.__debug.cheat('stopSpawns');
     window.__debug.cheat('killAll');
-    window.__debug.step(5);
+    window.__debug.step(240); // wave-end vacuum gathers leftovers before 'cleared'
     window.__debug.resume();
   });
   await expect(page.locator('[data-screen="intermission"]')).toBeVisible();
 }
 
-/** Resolve any pending boon picks so the panel reaches its done state. */
+/** Resolve every pending pick (chests, feats, boons) so the panel reaches done. */
 async function resolveBoons(page: import('@playwright/test').Page): Promise<void> {
-  const boonButtons = page.locator('[data-boon]');
-  while ((await boonButtons.count()) > 0) {
-    await boonButtons.first().click();
+  for (let i = 0; i < 20; i++) {
+    const salvage = page.locator('[data-action="salvage-0"]');
+    const feat = page.locator('[data-feat]');
+    const boon = page.locator('[data-boon]');
+    if ((await salvage.count()) > 0) await salvage.click();
+    else if ((await feat.count()) > 0) await feat.first().click();
+    else if ((await boon.count()) > 0) await boon.first().click();
+    else break;
     await page.waitForTimeout(250);
   }
 }

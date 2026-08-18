@@ -154,9 +154,9 @@ footer a { color: var(--gold); }
 
 function classesPage(): string {
   let body = `<h1>Classes</h1>
-<p>Every class carries a different pair of hands and a different bad idea. Hand points limit
-what you can hold: most one-handed items cost 1 point, hefty ones cost 2. Some classes refuse
-whole categories of gear — that refusal is usually where their power hides.</p>`;
+<p>Every class carries a different number of weapon slots and a different bad idea. Every
+weapon takes exactly one slot. Some classes refuse whole categories of gear — that refusal
+is usually where their power hides.</p>`;
   for (const c of reg.classes.values()) {
     const mods = (c.statMods ?? []).map(grantLine).filter(Boolean).join(' · ');
     const weapons = (c.startingWeapons ?? []).map(titleCase).join(', ') || 'None (yes, really)';
@@ -169,7 +169,7 @@ whole categories of gear — that refusal is usually where their power hides.</p
     body += `<div class="card">
 <h3>${esc(c.name)}</h3>
 <p class="blurb">${esc(c.blurb ?? '')}</p>
-<p class="statline"><b>Hands:</b> ${c.handPoints} point${c.handPoints === 1 ? '' : 's'} · <b>Starts with:</b> ${esc(weapons)}${pets ? ` · <b>Companion:</b> ${esc(pets)}` : ''}</p>
+<p class="statline"><b>Slots:</b> ${c.handPoints} · <b>Starts with:</b> ${esc(weapons)}${pets ? ` · <b>Companion:</b> ${esc(pets)}` : ''}</p>
 ${mods ? `<p class="statline"><b>Talents:</b> ${esc(mods)}</p>` : ''}
 ${deny ? `<p class="statline">${deny}</p>` : ''}
 ${c.mechanic ? `<p class="statline"><b>Signature:</b> ${esc(mechanicText(c.mechanic))}</p>` : ''}
@@ -207,7 +207,7 @@ function weaponsPage(): string {
 Superb → Masterwork) scale them, and rare variants do stranger things — see the
 <a href="index.html#variants">variants note</a>.</p>
 <div class="wrap"><table>
-<tr><th>Weapon</th><th>Hands</th><th>Kind</th><th>Damage</th><th>Delivery</th><th>Bonus</th></tr>`;
+<tr><th>Weapon</th><th>Kind</th><th>Damage</th><th>Delivery</th><th>Bonus</th></tr>`;
   for (const w of reg.weapons.values()) {
     const d = w.delivery;
     const dmg =
@@ -221,7 +221,7 @@ Superb → Masterwork) scale them, and rare variants do stranger things — see 
           ? `melee arc, reach ${d.reach}, every ${d.cooldown}s`
           : `${d.count && d.count > 1 ? `${d.count} projectiles` : 'projectile'}, range ${d.range}, every ${d.cooldown}s${d.blastRadius ? `, blast ${d.blastRadius}` : ''}`;
     const bonus = (w.grants ?? []).map(grantLine).join('; ');
-    body += `<tr><td>${esc(titleCase(w.id))}</td><td>${w.hands}</td><td>${w.kind}</td><td>${esc(dmg)}</td><td>${esc(delivery)}</td><td>${esc(bonus)}</td></tr>`;
+    body += `<tr><td>${esc(titleCase(w.id))}</td><td>${w.kind}</td><td>${esc(dmg)}</td><td>${esc(delivery)}</td><td>${esc(bonus)}</td></tr>`;
   }
   body += `</table></div>
 <p>Several weapons are earned by <a href="deeds.html">deeds</a> — the game will tell you when

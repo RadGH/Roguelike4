@@ -139,7 +139,7 @@ export function botInput(sim: Sim, playerIndex: number, policy: BotPolicy): Inpu
   // kiting stalls out the clock, and sustain makes the contact survivable
   const aliveCount = sim.state.enemies.reduce((n, e) => n + (e.alive ? 1 : 0), 0);
   const sustain =
-    stat(p.stats, 'lifestealPhys') > 0 || stat(p.stats, 'lifestealMagic') > 0;
+    stat(p.stats, 'lifesteal') > 0;
   // ...and never "finish" a miniboss/elite: heavy hitters get kited, not hugged
   const nearestE = sim.nearestEnemy(p.x, p.y, 100);
   const hpFrac = p.hp / Math.max(1, stat(p.stats, 'maxHp'));
@@ -318,22 +318,22 @@ export function resolveRewards(sim: Sim): void {
     }
     guard = 0;
     while (p.pendingBoons > 0 && guard++ < 50) {
-      const choices = sim.rollBoonChoices(4);
+      const choices = sim.rollBoonChoices(4, stat(p.stats, 'luck'));
       // Humans buy survivability as the waves deepen: keep maxHp ≈ 10 + 2.2×wave,
       // then push damage. Defense (armor/regen/dodge) counts toward "survival".
       const wantSurvival = (stat(p.stats, 'maxHp') || 10) < 10 + sim.state.wave * 2.2;
-      const survivalPick = choices.find((id) => {
-        const b = sim.registry.boons.get(id)!;
+      const survivalPick = choices.find((c) => {
+        const b = sim.registry.boons.get(c.id)!;
         return b.grants.some((g) =>
           ['maxHp', 'armor', 'hpRegen', 'dodge', 'flatReduction', 'resistAll'].includes(g.stat),
         );
       });
-      const damagePick = choices.find((id) => {
-        const b = sim.registry.boons.get(id)!;
+      const damagePick = choices.find((c) => {
+        const b = sim.registry.boons.get(c.id)!;
         return b.grants.some((g) => (stat(p.stats, g.stat) ?? 0) > 0 && g.stat.includes('Damage'));
       });
       const pick = (wantSurvival ? (survivalPick ?? damagePick) : (damagePick ?? survivalPick)) ?? choices[0]!;
-      sim.applyBoon(p.index, pick);
+      sim.applyBoon(p.index, pick.id, pick.tier);
     }
   }
 }
