@@ -36,8 +36,8 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
         for (const w of panel.chest.currentWeapons) out.push(() => engine.equipReplace(pi, w.slot));
         out.push(() => engine.cancelEquip(pi));
       } else {
-        for (const c of panel.chest.choices) out.push(() => engine.chooseChestWeapon(pi, c.id));
-        out.push(() => engine.salvageChest(pi));
+        for (const c of panel.chest.choices) out.push(() => engine.chooseChestOffer(pi, c.idx));
+        out.push(() => engine.salvageForBits(pi));
       }
     } else if (panel.boonChoices) {
       for (const c of panel.boonChoices) out.push(() => engine.chooseBoon(pi, c.id));
@@ -170,8 +170,8 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
               {panel.chest.choices.map((c, i) => (
                 <button
-                  key={c.id}
-                  onClick={() => engine.chooseChestWeapon(pi, c.id)}
+                  key={c.idx}
+                  onClick={() => engine.chooseChestOffer(pi, c.idx)}
                   data-chest-weapon={`${pi}-${c.id}`}
                   style={{
                     ...cardBtn,
@@ -187,7 +187,7 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 </button>
               ))}
               <button
-                onClick={() => engine.salvageChest(pi)}
+                onClick={() => engine.salvageForBits(pi)}
                 data-action={`salvage-${pi}`}
                 style={{
                   ...cardBtn,
@@ -198,7 +198,7 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
                 }}
               >
                 Salvage
-                <div style={{ fontSize: 10, opacity: 0.8 }}>+15 gold</div>
+                <div style={{ fontSize: 10, opacity: 0.8 }}>+2 bits 🔩</div>
               </button>
             </div>
           </>
@@ -225,6 +225,36 @@ function PlayerPanel({ panel, engine, solo }: { panel: Panel; engine: Engine; so
         </>
       ) : (
         <div style={{ fontSize: 13, opacity: 0.8, textAlign: 'center', padding: '8px 0' }}>ready ✓</div>
+      )}
+      {panel.done && panel.tinker.some((t) => t.next) && (
+        <div style={{ marginTop: 8, fontSize: 12 }}>
+          <div style={{ fontWeight: 700, opacity: 0.9 }}>🔩 {panel.bits} bits — tinker?</div>
+          {panel.tinker.map(
+            (t) =>
+              t.next && (
+                <div key={t.slot} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
+                  <span style={{ opacity: 0.9 }}>{t.name}</span>
+                  <button
+                    onClick={() => engine.tinker(pi, t.slot)}
+                    disabled={!t.affordable}
+                    data-tinker={`${pi}-${t.slot}`}
+                    style={{
+                      background: t.affordable ? '#3b2f57' : 'transparent',
+                      color: t.affordable ? '#ffd97a' : '#666',
+                      border: `1px solid ${t.affordable ? '#ffd97a' : '#555'}`,
+                      borderRadius: 6,
+                      padding: '2px 8px',
+                      cursor: t.affordable ? 'pointer' : 'default',
+                      fontFamily: 'inherit',
+                      fontSize: 11,
+                    }}
+                  >
+                    → {t.next} ({t.cost} 🔩)
+                  </button>
+                </div>
+              ),
+          )}
+        </div>
       )}
       <button
         onClick={() => setShowMeters(!showMeters)}

@@ -122,7 +122,7 @@ describe('unlock gating in the sim', () => {
   it('firecracker blasts share one hitId across every enemy hit', () => {
     const sim = new Sim(9, 1);
     const p = sim.state.players[0]!;
-    p.weapons = [{ itemId: 'firecracker', cooldownLeft: 0 }];
+    p.weapons = [{ itemId: 'firecracker', cooldownLeft: 0, quality: 'standard', variant: null, holo: false, seedTag: 0 }];
     // A tight cluster in range
     for (let i = 0; i < 5; i++) sim.spawnEnemy('snuffling', p.x + 5, p.y + (i - 2) * 0.5);
     for (let t = 0; t < TICK_RATE * 4; t++) sim.tick([neutralInput()]);

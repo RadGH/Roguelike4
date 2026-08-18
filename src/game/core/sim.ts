@@ -33,9 +33,24 @@ import {
   minWave,
   type Registry,
 } from '../data/registry';
-import type { ClassDef, EnemyDef, TriggerDef, WeaponDef } from '../data/schemas';
+import type { ClassDef, EnemyDef, TriggerDef } from '../data/schemas';
+import {
+  nextQuality,
+  resolveWeapon,
+  rustyInstance,
+  standardInstance,
+  TINKER_COST,
+  type Quality,
+  type ResolvedWeapon,
+  type VariantKind,
+  type WeaponInstance,
+} from './items';
 
-export type WeaponSlot = { itemId: string; cooldownLeft: number };
+export type WeaponSlot = WeaponInstance & { cooldownLeft: number };
+
+export type ChestOffer =
+  | { kind: 'weapon'; inst: WeaponInstance }
+  | { kind: 'passive'; id: string };
 
 export type PlayerState = {
   index: number;
@@ -53,6 +68,7 @@ export type PlayerState = {
   passives: string[];
   usedSecondWick: boolean; // once-per-run fatal save spent
   coinCharge: number; // coin-operated-blade: bonus damage fraction on next hit
+  bits: number; // salvage material — spent on Tinkering quality upgrades
   gold: number;
   xp: number;
   xpIntoLevel: number;
@@ -140,6 +156,7 @@ export type ProjectileState = {
   isChild: boolean; // split children can't split again
   bouncesLeft: number; // bouncy-castle-writ: wall reflections
   damageScale: number; // child projectiles hit softer
+  resolved: import('./items').ResolvedWeapon | null; // quality/variant-resolved profile
   hitIds: Set<number>;
 };
 
@@ -236,6 +253,7 @@ export class Sim {
         blastRadius: 0,
         poolRadius: 0, poolDps: 0, poolDuration: 0,
         splitOnHit: false, isChild: false, bouncesLeft: 0, damageScale: 1,
+        resolved: null,
         hitIds: new Set(),
       });
     }
@@ -275,8 +293,12 @@ export class Sim {
   private createPlayer(i: number, playerCount: number, arena: Arena, classId = 'hero'): PlayerState {
     const bal = this.registry.balance;
     const cls = this.classDef(classId);
-    const weapons: WeaponSlot[] = cls.startingWeapons.map((id) => ({ itemId: id, cooldownLeft: 0 }));
-    const grantSets = [cls.statMods, ...weapons.map((w) => getWeapon(this.registry, w.itemId).grants)];
+    // Starting kit is Rusty quality — the town's "starting weapon" upgrade shines later
+    const weapons: WeaponSlot[] = cls.startingWeapons.map((id) => ({
+      ...rustyInstance(id),
+      cooldownLeft: 0,
+    }));
+    const grantSets = [cls.statMods, ...weapons.map((w) => resolveWeapon(this.registry, w).grants)];
     const stats = buildStats(bal.player.baseStats as StatSheet, grantSets);
     return {
       index: i,
@@ -286,6 +308,7 @@ export class Sim {
       passives: [],
       usedSecondWick: false,
       coinCharge: 0,
+      bits: 0,
       x: arena.width / 2 + (i - (playerCount - 1) / 2) * 2,
       y: arena.height / 2,
       facing: 0,
@@ -373,7 +396,7 @@ export class Sim {
     const prevMax = stat(p.stats, 'maxHp');
     const grantSets = [
       cls.statMods,
-      ...p.weapons.map((w) => getWeapon(this.registry, w.itemId).grants),
+      ...p.weapons.map((w) => resolveWeapon(this.registry, w).grants),
       ...p.passives.map((id) => this.registry.passives.get(id)?.grants ?? []),
       ...p.boonIds.map((id) => {
         const b = this.registry.boons.get(id);
@@ -602,16 +625,58 @@ export class Sim {
     return this.classDef(p.classId).handPoints;
   }
 
-  /** Equip into a free slot if hand points allow. Returns success. */
-  equipWeapon(playerIndex: number, weaponId: string): boolean {
+  /** Equip an instance (or bare id → standard quality) if hand points allow. */
+  equipWeapon(playerIndex: number, weapon: string | WeaponInstance): boolean {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
-    if (!this.classCanUse(p.classId, weaponId)) return false;
-    const cost = getWeapon(this.registry, weaponId).hands;
+    const inst = typeof weapon === 'string' ? standardInstance(weapon) : weapon;
+    if (!this.classCanUse(p.classId, inst.itemId)) return false;
+    const cost = getWeapon(this.registry, inst.itemId).hands;
     if (this.handPointsUsed(p) + cost > this.handPointsMax(p)) return false;
-    p.weapons.push({ itemId: weaponId, cooldownLeft: 0 });
+    p.weapons.push({ ...inst, cooldownLeft: 0 });
     this.recomputeStats(p);
     return true;
+  }
+
+  /** Spend Bits to raise one equipped weapon's quality a tier. Returns success. */
+  tinker(playerIndex: number, slotIndex: number): boolean {
+    const p = this.state.players[playerIndex];
+    if (!p) throw new Error(`No player ${playerIndex}`);
+    const slot = p.weapons[slotIndex];
+    if (!slot) return false;
+    const next = nextQuality(slot.quality);
+    const cost = TINKER_COST[slot.quality];
+    if (!next || !Number.isFinite(cost) || p.bits < cost) return false;
+    p.bits -= cost;
+    slot.quality = next;
+    this.recomputeStats(p);
+    return true;
+  }
+
+  /** Drop-time rolls: quality odds improve with the wave; variants are rare spice. */
+  rollWeaponInstance(itemId: string): WeaponInstance {
+    const wave = this.state.wave;
+    const weights: [Quality, number][] = [
+      ['rusty', Math.max(0, 12 - wave)],
+      ['standard', 50],
+      ['fine', 12 + wave * 0.8],
+      ['superb', 4 + wave * 0.5],
+      ['masterwork', 1 + wave * 0.25],
+    ];
+    const total = weights.reduce((a, [, w]) => a + w, 0);
+    let roll = this.rng.variants.next() * total;
+    let quality: Quality = 'standard';
+    for (const [q, w] of weights) {
+      roll -= w;
+      if (roll <= 0) {
+        quality = q;
+        break;
+      }
+    }
+    const v = this.rng.variants.next();
+    const variant: VariantKind = v < 0.03 ? 'corrupted' : v < 0.07 ? 'cursed' : v < 0.09 ? 'relic' : null;
+    const holo = this.rng.variants.chance(0.015);
+    return { itemId, quality, variant, holo, seedTag: this.rng.variants.int(0, 1_000_000) };
   }
 
   private isPassiveAvailable(id: string): boolean {
@@ -620,8 +685,8 @@ export class Sim {
     return !def.unlockDeed || this.unlockedItems.has(id);
   }
 
-  /** Chest pool: weapons AND passives, filtered per owner (class + unlocks + owned). */
-  rollChestChoices(playerIndex: number, count = 3): string[] {
+  /** Chest pool: weapon instances AND passives, filtered per owner. */
+  rollChestChoices(playerIndex: number, count = 3): ChestOffer[] {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
     const held = new Set(p.weapons.map((w) => w.itemId));
@@ -633,11 +698,16 @@ export class Sim {
         (id) => !p.passives.includes(id) && this.isPassiveAvailable(id),
       ),
     ];
-    const out: string[] = [];
+    const out: ChestOffer[] = [];
     for (let i = 0; i < count && pool.length > 0; i++) {
       const idx = this.rng.drops.int(0, pool.length - 1);
-      out.push(pool[idx]!);
+      const id = pool[idx]!;
       pool.splice(idx, 1);
+      out.push(
+        this.registry.passives.has(id)
+          ? { kind: 'passive', id }
+          : { kind: 'weapon', inst: this.rollWeaponInstance(id) },
+      );
     }
     return out;
   }
@@ -659,16 +729,17 @@ export class Sim {
     return out;
   }
 
-  replaceWeapon(playerIndex: number, slotIndex: number, weaponId: string): void {
+  replaceWeapon(playerIndex: number, slotIndex: number, weapon: string | WeaponInstance): void {
     const p = this.state.players[playerIndex];
     if (!p) throw new Error(`No player ${playerIndex}`);
-    if (!this.registry.weapons.has(weaponId)) throw new Error(`Unknown weapon "${weaponId}"`);
+    const inst = typeof weapon === 'string' ? standardInstance(weapon) : weapon;
+    if (!this.registry.weapons.has(inst.itemId)) throw new Error(`Unknown weapon "${inst.itemId}"`);
     if (slotIndex < 0 || slotIndex >= p.weapons.length) throw new Error(`Bad slot ${slotIndex}`);
     // Capacity must still fit after the swap (e.g. 1H → 2H on a full loadout)
-    const newCost = getWeapon(this.registry, weaponId).hands;
+    const newCost = getWeapon(this.registry, inst.itemId).hands;
     const oldCost = getWeapon(this.registry, p.weapons[slotIndex]!.itemId).hands;
     if (this.handPointsUsed(p) - oldCost + newCost > this.handPointsMax(p)) return;
-    p.weapons[slotIndex] = { itemId: weaponId, cooldownLeft: 0 };
+    p.weapons[slotIndex] = { ...inst, cooldownLeft: 0 };
     this.recomputeStats(p);
   }
 
@@ -845,7 +916,7 @@ export class Sim {
     for (const slot of p.weapons) {
       if (slot.cooldownLeft > 0) slot.cooldownLeft = Math.max(0, slot.cooldownLeft - dt);
       if (slot.cooldownLeft > 0) continue;
-      const weapon = getWeapon(this.registry, slot.itemId);
+      const weapon = resolveWeapon(this.registry, slot);
       let dir: number | null = null;
       if (aiming) dir = Math.atan2(input.aimY, input.aimX);
       else {
@@ -859,7 +930,7 @@ export class Sim {
     }
   }
 
-  private fireWeapon(p: PlayerState, weapon: WeaponDef, dir: number): void {
+  private fireWeapon(p: PlayerState, weapon: ResolvedWeapon, dir: number): void {
     if (weapon.delivery.type === 'meleeArc') {
       const reach = weapon.delivery.reach * (1 + stat(p.stats, 'area'));
       const halfArc = ((weapon.delivery.arcDeg / 2) * Math.PI) / 180;
@@ -908,6 +979,7 @@ export class Sim {
         proj.isChild = false;
         proj.bouncesLeft = this.hasMod(p, 'projectileBounce') ? 2 : 0;
         proj.damageScale = 1;
+        proj.resolved = weapon;
         proj.hitIds.clear();
       }
     }
@@ -917,7 +989,7 @@ export class Sim {
   private weaponHitEnemy(
     enemy: EnemyState,
     p: PlayerState,
-    weapon: WeaponDef,
+    weapon: ResolvedWeapon,
     deliveryTag: SourceChain['deliveryTag'],
     hitId: number,
     damageScale = 1,
@@ -925,9 +997,9 @@ export class Sim {
     const cls = this.classDef(p.classId);
     const attack: AttackProfile = {
       kind: weapon.kind,
-      types: weapon.damage.types,
-      multiplier: weapon.damage.multiplier,
-      flat: weapon.damage.flat,
+      types: weapon.types,
+      multiplier: weapon.multiplier,
+      flat: weapon.flat,
     };
     const source: SourceChain = {
       actor: { kind: 'player', index: p.index },
@@ -955,7 +1027,7 @@ export class Sim {
     }
     const dealt = this.applyDamageToEnemy(enemy, attack, p.stats, source, { forceCrit, damageMult });
     // Storm Anklet: melee hits may arc lightning outward (self-attributing)
-    if (weapon.kind === 'attack' && weapon.damage.types.includes('melee') && dealt > 0) {
+    if (weapon.kind === 'attack' && weapon.types.includes('melee') && dealt > 0) {
       for (const { trigger, itemId } of this.triggersFor(p, 'meleeHit')) {
         if (trigger.action === 'chainLightning' && this.rng.combat.chance(trigger.chance)) {
           this.chainLightning(
@@ -1358,6 +1430,7 @@ export class Sim {
             proj.isChild = false;
             proj.bouncesLeft = 0;
             proj.damageScale = 1;
+            proj.resolved = null;
             proj.hitIds.clear();
           }
         }
@@ -1436,6 +1509,7 @@ export class Sim {
             proj.isChild = false;
             proj.bouncesLeft = 0;
             proj.damageScale = 1;
+            proj.resolved = null;
             proj.hitIds.clear();
           }
         }
@@ -1520,6 +1594,7 @@ export class Sim {
             proj.isChild = false;
             proj.bouncesLeft = 0;
             proj.damageScale = 1;
+            proj.resolved = null;
             proj.hitIds.clear();
           };
           const ring = phase.volleyRing ?? 8;
@@ -1581,6 +1656,7 @@ export class Sim {
             proj.isChild = false;
             proj.bouncesLeft = 0;
             proj.damageScale = 1;
+            proj.resolved = null;
             proj.hitIds.clear();
           }
           b.stage = 'recover';
@@ -1755,7 +1831,7 @@ export class Sim {
           const def = getEnemy(this.registry, enemy.defId);
           if (Math.hypot(enemy.x - pr.x, enemy.y - pr.y) > def.radius + pr.radius) continue;
           const p = this.state.players[pr.fromPlayer]!;
-          const weapon = pr.itemId ? getWeapon(this.registry, pr.itemId) : null;
+          const weapon = pr.resolved;
           if (weapon) {
             if (pr.blastRadius > 0) {
               // Explode: one hitId shared by every enemy in the blast (multikill deeds)
@@ -1800,6 +1876,7 @@ export class Sim {
                   child.isChild = true;
                   child.bouncesLeft = 0;
                   child.damageScale = pr.damageScale * 0.75;
+                  child.resolved = pr.resolved;
                   child.hitIds.clear();
                   child.hitIds.add(c.id); // don't instantly re-hit the same enemy
                 }

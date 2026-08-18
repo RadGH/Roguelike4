@@ -1,7 +1,8 @@
 // The engine shell: owns the Sim, the renderer, the input sampler, and the
 // fixed-timestep accumulator loop. React mounts/unmounts this.
 
-import { Sim } from '@game/core/sim';
+import { Sim, type ChestOffer } from '@game/core/sim';
+import { resolveWeapon, TINKER_COST, nextQuality, type WeaponInstance } from '@game/core/items';
 import { TICK_SECONDS } from '@game/core/constants';
 import { neutralInput, type InputFrame } from '@game/core/input';
 import { DeedEngine } from '@game/core/deeds';
@@ -132,9 +133,24 @@ export class Engine {
 
   private intermissionActive = false;
   private boonChoices = new Map<number, string[]>();
-  private chestChoices = new Map<number, string[]>();
-  private pendingEquip = new Map<number, string>();
+  private chestChoices = new Map<number, ChestOffer[]>();
+  private pendingEquip = new Map<number, WeaponInstance>();
   private classEquipPending = new Set<number>();
+
+  /** Display info for a weapon instance: quality/variant label + effective numbers. */
+  private instanceInfo(inst: WeaponInstance) {
+    const r = resolveWeapon(this.sim.registry, inst);
+    const base = this.weaponInfo(inst.itemId);
+    const effects = r.effects.map((e) => e.kind).join(', ');
+    return {
+      id: inst.itemId,
+      name: `${r.label ? r.label + ' ' : ''}${base.name}`,
+      desc:
+        `${r.hands}H ${r.kind} · ${Math.round(r.multiplier * 100)}% ${r.types.join('/')}` +
+        (effects ? ` · ${effects}` : ''),
+      kind: 'weapon' as const,
+    };
+  }
 
   private weaponInfo(id: string) {
     const name = id
@@ -192,7 +208,13 @@ export class Engine {
       this.refreshIntermissionOffers(playerIndex);
     } else {
       // Hands full — pick something to replace
-      this.pendingEquip.set(playerIndex, weaponId);
+      this.pendingEquip.set(playerIndex, {
+        itemId: weaponId,
+        quality: 'standard',
+        variant: null,
+        holo: false,
+        seedTag: 0,
+      });
       this.classEquipPending.add(playerIndex);
     }
   }
@@ -210,17 +232,31 @@ export class Engine {
     this.classEquipPending.clear();
   }
 
-  chooseChestWeapon(playerIndex: number, itemId: string): void {
-    if (!this.intermissionActive || !this.chestChoices.get(playerIndex)?.includes(itemId)) return;
+  chooseChestOffer(playerIndex: number, offerIndex: number): void {
+    const offer = this.chestChoices.get(playerIndex)?.[offerIndex];
+    if (!this.intermissionActive || !offer) return;
     // Passives always fit; weapons equip straight away when hands are free.
-    if (this.sim.registry.passives.has(itemId)) {
-      this.sim.addPassive(playerIndex, itemId);
+    if (offer.kind === 'passive') {
+      this.sim.addPassive(playerIndex, offer.id);
       this.finishChest(playerIndex);
-    } else if (this.sim.equipWeapon(playerIndex, itemId)) {
+    } else if (this.sim.equipWeapon(playerIndex, offer.inst)) {
       this.finishChest(playerIndex);
     } else {
-      this.pendingEquip.set(playerIndex, itemId);
+      this.pendingEquip.set(playerIndex, offer.inst);
     }
+  }
+
+  /** Salvage the whole chest for Bits (tinkering material). */
+  salvageForBits(playerIndex: number): void {
+    if (!this.intermissionActive || !this.chestChoices.has(playerIndex)) return;
+    const p = this.sim.state.players[playerIndex]!;
+    p.bits += 2;
+    this.finishChest(playerIndex);
+  }
+
+  tinker(playerIndex: number, slotIndex: number): void {
+    if (!this.intermissionActive) return;
+    this.sim.tinker(playerIndex, slotIndex);
   }
 
   cancelEquip(playerIndex: number): void {
@@ -240,12 +276,6 @@ export class Engine {
     } else {
       this.finishChest(playerIndex);
     }
-  }
-
-  salvageChest(playerIndex: number): void {
-    if (!this.intermissionActive || !this.chestChoices.has(playerIndex)) return;
-    for (const other of this.sim.state.players) other.gold += 15; // mirrored, like gold drops
-    this.finishChest(playerIndex);
   }
 
   private finishChest(playerIndex: number): void {
@@ -291,8 +321,8 @@ export class Engine {
               : null,
           classEquip: this.classEquipPending.has(p.index)
             ? {
-                pendingEquip: this.weaponInfo(this.pendingEquip.get(p.index)!),
-                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.weaponInfo(w.itemId) })),
+                pendingEquip: this.instanceInfo(this.pendingEquip.get(p.index)!),
+                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.instanceInfo(w) })),
               }
             : null,
           kills: this.sim.tracker.killsByPlayer.get(p.index) ?? 0,
@@ -302,11 +332,26 @@ export class Engine {
           done: p.pendingBoons === 0 && p.pendingChests === 0 && p.pendingClassItems.length === 0,
           chest: chest
             ? {
-                choices: chest.map((id) => this.weaponInfo(id)),
-                pendingEquip: equip ? this.weaponInfo(equip) : null,
-                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.weaponInfo(w.itemId) })),
+                choices: chest.map((offer, idx) =>
+                  offer.kind === 'passive'
+                    ? { idx, ...this.weaponInfo(offer.id) }
+                    : { idx, ...this.instanceInfo(offer.inst) },
+                ),
+                pendingEquip: equip ? this.instanceInfo(equip) : null,
+                currentWeapons: p.weapons.map((w, slot) => ({ slot, ...this.instanceInfo(w) })),
               }
             : null,
+          bits: p.bits,
+          tinker: p.weapons.map((w, slot) => {
+            const next = nextQuality(w.quality);
+            return {
+              slot,
+              name: this.instanceInfo(w).name,
+              next,
+              cost: next ? TINKER_COST[w.quality] : null,
+              affordable: next ? p.bits >= TINKER_COST[w.quality] : false,
+            };
+          }),
           boonChoices:
             boons?.map((id) => {
               const b = this.sim.registry.boons.get(id)!;

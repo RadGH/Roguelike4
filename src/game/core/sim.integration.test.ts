@@ -57,6 +57,8 @@ describe('scripted fight', () => {
     const a = new Sim(9, 1);
     // Kill several enemies rapidly → later kills drop more XP than the first
     const p = a.state.players[0]!;
+    for (const w of p.weapons) w.quality = 'masterwork'; // sharp knives → rapid kills
+    a.recomputeStats(p);
     for (let i = 0; i < 6; i++) a.spawnEnemy('snuffling', p.x + 1.2, p.y + (i - 3) * 0.2);
     runTicks(a, TICK_RATE * 6);
     // Sweep the battlefield to vacuum every orb

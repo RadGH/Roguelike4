@@ -132,7 +132,7 @@ describe('projectile mods', () => {
     const sim = new Sim(8, 1);
     sim.addPassive(0, 'splitter-prism');
     const p = sim.state.players[0]!;
-    p.weapons = [{ itemId: 'sling', cooldownLeft: 0 }];
+    p.weapons = [{ itemId: 'sling', cooldownLeft: 0, quality: 'standard', variant: null, holo: false, seedTag: 0 }];
     sim.recomputeStats(p);
     p.iframeTimer = 9999;
     sim.spawnEnemy('grand-snuff', p.x + 5, p.y);
@@ -158,8 +158,8 @@ describe('chest pools', () => {
     const sim = new Sim(10, 1);
     let sawPassive = false;
     for (let i = 0; i < 40 && !sawPassive; i++) {
-      for (const id of sim.rollChestChoices(0, 3)) {
-        if (sim.registry.passives.has(id)) sawPassive = true;
+      for (const offer of sim.rollChestChoices(0, 3)) {
+        if (offer.kind === 'passive') sawPassive = true;
       }
     }
     expect(sawPassive).toBe(true);
@@ -168,8 +168,8 @@ describe('chest pools', () => {
       if (!sim.registry.passives.get(id)!.unlockDeed) sim.addPassive(0, id);
     }
     for (let i = 0; i < 20; i++) {
-      for (const id of sim.rollChestChoices(0, 3)) {
-        expect(sim.state.players[0]!.passives).not.toContain(id);
+      for (const offer of sim.rollChestChoices(0, 3)) {
+        if (offer.kind === 'passive') expect(sim.state.players[0]!.passives).not.toContain(offer.id);
       }
     }
   });
