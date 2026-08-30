@@ -100,5 +100,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   now lead your movement), discrete dodgeable contact damage, XP curve + level-ups banking
   drafts, weapons visibly hovering/rotating/lunging, HUD, readability debug views (F1–F3).
   27 unit + 2 E2E green.
-- Next: XP/gold economy polish, then M2 intermission screens (recap → rewards → draft →
-  shop) with the quarter-screen personal-screen framework.
+- Third chunk (c7da9dd): the run loop exists. Title screen → run → wave → recap → level-up
+  drafts (16 attribute perks, rolled tiers) → shop (buy/sell/reroll, wave-scaled prices)
+  → next wave → victory/defeat with a damage-by-source run summary. Stats recompute from
+  scratch on every build change so nothing drifts. 33 unit + 2 E2E green.
+- Next: saves after every wave + resume, equip prompt, character/details screens, then
+  M3 (remaining act-1 enemies + authored 10-wave table + King Slime).

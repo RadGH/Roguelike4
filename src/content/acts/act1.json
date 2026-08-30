@@ -1,7 +1,7 @@
 {
   "id": "act1",
   "name": "Act 1",
-  "boss": "king-slime",
+  "boss": "kingslime-t1",
   "waves": [
     {
       "wave": 1,
@@ -30,6 +30,84 @@
         { "at": 20, "enemy": "spitter", "count": 4, "spacing": 1.5 },
         { "at": 32, "enemy": "slime", "count": 3, "spacing": 2 },
         { "at": 45, "enemy": "scurrier", "count": 6, "spacing": 0.8 }
+      ]
+    },
+    {
+      "wave": 4,
+      "groups": [
+        { "at": 1, "enemy": "flitter", "count": 4, "spacing": 1.2 },
+        { "at": 10, "enemy": "nibbler", "count": 14, "spacing": 0.3 },
+        { "at": 18, "enemy": "thornback", "count": 2, "spacing": 3 },
+        { "at": 30, "enemy": "flitter", "count": 4, "spacing": 1 },
+        { "at": 40, "enemy": "spitter", "count": 3, "spacing": 1.5 },
+        { "at": 50, "enemy": "thornback", "count": 2, "spacing": 2 }
+      ]
+    },
+    {
+      "wave": 5,
+      "groups": [
+        { "at": 1, "enemy": "gorer", "count": 1 },
+        { "at": 8, "enemy": "nibbler", "count": 12, "spacing": 0.3 },
+        { "at": 16, "enemy": "gorer", "count": 2, "spacing": 4 },
+        { "at": 28, "enemy": "scurrier", "count": 6, "spacing": 0.8 },
+        { "at": 40, "enemy": "gorer", "count": 2, "spacing": 3 },
+        { "at": 48, "enemy": "flitter", "count": 3, "spacing": 1 }
+      ]
+    },
+    {
+      "wave": 6,
+      "groups": [
+        { "at": 1, "enemy": "bloater", "count": 2, "spacing": 3 },
+        { "at": 10, "enemy": "weaver", "count": 2, "spacing": 3 },
+        { "at": 18, "enemy": "nibbler", "count": 16, "spacing": 0.25 },
+        { "at": 28, "enemy": "bloater", "count": 3, "spacing": 2 },
+        { "at": 38, "enemy": "spitter", "count": 4, "spacing": 1.2 },
+        { "at": 48, "enemy": "weaver", "count": 2, "spacing": 2 },
+        { "at": 55, "enemy": "scurrier", "count": 5, "spacing": 0.8 }
+      ]
+    },
+    {
+      "wave": 7,
+      "groups": [
+        { "at": 1, "enemy": "delver", "count": 2, "spacing": 4 },
+        { "at": 10, "enemy": "brood-sac", "count": 1 },
+        { "at": 14, "enemy": "nibbler", "count": 10, "spacing": 0.3 },
+        { "at": 24, "enemy": "delver", "count": 2, "spacing": 3 },
+        { "at": 34, "enemy": "brood-sac", "count": 1 },
+        { "at": 40, "enemy": "flitter", "count": 4, "spacing": 1 },
+        { "at": 50, "enemy": "bloater", "count": 2, "spacing": 2 }
+      ]
+    },
+    {
+      "wave": 8,
+      "groups": [
+        { "at": 1, "enemy": "nibbler", "count": 20, "spacing": 0.2 },
+        { "at": 8, "enemy": "scurrier", "count": 6, "spacing": 0.7, "elite": "enlarged" },
+        { "at": 18, "enemy": "spitter", "count": 5, "spacing": 1, "elite": "resistant" },
+        { "at": 28, "enemy": "gorer", "count": 3, "spacing": 3 },
+        { "at": 38, "enemy": "slime", "count": 3, "spacing": 2, "elite": "enlarged" },
+        { "at": 48, "enemy": "flitter", "count": 5, "spacing": 0.8 },
+        { "at": 56, "enemy": "nibbler", "count": 18, "spacing": 0.2 }
+      ]
+    },
+    {
+      "wave": 9,
+      "groups": [
+        { "at": 1, "enemy": "brood-sac", "count": 2, "spacing": 5 },
+        { "at": 8, "enemy": "delver", "count": 3, "spacing": 2.5, "elite": "resistant" },
+        { "at": 18, "enemy": "bloater", "count": 4, "spacing": 1.5, "elite": "enlarged" },
+        { "at": 28, "enemy": "weaver", "count": 3, "spacing": 2 },
+        { "at": 36, "enemy": "thornback", "count": 3, "spacing": 2, "elite": "resistant" },
+        { "at": 46, "enemy": "gorer", "count": 3, "spacing": 2.5, "elite": "enlarged" },
+        { "at": 56, "enemy": "nibbler", "count": 24, "spacing": 0.15 }
+      ]
+    },
+    {
+      "wave": 10,
+      "groups": [
+        { "at": 2, "enemy": "kingslime-t1", "count": 1 },
+        { "at": 30, "enemy": "nibbler", "count": 8, "spacing": 0.4 },
+        { "at": 60, "enemy": "nibbler", "count": 8, "spacing": 0.4 }
       ]
     }
   ]

@@ -2,11 +2,11 @@ import { Rng } from './rng'
 import { hashState } from './hash'
 import { clamp, dist, distSq, moveToward, norm } from './math'
 import type {
-  EnemyState, PickupState, PlayerState, ProjectileState, SimState,
-  TelegraphSeverity, WeaponInstance,
+  DeferredSpawn, EliteKind, EnemyState, PickupState, PlayerState,
+  ProjectileState, SimState, TelegraphSeverity, WeaponInstance,
 } from './state'
 import type { Registry } from '../data/registry'
-import type { WaveDef } from '../data/types'
+import type { EnemyDef, WaveDef } from '../data/types'
 import type { DamageType } from '../data/tags'
 import { Tracker } from '../systems/tracker'
 import { emptyDefenses, resolveDamage, xpForLevel } from '../systems/damage'
@@ -57,6 +57,7 @@ export class Sim {
       projectiles: [],
       pickups: [],
       telegraphs: [],
+      pools: [],
       wave: { number: 0, elapsed: 0, pendingSpawns: [], deferred: [], cleared: true },
       arenaW: 28,
       arenaH: 20,
@@ -138,6 +139,7 @@ export class Sim {
         remaining: g.count,
         spacing: g.spacing ?? 0,
         nextAt: g.at,
+        elite: g.elite ?? null,
       })),
     }
   }
@@ -153,6 +155,7 @@ export class Sim {
     this.tickPlayers()
     this.tickEnemies()
     this.tickTelegraphs()
+    this.tickPools()
     this.tickWeapons()
     this.tickProjectiles()
     this.tickPickups()
@@ -172,15 +175,16 @@ export class Sim {
 
     // Deferred spawns re-enter as the density cap frees up.
     while (w.deferred.length > 0 && s.enemies.length < DENSITY_CAP) {
-      this.spawnEnemy(w.deferred.shift() as string)
+      const d = w.deferred.shift() as DeferredSpawn
+      this.spawnEnemy(d.enemy, d.elite)
     }
 
     for (const g of w.pendingSpawns) {
       while (g.remaining > 0 && w.elapsed >= g.nextAt) {
         if (s.enemies.length >= DENSITY_CAP) {
-          w.deferred.push(g.enemy)
+          w.deferred.push({ enemy: g.enemy, elite: g.elite })
         } else {
-          this.spawnEnemy(g.enemy)
+          this.spawnEnemy(g.enemy, g.elite)
         }
         g.remaining--
         g.nextAt += g.spacing
@@ -193,7 +197,7 @@ export class Sim {
     w.pendingSpawns = w.pendingSpawns.filter((g) => g.remaining > 0)
   }
 
-  private spawnEnemy(defId: string): EnemyState {
+  private spawnEnemy(defId: string, elite: EliteKind | null = null): EnemyState {
     const def = this.registry.enemy(defId)
     const s = this.state
     // Spawn on the arena boundary, away from the nearest player.
@@ -205,29 +209,55 @@ export class Sim {
     if (side === 1) { x = s.arenaW / 2; y = (rx - 0.5) * s.arenaH }
     if (side === 2) { y = -s.arenaH / 2; x = (rx - 0.5) * s.arenaW }
     if (side === 3) { y = s.arenaH / 2; x = (rx - 0.5) * s.arenaW }
+    const hpScale = elite === 'enlarged' ? 2.2 : elite === 'shrunk' ? 0.8 : 1
     const e: EnemyState = {
       id: s.nextEntityId++,
       defId,
       x,
       y,
-      health: def.health,
-      maxHealth: def.health,
+      health: Math.round(def.health * hpScale),
+      maxHealth: Math.round(def.health * hpScale),
       vx: 0,
       vy: 0,
       lastDamagedTick: -1,
       touchCdLeft: 0,
       attackCdLeft: def.props?.attackCd ? def.props.attackCd * 0.5 : 0,
+      mode: 0,
+      modeTime: 0,
+      dirX: 0,
+      dirY: 0,
+      elite,
     }
     s.enemies.push(e)
     return e
+  }
+
+  /** Effective radius including elite size changes (readability: size = threat). */
+  radiusOf(e: EnemyState): number {
+    const def = this.registry.enemy(e.defId)
+    const scale = e.elite === 'enlarged' ? 1.4 : e.elite === 'shrunk' ? 0.7 : 1
+    return def.radius * scale
+  }
+
+  private speedOf(e: EnemyState, base: number): number {
+    const scale = e.elite === 'enlarged' ? 0.75 : e.elite === 'shrunk' ? 1.5 : 1
+    return base * scale
+  }
+
+  /** Burrowed enemies cannot be targeted or hit until they surface. */
+  isTargetable(e: EnemyState): boolean {
+    const def = this.registry.enemy(e.defId)
+    if (def.archetype === 'burrower') return e.mode >= 5
+    return true
   }
 
   private tickPlayers(): void {
     const s = this.state
     for (const p of s.players) {
       if (!p.alive) continue
-      p.x = clamp(p.x + p.moveX * p.moveSpeed * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
-      p.y = clamp(p.y + p.moveY * p.moveSpeed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
+      const speed = p.moveSpeed * this.slowFactorFor(p)
+      p.x = clamp(p.x + p.moveX * speed * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
+      p.y = clamp(p.y + p.moveY * speed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
       if (p.regen > 0 && p.health < p.maxHealth) {
         p.health = Math.min(p.maxHealth, p.health + p.regen * TICK_DT)
       }
@@ -241,7 +271,7 @@ export class Sim {
 
     for (const e of s.enemies) {
       const def = this.registry.enemy(e.defId)
-      // Nearest living player is the pursuit target for all basic archetypes.
+      // Nearest living player is the default pursuit target.
       let target = alivePlayers[0]
       let best = distSq(e, target)
       for (const p of alivePlayers) {
@@ -249,67 +279,18 @@ export class Sim {
         if (d < best) { best = d; target = p }
       }
 
-      let dirX = target.x - e.x
-      let dirY = target.y - e.y
+      e.touchCdLeft -= TICK_DT
+      e.attackCdLeft -= TICK_DT
+      if (e.modeTime > 0) e.modeTime -= TICK_DT
 
-      // Ranged enemies keep their distance instead of closing.
-      if (def.archetype === 'ranged') {
-        const d = Math.sqrt(best)
-        const standoff = (def.props?.standoff ?? 6)
-        if (d < standoff) { dirX = -dirX; dirY = -dirY }
-        else if (d < standoff * 1.3) { dirX = 0; dirY = 0 }
-      }
-
-      const n = norm(dirX, dirY)
-      let vx = n.x * def.speed
-      let vy = n.y * def.speed
-
-      // Flocking: one mass with a shape, not thirty independent agents.
-      if (def.flock) {
-        let sepX = 0, sepY = 0, alignX = 0, alignY = 0, cohX = 0, cohY = 0
-        let neighbors = 0
-        const radius = def.radius * 6
-        const r2 = radius * radius
-        for (const o of s.enemies) {
-          if (o === e || o.defId !== e.defId) continue
-          const d2 = distSq(e, o)
-          if (d2 > r2) continue
-          neighbors++
-          const d = Math.sqrt(d2) || 0.001
-          const push = (radius - d) / radius
-          sepX += ((e.x - o.x) / d) * push
-          sepY += ((e.y - o.y) / d) * push
-          alignX += o.vx
-          alignY += o.vy
-          cohX += o.x
-          cohY += o.y
-        }
-        if (neighbors > 0) {
-          const f = def.flock
-          vx += sepX * f.separation
-          vy += sepY * f.separation
-          const an = norm(alignX / neighbors, alignY / neighbors)
-          vx += an.x * f.alignment
-          vy += an.y * f.alignment
-          const cn = norm(cohX / neighbors - e.x, cohY / neighbors - e.y)
-          vx += cn.x * f.cohesion
-          vy += cn.y * f.cohesion
-          const vn = norm(vx, vy)
-          vx = vn.x * def.speed
-          vy = vn.y * def.speed
-        }
-      }
-
-      e.vx = vx
-      e.vy = vy
-      e.x = clamp(e.x + vx * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
-      e.y = clamp(e.y + vy * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
+      this.behave(e, def, target)
 
       // Contact damage: a discrete, dodgeable hit with a per-enemy cooldown.
-      e.touchCdLeft -= TICK_DT
-      if (e.touchCdLeft <= 0) {
+      // Suppressed while airborne (mode 1) or burrowed.
+      const canTouch = e.mode !== 1 && e.mode !== 2 && this.isTargetable(e) && def.damage > 0
+      if (canTouch && e.touchCdLeft <= 0) {
         for (const p of alivePlayers) {
-          const touch = def.radius + 0.4
+          const touch = this.radiusOf(e) + 0.4
           if (distSq(e, p) < touch * touch) {
             this.damagePlayer(p, def.damage, 'Melee', def.id, true)
             e.touchCdLeft = def.props?.touchCd ?? 0.8
@@ -317,33 +298,267 @@ export class Sim {
           }
         }
       }
+    }
+  }
 
-      // Ranged/special attacks: telegraphed floor zones at the predicted position.
-      if (def.props?.attackCd) {
-        e.attackCdLeft -= TICK_DT
-        const range = def.props.attackRange ?? 8
-        if (e.attackCdLeft <= 0 && distSq(e, target) <= range * range) {
-          e.attackCdLeft = def.props.attackCd
-          const severity = 'light' as const
-          const window = TELEGRAPH_WINDOWS[severity]
-          // Lead the target by their current velocity over the window.
-          const px = target.x + target.moveX * target.moveSpeed * window * 0.7
-          const py = target.y + target.moveY * target.moveSpeed * window * 0.7
-          s.telegraphs.push({
+  /** Per-archetype behavior dispatch. Sets velocity and advances mode machines. */
+  private behave(e: EnemyState, def: EnemyDef, target: PlayerState): void {
+    const s = this.state
+    const props = def.props ?? {}
+    const speed = this.speedOf(e, def.speed)
+    const d = dist(e, target)
+
+    // Leap-slam (King Slime tiers): telegraph a zone, go airborne, land on it.
+    if (props.slamCd) {
+      if (e.mode === 1) {
+        this.moveBy(e, e.dirX, e.dirY)
+        if (e.modeTime <= 0) e.mode = 0
+        return
+      }
+      if (e.attackCdLeft <= 0 && d <= (props.slamRange ?? 9)) {
+        const severity = (['light', 'heavy', 'extreme'] as const)[props.slamSeverity ?? 1]
+        const window = TELEGRAPH_WINDOWS[severity]
+        const zx = clamp(target.x + target.moveX * target.moveSpeed * window * 0.6, -s.arenaW / 2, s.arenaW / 2)
+        const zy = clamp(target.y + target.moveY * target.moveSpeed * window * 0.6, -s.arenaH / 2, s.arenaH / 2)
+        this.pushTelegraph(zx, zy, props.slamRadius ?? 2, severity, props.slamDamage ?? def.damage, 'Melee', def.id)
+        e.mode = 1
+        e.modeTime = window
+        e.dirX = (zx - e.x) / window
+        e.dirY = (zy - e.y) / window
+        e.attackCdLeft = props.slamCd
+        return
+      }
+      this.chaseMove(e, def, target, speed)
+      return
+    }
+
+    switch (def.archetype) {
+      case 'charger': {
+        if (!props.chargeCd) { this.chaseMove(e, def, target, speed); return }
+        if (e.mode === 2) { // windup: rooted, committed direction shown by the body
+          e.vx = 0; e.vy = 0
+          if (e.modeTime <= 0) { e.mode = 3; e.modeTime = props.chargeTime ?? 0.9 }
+          return
+        }
+        if (e.mode === 3) { // the charge itself
+          this.moveBy(e, e.dirX * (props.chargeSpeed ?? 10), e.dirY * (props.chargeSpeed ?? 10))
+          const hitWall =
+            Math.abs(e.x) >= s.arenaW / 2 - 0.05 || Math.abs(e.y) >= s.arenaH / 2 - 0.05
+          if (e.modeTime <= 0 || hitWall) { e.mode = 0; e.attackCdLeft = props.chargeCd }
+          return
+        }
+        if (e.attackCdLeft <= 0 && d < (props.chargeTrigger ?? 7)) {
+          const n = norm(target.x - e.x, target.y - e.y)
+          e.mode = 2
+          e.modeTime = props.windup ?? 0.8
+          e.dirX = n.x
+          e.dirY = n.y
+          e.vx = 0; e.vy = 0
+          return
+        }
+        this.chaseMove(e, def, target, speed)
+        return
+      }
+
+      case 'flyer': {
+        if (e.mode === 4) { // dive
+          this.moveBy(e, e.dirX * (props.diveSpeed ?? 9), e.dirY * (props.diveSpeed ?? 9))
+          if (e.modeTime <= 0) { e.mode = 0; e.attackCdLeft = props.diveCd ?? 4 }
+          return
+        }
+        if (e.attackCdLeft <= 0) {
+          const n = norm(target.x - e.x, target.y - e.y)
+          e.mode = 4
+          e.modeTime = props.diveTime ?? 0.55
+          e.dirX = n.x
+          e.dirY = n.y
+          return
+        }
+        // Erratic wander biased toward the target.
+        if (e.modeTime <= 0) {
+          const n = norm(
+            (target.x - e.x) * 0.4 + (this.rngCombat.next() - 0.5) * 10,
+            (target.y - e.y) * 0.4 + (this.rngCombat.next() - 0.5) * 10,
+          )
+          e.dirX = n.x
+          e.dirY = n.y
+          e.modeTime = props.wanderCd ?? 1.1
+        }
+        this.moveBy(e, e.dirX * speed, e.dirY * speed)
+        return
+      }
+
+      case 'burrower': {
+        if (e.mode === 5) { // erupting under its telegraph
+          e.vx = 0; e.vy = 0
+          if (e.modeTime <= 0) { e.mode = 6; e.modeTime = props.surfacedTime ?? 2.5 }
+          return
+        }
+        if (e.mode === 6) { // surfaced and vulnerable
+          this.chaseMove(e, def, target, speed)
+          if (e.modeTime <= 0) e.mode = 0
+          return
+        }
+        // Burrowed: fast underground tracking, then erupt with a tell.
+        this.chaseMove(e, def, target, this.speedOf(e, props.burrowSpeed ?? 3.4))
+        if (d < (props.eruptTrigger ?? 1.4)) {
+          e.mode = 5
+          e.modeTime = props.eruptWindow ?? 1.1
+          this.pushTelegraph(e.x, e.y, props.eruptRadius ?? 1.4, 'heavy', def.damage, 'Melee', def.id)
+        }
+        return
+      }
+
+      case 'spawner': {
+        e.vx = 0; e.vy = 0
+        if (def.spawnId && e.attackCdLeft <= 0) {
+          e.attackCdLeft = props.spawnCd ?? 2.5
+          for (let i = 0; i < (props.spawnCount ?? 2); i++) {
+            if (s.enemies.length >= DENSITY_CAP) break
+            const child = this.spawnEnemy(def.spawnId)
+            child.x = clamp(e.x + (this.rngCombat.next() - 0.5) * 2, -s.arenaW / 2, s.arenaW / 2)
+            child.y = clamp(e.y + (this.rngCombat.next() - 0.5) * 2, -s.arenaH / 2, s.arenaH / 2)
+          }
+        }
+        return
+      }
+
+      case 'ranged': {
+        // Keep distance, then lob a telegraphed shot at the predicted position.
+        const standoff = props.standoff ?? 6
+        let dirX = target.x - e.x
+        let dirY = target.y - e.y
+        if (d < standoff) { dirX = -dirX; dirY = -dirY }
+        else if (d < standoff * 1.3) { dirX = 0; dirY = 0 }
+        const n = norm(dirX, dirY)
+        e.vx = n.x * speed
+        e.vy = n.y * speed
+        this.moveBy(e, e.vx, e.vy)
+        if (props.attackCd && e.attackCdLeft <= 0 && d <= (props.attackRange ?? 8)) {
+          e.attackCdLeft = props.attackCd
+          const window = TELEGRAPH_WINDOWS.light
+          const px = clamp(target.x + target.moveX * target.moveSpeed * window * 0.7, -s.arenaW / 2, s.arenaW / 2)
+          const py = clamp(target.y + target.moveY * target.moveSpeed * window * 0.7, -s.arenaH / 2, s.arenaH / 2)
+          this.pushTelegraph(px, py, props.attackRadius ?? 1.2, 'light', def.damage, 'Ranged', def.id)
+        }
+        return
+      }
+
+      default: {
+        // Chase, flock if flocking, and lay webbing if a weaver.
+        this.chaseMove(e, def, target, speed)
+        if (props.webCd && e.attackCdLeft <= 0) {
+          e.attackCdLeft = props.webCd
+          s.pools.push({
             id: s.nextEntityId++,
-            x: clamp(px, -s.arenaW / 2, s.arenaW / 2),
-            y: clamp(py, -s.arenaH / 2, s.arenaH / 2),
-            radius: def.props.attackRadius ?? 1.2,
-            severity,
-            window,
-            timeLeft: window,
-            damage: def.damage,
-            damageType: 'Ranged',
+            x: e.x,
+            y: e.y,
+            radius: props.webRadius ?? 1.5,
+            dps: 0,
+            slowFactor: props.webSlow ?? 0.45,
+            ttl: props.webTtl ?? 7,
             sourceId: def.id,
           })
         }
       }
     }
+  }
+
+  private chaseMove(e: EnemyState, def: EnemyDef, target: PlayerState, speed: number): void {
+    const n = norm(target.x - e.x, target.y - e.y)
+    let vx = n.x * speed
+    let vy = n.y * speed
+
+    // Flocking: one mass with a shape, not thirty independent agents.
+    if (def.flock) {
+      const s = this.state
+      let sepX = 0, sepY = 0, alignX = 0, alignY = 0, cohX = 0, cohY = 0
+      let neighbors = 0
+      const radius = def.radius * 6
+      const r2 = radius * radius
+      for (const o of s.enemies) {
+        if (o === e || o.defId !== e.defId) continue
+        const d2 = distSq(e, o)
+        if (d2 > r2) continue
+        neighbors++
+        const dd = Math.sqrt(d2) || 0.001
+        const push = (radius - dd) / radius
+        sepX += ((e.x - o.x) / dd) * push
+        sepY += ((e.y - o.y) / dd) * push
+        alignX += o.vx
+        alignY += o.vy
+        cohX += o.x
+        cohY += o.y
+      }
+      if (neighbors > 0) {
+        const f = def.flock
+        vx += sepX * f.separation
+        vy += sepY * f.separation
+        const an = norm(alignX / neighbors, alignY / neighbors)
+        vx += an.x * f.alignment
+        vy += an.y * f.alignment
+        const cn = norm(cohX / neighbors - e.x, cohY / neighbors - e.y)
+        vx += cn.x * f.cohesion
+        vy += cn.y * f.cohesion
+        const vn = norm(vx, vy)
+        vx = vn.x * speed
+        vy = vn.y * speed
+      }
+    }
+
+    e.vx = vx
+    e.vy = vy
+    this.moveBy(e, vx, vy)
+  }
+
+  private moveBy(e: EnemyState, vx: number, vy: number): void {
+    const s = this.state
+    e.x = clamp(e.x + vx * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
+    e.y = clamp(e.y + vy * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
+  }
+
+  private pushTelegraph(
+    x: number, y: number, radius: number, severity: TelegraphSeverity,
+    damage: number, damageType: DamageType, sourceId: string,
+  ): void {
+    const s = this.state
+    const window = TELEGRAPH_WINDOWS[severity]
+    s.telegraphs.push({
+      id: s.nextEntityId++,
+      x, y, radius, severity, window,
+      timeLeft: window,
+      damage, damageType, sourceId,
+    })
+  }
+
+  private tickPools(): void {
+    const s = this.state
+    for (const pool of s.pools) {
+      pool.ttl -= TICK_DT
+      if (pool.dps <= 0) continue
+      // Damaging pools hit twice a second, not per tick, to keep events sane.
+      const beat = Math.floor((pool.ttl * 2)) !== Math.floor((pool.ttl + TICK_DT) * 2)
+      if (!beat) continue
+      const r2 = pool.radius * pool.radius
+      for (const p of s.players) {
+        if (!p.alive) continue
+        if (distSq(pool, p) <= r2) {
+          this.damagePlayer(p, pool.dps * 0.5, 'Magic', pool.sourceId, false)
+        }
+      }
+    }
+    s.pools = s.pools.filter((p) => p.ttl > 0)
+  }
+
+  /** The strongest slow among pools the player is standing in (1 = none). */
+  slowFactorFor(p: PlayerState): number {
+    let factor = 1
+    for (const pool of this.state.pools) {
+      if (pool.slowFactor >= 1) continue
+      const r2 = pool.radius * pool.radius
+      if (distSq(pool, p) <= r2) factor = Math.min(factor, pool.slowFactor)
+    }
+    return factor
   }
 
   private tickTelegraphs(): void {
@@ -423,7 +638,7 @@ export class Sim {
           s.projectiles.push(pr)
         } else {
           // Instant melee resolution; the renderer shows the lunge.
-          this.damageEnemy(target, damage, p.id, def.id)
+          this.damageEnemy(target, damage, p.id, def.id, def.damageType)
         }
       }
     }
@@ -439,6 +654,7 @@ export class Sim {
     const inRange: EnemyState[] = []
     const r2 = range * range
     for (const e of s.enemies) {
+      if (!this.isTargetable(e)) continue
       if (distSq(e, p) <= r2) inRange.push(e)
     }
     if (inRange.length === 0) return null
@@ -469,9 +685,30 @@ export class Sim {
     return sorted[Math.min(skip, sorted.length - 1)]
   }
 
-  private damageEnemy(e: EnemyState, amount: number, playerId: number, sourceId: string): void {
+  private damageEnemy(
+    e: EnemyState,
+    amount: number,
+    playerId: number,
+    sourceId: string,
+    damageType: DamageType = 'Melee',
+  ): void {
+    // Resistant elites absorb part of everything except Void.
+    if (e.elite === 'resistant' && damageType !== 'Void') amount *= 0.6
     e.health -= amount
     e.lastDamagedTick = this.state.tick
+
+    // Retaliators answer close-range damage with an avoidable spike.
+    const def = this.registry.enemy(e.defId)
+    if (def.props?.spikeCd && e.attackCdLeft <= 0 && e.health > 0) {
+      const attacker = this.state.players.find((p) => p.id === playerId)
+      if (attacker && dist(e, attacker) <= (def.props.spikeRange ?? 2.4)) {
+        e.attackCdLeft = def.props.spikeCd
+        this.pushTelegraph(
+          attacker.x, attacker.y, 0.9, 'light',
+          def.props.spikeDamage ?? 3, 'Melee', def.id,
+        )
+      }
+    }
     const killed = e.health <= 0
     this.tracker.recordDamage({
       tick: this.state.tick,
@@ -495,12 +732,33 @@ export class Sim {
     const def = this.registry.enemy(e.defId)
     s.enemies = s.enemies.filter((x) => x !== e)
 
+    // Exploders burst where they die and leave a lingering pool.
+    if (def.props?.burstRadius) {
+      this.pushTelegraph(
+        e.x, e.y, def.props.burstRadius, 'light',
+        def.props.burstDamage ?? def.damage * 2, 'Magic', def.id,
+      )
+      s.pools.push({
+        id: s.nextEntityId++,
+        x: e.x,
+        y: e.y,
+        radius: def.props.burstRadius * 0.8,
+        dps: def.props.poolDps ?? 2,
+        slowFactor: 1,
+        ttl: def.props.poolTtl ?? 4,
+        sourceId: def.id,
+      })
+    }
+
     // Splitters divide instead of dying (bounded: children reference a fixed def).
     if (def.splitInto && def.splitTo) {
       const childDef = this.childSplitDef(def.splitTo)
       if (childDef) {
         for (let i = 0; i < def.splitInto; i++) {
-          if (s.enemies.length >= DENSITY_CAP) { s.wave.deferred.push(childDef.id); continue }
+          if (s.enemies.length >= DENSITY_CAP) {
+            s.wave.deferred.push({ enemy: childDef.id, elite: null })
+            continue
+          }
           const child = this.spawnEnemy(childDef.id)
           child.x = e.x + (this.rngCombat.next() - 0.5)
           child.y = e.y + (this.rngCombat.next() - 0.5)
@@ -544,10 +802,10 @@ export class Sim {
         continue
       }
       for (const e of s.enemies) {
-        const def = this.registry.enemy(e.defId)
-        const r = def.radius + 0.15
+        if (!this.isTargetable(e)) continue
+        const r = this.radiusOf(e) + 0.15
         if (distSq(pr, e) < r * r) {
-          this.damageEnemy(e, pr.damage, pr.ownerId, pr.sourceId)
+          this.damageEnemy(e, pr.damage, pr.ownerId, pr.sourceId, pr.damageType)
           dead.push(pr)
           break
         }

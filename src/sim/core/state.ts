@@ -78,6 +78,38 @@ export interface EnemyState {
   touchCdLeft: number
   /** Seconds until a ranged/special enemy may attack again. */
   attackCdLeft: number
+  /**
+   * Behavior state machine for special archetypes (charger, burrower, flyer,
+   * boss). 0 is always the default mode; meanings are per-archetype.
+   */
+  mode: number
+  /** Seconds remaining in the current mode. */
+  modeTime: number
+  /** Committed movement direction for charges and dives. */
+  dirX: number
+  dirY: number
+  /** Elite modifier, if any. */
+  elite: EliteKind | null
+}
+
+export type EliteKind = 'resistant' | 'enlarged' | 'shrunk'
+
+/**
+ * A lingering ground hazard on the floor plane: exploder pools, webbing.
+ * Damages and/or slows players standing inside.
+ */
+export interface PoolState {
+  id: number
+  x: number
+  y: number
+  radius: number
+  /** Damage per second to players inside (0 for pure slows). */
+  dps: number
+  /** Movement multiplier applied to players inside (1 = no slow). */
+  slowFactor: number
+  /** Seconds remaining. */
+  ttl: number
+  sourceId: string
 }
 
 export interface ProjectileState {
@@ -136,7 +168,7 @@ export interface WaveRuntime {
   /** Spawn groups not yet fully spawned. */
   pendingSpawns: PendingSpawn[]
   /** Enemies deferred by the density cap, spawned as space frees up. */
-  deferred: string[]
+  deferred: DeferredSpawn[]
   cleared: boolean
 }
 
@@ -146,6 +178,12 @@ export interface PendingSpawn {
   remaining: number
   spacing: number
   nextAt: number
+  elite: EliteKind | null
+}
+
+export interface DeferredSpawn {
+  enemy: string
+  elite: EliteKind | null
 }
 
 export interface SimState {
@@ -158,6 +196,7 @@ export interface SimState {
   projectiles: ProjectileState[]
   pickups: PickupState[]
   telegraphs: TelegraphState[]
+  pools: PoolState[]
   wave: WaveRuntime
   /** Arena half-extents in world units (arena is a bounded rectangle). */
   arenaW: number

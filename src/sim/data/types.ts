@@ -55,6 +55,8 @@ export interface EnemyDef {
   /** Splitters: on death, spawn `splitInto` copies of enemy `splitTo`. */
   splitInto?: number
   splitTo?: string
+  /** Spawners: enemy id produced while alive (cadence via props.spawnCd). */
+  spawnId?: string
   /** Archetype-specific tuning knobs (standoff distance, ...). */
   props?: Record<string, number>
 }
@@ -90,6 +92,8 @@ export interface SpawnGroup {
   count: number
   /** Seconds between individual spawns within the group (0 = all at once). */
   spacing?: number
+  /** Elite modifier applied to every enemy in the group. */
+  elite?: 'resistant' | 'enlarged' | 'shrunk'
 }
 
 export interface WaveDef {

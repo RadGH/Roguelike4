@@ -103,6 +103,15 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         ]
         gGround.poly(corners.flatMap((k) => [k.sx, k.sy])).fill(0x24242e).stroke({ width: 2, color: 0x3a3a48 })
 
+        // Lingering ground hazards: webbing (slows) and damage pools.
+        for (const pool of sim.state.pools) {
+          const s = toScreen(pool.x, pool.y)
+          const r = pool.radius * 32
+          const color = pool.dps > 0 ? 0x9acd32 : 0xcfcfe8
+          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color, alpha: 0.22 })
+          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 1.5, color })
+        }
+
         for (const tg of sim.state.telegraphs) {
           const s = toScreen(tg.x, tg.y)
           const r = tg.radius * 32
@@ -123,14 +132,32 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         for (const e of sim.state.enemies) {
           const def = registry.enemy(e.defId)
           const s = toScreen(e.x, e.y)
-          const r = def.radius * 32
+          const r = sim.radiusOf(e) * 32
           gGround.ellipse(s.sx, s.sy, r + 3, (r + 3) / 2).fill({ color: 0x000000, alpha: 0.35 })
+          // Burrowed enemies exist only as a moving ground disturbance.
+          if (!sim.isTargetable(e)) {
+            gGround.ellipse(s.sx, s.sy, r + 5, (r + 5) / 2).stroke({ width: 2, color: 0xb08a5a })
+            continue
+          }
           if (markersOnly) continue
-          const color = silho ? 0x000000 :
-            def.archetype === 'swarm' ? 0xd94f4f :
-            def.archetype === 'chaser' ? 0xe08a3a :
-            def.archetype === 'ranged' ? 0xb44fd9 : 0x4fd97a
-          gCritical.circle(s.sx, s.sy - r / 2, r).fill(color).stroke({ width: 2, color: silho ? 0xffffff : 0x000000 })
+          // Reserved palette: colour encodes the archetype, i.e. the threat.
+          const ARCHETYPE_COLOR: Record<string, number> = {
+            swarm: 0xd94f4f, chaser: 0xe08a3a, ranged: 0xb44fd9,
+            charger: 0xff7043, exploder: 0x9acd32, flyer: 0x5ad9d9,
+            blocker: 0x4fd97a, burrower: 0xb08a5a, spawner: 0xd94fb0,
+            retaliator: 0x8a9ab0,
+          }
+          const color = silho ? 0x000000 : (ARCHETYPE_COLOR[def.archetype] ?? 0x4fd97a)
+          const lift = def.archetype === 'flyer' ? 22 : r / 2
+          gCritical.circle(s.sx, s.sy - lift, r).fill(color).stroke({ width: 2, color: silho ? 0xffffff : 0x000000 })
+          // Charger windup: a bright pulse announces the committed charge.
+          if (e.mode === 2) {
+            gCritical.circle(s.sx, s.sy - lift, r + 4).stroke({ width: 3, color: 0xffffff })
+          }
+          // Flyers stay visually tied to their true ground position.
+          if (def.archetype === 'flyer') {
+            gCritical.moveTo(s.sx, s.sy).lineTo(s.sx, s.sy - lift + r).stroke({ width: 1, color: 0x5ad9d9 })
+          }
         }
 
         if (!markersOnly) {
@@ -178,10 +205,12 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           sim.state.enemies.length +
           sim.state.wave.pendingSpawns.reduce((a, g) => a + g.remaining, 0) +
           sim.state.wave.deferred.length
+        const bossPieces = sim.state.enemies.filter((e) => e.defId.startsWith('kingslime'))
         hud.text =
           `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}   Enemies ${enemiesLeft}\n` +
           `HP ${Math.ceil(p0.health)}/${p0.maxHealth}   Lv ${p0.level}` +
           `   XP ${Math.floor(p0.xp)}   Gold ${p0.gold}` +
+          (bossPieces.length > 0 ? `\nKing Slime — ${bossPieces.length} piece${bossPieces.length > 1 ? 's' : ''}` : '') +
           (view !== 'normal' ? `\n[debug view: ${view} — F1 normal]` : '')
       })
     })
