@@ -11,6 +11,7 @@ import type { DamageType } from '../data/tags'
 import { Tracker } from '../systems/tracker'
 import { emptyDefenses, resolveDamage, xpForLevel } from '../systems/damage'
 import { damageMultiplier, recomputePlayer } from '../systems/stats'
+import { resolveItem } from '../data/variants'
 
 /** Telegraph severities: the longer the window, the larger the payload. */
 export const TELEGRAPH_WINDOWS: Record<TelegraphSeverity, number> = {
@@ -190,7 +191,7 @@ export class Sim {
     s.pets = []
     for (const p of s.players) {
       for (const itemId of p.items) {
-        const item = this.registry.item(itemId)
+        const item = resolveItem(this.registry, itemId)
         for (const eff of item.effects) {
           if (eff.kind !== 'summon') continue
           for (let i = 0; i < eff.count; i++) this.spawnPet(p, eff.petId)
@@ -1234,7 +1235,7 @@ export class Sim {
     rollAll(this.registry.weapons.get(sourceId)?.applies, sourceId)
     if (owner) {
       for (const itemId of owner.items) {
-        for (const eff of this.registry.item(itemId).effects) {
+        for (const eff of resolveItem(this.registry, itemId).effects) {
           if (eff.kind === 'applyOnHit') rollAll([eff.applier], itemId)
         }
       }
@@ -1274,7 +1275,7 @@ export class Sim {
   /** Item on-kill effects — attributed to the item, so builds become visible. */
   private triggerOnKill(owner: PlayerState, at: { x: number; y: number }): void {
     for (const itemId of owner.items) {
-      const item = this.registry.item(itemId)
+      const item = resolveItem(this.registry, itemId)
       for (const eff of item.effects) {
         if (eff.kind === 'onKillExplode' && this.rngCombat.chance(eff.chance)) {
           const r2 = eff.radius * eff.radius
@@ -1298,7 +1299,7 @@ export class Sim {
     for (const p of this.state.players) {
       if (!p.alive || p.downed) continue
       for (const itemId of p.items) {
-        const item = this.registry.item(itemId)
+        const item = resolveItem(this.registry, itemId)
         for (const eff of item.effects) {
           if ((eff.kind === 'onPickupDamage' || eff.kind === 'onPickupHeal') &&
               eff.pickup && eff.pickup !== 'any' && eff.pickup !== kind) continue

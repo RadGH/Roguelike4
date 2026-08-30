@@ -234,4 +234,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   (slams and spawns, frenzy below half health — designed by me since the vault only has
   the act-1 boss; worth a vault entry), ten authored waves, and an act picker once act 1
   is won. Support enemies finally give co-op a target-priority conversation.
-- Next: act-2 balance pass via the simulator, then gamepad menu nav, audio, variants.
+- Twenty-second chunk (ae106fa): the simulator caught act 2's inverted difficulty curve
+  (half of all deaths in waves 1–2, then a coast) — opening softened, late stiffened, now
+  57% mid-skill with a spread curve. And the vault's uniform menu scheme is real: every
+  panel is pad-navigable (up/down + A) through one generic hook, with each co-op player's
+  pad driving their own quarter-screen panel. Arena A/B buttons no longer leak into menus.
+- Next: item variants (Corrupt/Cursed/Relic/Holographic), audio, more classes.

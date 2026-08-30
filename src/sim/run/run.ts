@@ -5,6 +5,7 @@ import type { OwnedPerk } from '../core/state'
 import type { ActDef, PerkDef, WeaponDef } from '../data/types'
 import { recomputePlayer } from '../systems/stats'
 import type { RunSave } from './save'
+import { resolveItem, rollVariant, variantEligible } from '../data/variants'
 
 /**
  * The run controller: everything above the arena tick. Owns the intermission
@@ -223,7 +224,14 @@ export class Run {
       const receiver = players[this.lootIndex % players.length]
       this.lootIndex++
       const rollActive = actives.length > 0 && this.rngRun.chance(0.25)
-      const id = rollActive ? this.rngRun.pick(actives).id : this.rngRun.pick(items).id
+      let id: string
+      if (rollActive) {
+        id = this.rngRun.pick(actives).id
+      } else {
+        const base = this.rngRun.pick(items)
+        const variant = variantEligible(base) ? rollVariant(this.rngRun.next()) : null
+        id = variant ? `${variant}:${base.id}` : base.id
+      }
       this.personal.get(receiver.id)?.rewards.push({ itemId: id, resolved: null })
     }
   }
@@ -276,7 +284,7 @@ export class Run {
       p.items.push(entry.itemId)
       recomputePlayer(p, this.registry)
     } else {
-      p.gold += Math.round(this.registry.item(entry.itemId).price * SELL_FRACTION)
+      p.gold += Math.round(resolveItem(this.registry, entry.itemId).price * SELL_FRACTION)
     }
   }
 
@@ -472,5 +480,10 @@ export class Run {
 
   get actId(): string {
     return this.act.id
+  }
+
+  /** Effective item definition, variant-aware. UIs should use this. */
+  itemDef(id: string): ReturnType<typeof resolveItem> {
+    return resolveItem(this.registry, id)
   }
 }

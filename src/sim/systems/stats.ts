@@ -2,6 +2,7 @@ import type { PlayerState } from '../core/state'
 import type { Registry } from '../data/registry'
 import { TIER_MULTIPLIER, type WeaponDef } from '../data/types'
 import { emptyDefenses } from './damage'
+import { resolveItem } from '../data/variants'
 
 /**
  * Baseline character stats — identical for every player, every run. There is
@@ -75,7 +76,7 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
 
   // Passive items: stat effects stack per copy carried.
   for (const itemId of p.items) {
-    const item = registry.item(itemId)
+    const item = resolveItem(registry, itemId)
     for (const eff of item.effects) {
       if (eff.kind !== 'stat') continue
       applyAttribute(p, eff.attribute, eff.amount)

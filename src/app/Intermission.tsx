@@ -120,7 +120,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                   {screen.rewards.map((r, i) => {
                     if (r.resolved) return null
                     const isActive = run.isActive(r.itemId)
-                    const item = isActive ? run.registry.active(r.itemId) : run.registry.item(r.itemId)
+                    const item = isActive ? run.registry.active(r.itemId) : run.itemDef(r.itemId)
                     const slotNote = isActive
                       ? ` · ${(item as { slot: string }).slot === 'equipment' ? 'A slot' : 'B slot'} (replaces what you carry)`
                       : ''
@@ -151,7 +151,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                 <div className="cards">
                   {screen.grant.map((id, i) => {
                     const isActive = run.isActive(id)
-                    const def = isActive ? run.registry.active(id) : run.registry.item(id)
+                    const def = isActive ? run.registry.active(id) : run.itemDef(id)
                     return (
                       <button
                         className="card"
