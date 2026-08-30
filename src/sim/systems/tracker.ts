@@ -7,6 +7,8 @@
 
 export interface DamageEvent {
   tick: number
+  /** Wave the event happened in, for per-wave recaps. */
+  wave: number
   playerId: number
   /** Content id of the source (weapon, item, effect). */
   sourceId: string
@@ -18,6 +20,7 @@ export interface DamageEvent {
 /** Damage the player received (or avoided) — mitigation is tracked, not lost. */
 export interface TakenEvent {
   tick: number
+  wave: number
   playerId: number
   /** What hit them (enemy def id, telegraph source, hazard id). */
   sourceId: string
@@ -42,6 +45,23 @@ export class Tracker {
 
   recordTaken(e: TakenEvent): void {
     this.takenEvents.push(e)
+  }
+
+  /** Per-wave recap numbers for one player. */
+  waveSummary(playerId: number, wave: number): { kills: number; dealt: number; taken: number } {
+    let kills = 0
+    let dealt = 0
+    let taken = 0
+    for (const e of this.events) {
+      if (e.playerId !== playerId || e.wave !== wave) continue
+      dealt += e.amount
+      if (e.kill) kills++
+    }
+    for (const e of this.takenEvents) {
+      if (e.playerId !== playerId || e.wave !== wave) continue
+      taken += e.taken
+    }
+    return { kills, dealt, taken }
   }
 
   /** Totals of damage taken/mitigated/dodge count for one player. */

@@ -94,5 +94,11 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
 - Isometric debug arena is playable in the browser: WASD/arrows or gamepad stick, waves
   1–3 loop, primitive-shape art per the two-layer rule. 14 unit + 2 E2E tests green.
 - **Playable now at http://192.168.1.34:5173/** (dev server running on the VM).
-- Next session: damage pipeline w/ defenses, XP/leveling, telegraph system, HUD, then the
-  intermission screens (M2).
+- Second chunk (05d5dd4): full damage pipeline (dodge → block → diminishing armor → flat
+  reduction → resist, Void unresistable, universal lifesteal), damage-taken tracking with
+  mitigation attribution, telegraphed floor zones (severity = window ∝ payload; Spitters
+  now lead your movement), discrete dodgeable contact damage, XP curve + level-ups banking
+  drafts, weapons visibly hovering/rotating/lunging, HUD, readability debug views (F1–F3).
+  27 unit + 2 E2E green.
+- Next: XP/gold economy polish, then M2 intermission screens (recap → rewards → draft →
+  shop) with the quarter-screen personal-screen framework.

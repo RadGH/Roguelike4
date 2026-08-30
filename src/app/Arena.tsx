@@ -1,21 +1,21 @@
 import { useEffect, useRef } from 'react'
 import { Application, Container, Graphics, Text } from 'pixi.js'
-import { Sim, TICK_DT, TICK_RATE } from '../sim/core/sim'
-import { loadContent } from '../sim/data/loadContent'
+import { TICK_DT, TICK_RATE } from '../sim/core/sim'
+import type { Run } from '../sim/run/run'
 import { toScreen } from '../render/iso'
 
 /**
- * Debug arena: the real sim rendered with gameplay-critical primitives only.
- * Bold flat shapes on the ground plane are the permanent art direction for
- * everything the player must react to — this is not placeholder art.
+ * The arena canvas. Renders the run's sim with gameplay-critical primitives —
+ * bold flat shapes on the ground plane, permanently (two-layer art rule).
  *
- * Readability debug modes (dev tool, not a player feature):
- *   F1 — normal · F2 — ground markers only · F3 — silhouette view
+ * Readability debug views (dev tool): F1 normal · F2 markers-only · F3 silhouette.
  */
 type DebugView = 'normal' | 'markers' | 'silhouette'
 
-export function ArenaDebug(): React.JSX.Element {
+export function Arena({ run }: { run: Run }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
+  const runRef = useRef(run)
+  runRef.current = run
 
   useEffect(() => {
     const host = hostRef.current
@@ -37,13 +37,6 @@ export function ArenaDebug(): React.JSX.Element {
       if (destroyed) return
       host.appendChild(app.canvas)
 
-      const registry = loadContent()
-      const sim = new Sim(registry, { seed: Date.now() >>> 0, playerCount: 1 })
-      sim.equipWeapon(0, 'practice-wand')
-      sim.equipWeapon(0, 'practice-sword')
-      const act = registry.act('act1')
-      sim.startWave(act.waves, 1)
-
       const world = new Container()
       app.stage.addChild(world)
       const gGround = new Graphics()
@@ -63,7 +56,11 @@ export function ArenaDebug(): React.JSX.Element {
 
       let acc = 0
       app.ticker.add((t) => {
-        // Input → move intent (keyboard now; first gamepad's left stick too).
+        const currentRun = runRef.current
+        const sim = currentRun.sim
+        const registry = currentRun.registry
+
+        // Input → move intent (keyboard; first connected gamepad's left stick).
         let mx = 0
         let my = 0
         if (keys.has('a') || keys.has('arrowleft')) mx -= 1
@@ -76,20 +73,16 @@ export function ArenaDebug(): React.JSX.Element {
           mx = pad.axes[0]
           my = pad.axes[1]
         }
-        // Screen-relative input mapped onto the iso ground plane.
         sim.setMoveIntent(0, my + mx, my - mx)
 
-        // Fixed-step sim; loop waves for now (intermission screens come next).
+        // Fixed-step run tick (run.tick only advances during the arena phase).
         acc += t.deltaMS / 1000
         while (acc >= TICK_DT) {
-          sim.tick()
+          currentRun.tick()
           acc -= TICK_DT
-          if (sim.waveSettled && sim.state.wave.number < sim.lastWaveNumber) {
-            sim.startWave(act.waves, sim.state.wave.number + 1)
-          }
         }
 
-        // Camera: center on player 1 for now.
+        // Camera: center on player 1 for now (zoom-to-fit arrives with co-op).
         const p0 = sim.state.players[0]
         const c = toScreen(p0.x, p0.y)
         world.x = app.screen.width / 2 - c.sx
@@ -103,7 +96,6 @@ export function ArenaDebug(): React.JSX.Element {
         const silho = view === 'silhouette'
         const markersOnly = view === 'markers'
 
-        // Arena bounds on the ground plane.
         const { arenaW: aw, arenaH: ah } = sim.state
         const corners = [
           toScreen(-aw / 2, -ah / 2), toScreen(aw / 2, -ah / 2),
@@ -111,7 +103,6 @@ export function ArenaDebug(): React.JSX.Element {
         ]
         gGround.poly(corners.flatMap((k) => [k.sx, k.sy])).fill(0x24242e).stroke({ width: 2, color: 0x3a3a48 })
 
-        // Telegraphed danger zones: floor plane only, urgency ramps with time.
         for (const tg of sim.state.telegraphs) {
           const s = toScreen(tg.x, tg.y)
           const r = tg.radius * 32
@@ -122,7 +113,6 @@ export function ArenaDebug(): React.JSX.Element {
           gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 2, color: 0xd93a3a })
         }
 
-        // Pickups (reserved pickup hue).
         if (!markersOnly) {
           for (const pk of sim.state.pickups) {
             const s = toScreen(pk.x, pk.y)
@@ -130,7 +120,6 @@ export function ArenaDebug(): React.JSX.Element {
           }
         }
 
-        // Enemies: ground marker + body, outlined for overlap survival.
         for (const e of sim.state.enemies) {
           const def = registry.enemy(e.defId)
           const s = toScreen(e.x, e.y)
@@ -144,7 +133,6 @@ export function ArenaDebug(): React.JSX.Element {
           gCritical.circle(s.sx, s.sy - r / 2, r).fill(color).stroke({ width: 2, color: silho ? 0xffffff : 0x000000 })
         }
 
-        // Projectiles: plain bright circles, permanently.
         if (!markersOnly) {
           for (const pr of sim.state.projectiles) {
             const s = toScreen(pr.x, pr.y)
@@ -152,56 +140,48 @@ export function ArenaDebug(): React.JSX.Element {
           }
         }
 
-        // Players: marker + body in the local-player reserved hue, plus weapons.
         for (const p of sim.state.players) {
           const s = toScreen(p.x, p.y)
           gGround.ellipse(s.sx, s.sy, 14, 7).fill({ color: 0x000000, alpha: 0.4 })
           if (markersOnly) continue
           gCritical.circle(s.sx, s.sy - 10, 11).fill(silho ? 0x000000 : 0x4da6ff).stroke({ width: 2.5, color: 0xffffff })
 
-          // Weapons hover beside their owner and rotate to show their aim.
           p.weapons.forEach((w, i) => {
             const def = registry.weapon(w.defId)
             const side = i % 2 === 0 ? 1 : -1
             const baseX = s.sx + side * 22
             const baseY = s.sy - 18 - Math.floor(i / 2) * 12
-            // Aim at the current target; idle weapons rest at a diagonal.
             let angle = side === 1 ? -0.5 : Math.PI + 0.5
             const target = sim.state.enemies.find((e) => e.id === w.targetId)
             if (target) {
               const ts = toScreen(target.x, target.y)
               angle = Math.atan2(ts.sy - baseY, ts.sx - baseX)
             }
-            // Melee lunge: a brief thrust along the aim right after firing.
             const sinceFired = (sim.state.tick - w.firedTick) / TICK_RATE
             const isMelee = !def.projectileSpeed
             const lunge = isMelee && sinceFired < 0.18 ? (1 - sinceFired / 0.18) * 14 : 0
             const wx = baseX + Math.cos(angle) * lunge
             const wy = baseY + Math.sin(angle) * lunge
             const len = 16
-            const tipX = wx + Math.cos(angle) * len
-            const tipY = wy + Math.sin(angle) * len
             const color = silho ? 0x000000 : isMelee ? 0xd9d9e0 : 0x9fe0ff
-            gCritical.moveTo(wx, wy).lineTo(tipX, tipY).stroke({ width: 4, color })
+            gCritical.moveTo(wx, wy).lineTo(wx + Math.cos(angle) * len, wy + Math.sin(angle) * len)
+              .stroke({ width: 4, color })
             gCritical.circle(wx, wy, 3.5).fill(color)
           })
 
-          // Health bar above (debug HUD; the real per-player HUD is richer).
           const bw = 30
           gCritical.rect(s.sx - bw / 2, s.sy - 38, bw, 4).fill(0x000000)
           gCritical.rect(s.sx - bw / 2, s.sy - 38, (bw * p.health) / p.maxHealth, 4).fill(0x6dff6d)
         }
 
-        // Shared HUD: wave state + player 1 vitals, whole numbers only.
         const enemiesLeft =
           sim.state.enemies.length +
           sim.state.wave.pendingSpawns.reduce((a, g) => a + g.remaining, 0) +
           sim.state.wave.deferred.length
         hud.text =
-          `Wave ${sim.state.wave.number}   Enemies ${enemiesLeft}\n` +
+          `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}   Enemies ${enemiesLeft}\n` +
           `HP ${Math.ceil(p0.health)}/${p0.maxHealth}   Lv ${p0.level}` +
           `   XP ${Math.floor(p0.xp)}   Gold ${p0.gold}` +
-          (p0.pendingDrafts > 0 ? `   Drafts +${p0.pendingDrafts}` : '') +
           (view !== 'normal' ? `\n[debug view: ${view} — F1 normal]` : '')
       })
     })

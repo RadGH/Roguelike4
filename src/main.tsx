@@ -1,10 +1,10 @@
 import { createRoot } from 'react-dom/client'
 import { GAME_TITLE } from './branding'
-import { ArenaDebug } from './app/ArenaDebug'
+import { App } from './app/App'
 
 document.title = GAME_TITLE
 
 const root = document.getElementById('root')
 if (root) {
-  createRoot(root).render(<ArenaDebug />)
+  createRoot(root).render(<App />)
 }

@@ -59,6 +59,30 @@ export interface EnemyDef {
   props?: Record<string, number>
 }
 
+/**
+ * Perks are the numbers layer of a build: per-character attribute unlocks
+ * obtained only through level-up drafts. Every perk affects one attribute.
+ * The tier it rolls at multiplies `amount` (whole numbers only).
+ */
+export type PerkAttribute =
+  | 'maxHealth' | 'regen' | 'armor' | 'dodge' | 'flatReduction' | 'resist'
+  | 'lifesteal' | 'moveSpeed' | 'pickupRadius'
+  | 'meleePct' | 'rangedPct' | 'magicPct' | 'allPct'
+  | 'cooldownPct' | 'goldPct' | 'xpPct'
+
+export interface PerkDef {
+  id: string
+  name: string
+  attribute: PerkAttribute
+  /** Whole-number magnitude at tier 1; tiers multiply it. */
+  amount: number
+  tags: Tag[]
+}
+
+/** Quality tiers: one colour ladder for everything tiered. */
+export const TIER_MULTIPLIER = [1, 2, 3, 4] as const
+export const TIER_NAMES = ['White', 'Blue', 'Yellow', 'Green'] as const
+
 export interface SpawnGroup {
   /** Seconds after wave start. */
   at: number

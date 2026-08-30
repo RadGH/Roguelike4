@@ -10,6 +10,7 @@ import type { WaveDef } from '../data/types'
 import type { DamageType } from '../data/tags'
 import { Tracker } from '../systems/tracker'
 import { emptyDefenses, resolveDamage, xpForLevel } from '../systems/damage'
+import { damageMultiplier } from '../systems/stats'
 
 /** Telegraph severities: the longer the window, the larger the payload. */
 export const TELEGRAPH_WINDOWS: Record<TelegraphSeverity, number> = {
@@ -81,6 +82,14 @@ export class Sim {
       pendingDrafts: 0,
       gold: 0,
       pickupRadius: 1.5,
+      perks: [],
+      meleePct: 0,
+      rangedPct: 0,
+      magicPct: 0,
+      allPct: 0,
+      cooldownPct: 0,
+      goldPct: 0,
+      xpPct: 0,
       weapons: [],
       alive: true,
     }
@@ -366,6 +375,7 @@ export class Sim {
     const result = resolveDamage(amount, type, p.defenses, isAttack, this.rngCombat.next())
     this.tracker.recordTaken({
       tick: this.state.tick,
+      wave: this.state.wave.number,
       playerId: p.id,
       sourceId,
       amount,
@@ -392,8 +402,9 @@ export class Sim {
         const target = this.selectTarget(p, def.range, def.targeting, w.staggerOffset)
         w.targetId = target?.id ?? null
         if (!target) continue // hold fire — no sensible target
-        w.cooldownLeft = def.cooldown
+        w.cooldownLeft = def.cooldown * (1 - p.cooldownPct / 100)
         w.firedTick = s.tick
+        const damage = def.damage * damageMultiplier(p, def.damageType)
 
         if (def.projectileSpeed) {
           const n = norm(target.x - p.x, target.y - p.y)
@@ -403,7 +414,7 @@ export class Sim {
             y: p.y,
             vx: n.x * def.projectileSpeed,
             vy: n.y * def.projectileSpeed,
-            damage: def.damage,
+            damage,
             damageType: def.damageType,
             ownerId: p.id,
             sourceId: def.id,
@@ -412,7 +423,7 @@ export class Sim {
           s.projectiles.push(pr)
         } else {
           // Instant melee resolution; the renderer shows the lunge.
-          this.damageEnemy(target, def.damage, p.id, def.id)
+          this.damageEnemy(target, damage, p.id, def.id)
         }
       }
     }
@@ -464,6 +475,7 @@ export class Sim {
     const killed = e.health <= 0
     this.tracker.recordDamage({
       tick: this.state.tick,
+      wave: this.state.wave.number,
       playerId,
       sourceId,
       targetId: e.defId,
@@ -575,9 +587,9 @@ export class Sim {
     // Gold and XP are shared and multiplied: every player receives the full amount.
     for (const p of this.state.players) {
       if (pk.kind === 'gold') {
-        p.gold += pk.amount
+        p.gold += Math.round(pk.amount * (1 + p.goldPct / 100))
       } else {
-        p.xp += pk.amount
+        p.xp += Math.round(pk.amount * (1 + p.xpPct / 100))
         // Level-ups bank a draft; the draft screen opens at intermission.
         while (p.xp >= xpForLevel(p.level)) {
           p.xp -= xpForLevel(p.level)

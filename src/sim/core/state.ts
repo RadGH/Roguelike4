@@ -29,9 +29,25 @@ export interface PlayerState {
   gold: number
   /** Pickup attraction radius in world units. */
   pickupRadius: number
+  /** Drafted perks (the numbers layer of the build). */
+  perks: OwnedPerk[]
+  /** Whole-number percent modifiers derived from perks (see stats.ts). */
+  meleePct: number
+  rangedPct: number
+  magicPct: number
+  allPct: number
+  cooldownPct: number
+  goldPct: number
+  xpPct: number
   /** Equipped weapon instance list (ids into registry + per-instance state). */
   weapons: WeaponInstance[]
   alive: boolean
+}
+
+export interface OwnedPerk {
+  perkId: string
+  /** 0-based tier index into TIER_MULTIPLIER (White/Blue/Yellow/Green). */
+  tier: number
 }
 
 export interface WeaponInstance {

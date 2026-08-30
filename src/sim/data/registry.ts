@@ -1,4 +1,4 @@
-import type { ActDef, EnemyDef, WeaponDef } from './types'
+import type { ActDef, EnemyDef, PerkDef, WeaponDef } from './types'
 
 /**
  * Content registry: one source of truth for definitions, shared by the game,
@@ -9,6 +9,7 @@ export class Registry {
   readonly enemies = new Map<string, EnemyDef>()
   readonly weapons = new Map<string, WeaponDef>()
   readonly acts = new Map<string, ActDef>()
+  readonly perks = new Map<string, PerkDef>()
 
   registerEnemies(defs: EnemyDef[]): void {
     for (const d of defs) {
@@ -29,6 +30,19 @@ export class Registry {
       if (this.acts.has(d.id)) throw new Error(`duplicate act id: ${d.id}`)
       this.acts.set(d.id, d)
     }
+  }
+
+  registerPerks(defs: PerkDef[]): void {
+    for (const d of defs) {
+      if (this.perks.has(d.id)) throw new Error(`duplicate perk id: ${d.id}`)
+      this.perks.set(d.id, d)
+    }
+  }
+
+  perk(id: string): PerkDef {
+    const d = this.perks.get(id)
+    if (!d) throw new Error(`unknown perk: ${id}`)
+    return d
   }
 
   enemy(id: string): EnemyDef {
