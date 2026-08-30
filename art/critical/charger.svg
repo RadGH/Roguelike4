@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Charger body plan: bulky, forward-leaning, horned. Hue: deep orange. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M8 40 Q8 22 28 20 Q48 18 54 30 L58 38 Q58 48 46 48 L18 48 Q8 48 8 40 Z" fill="#ff7043"/>
+    <path d="M52 28 L64 20 L58 34 Z" fill="#f2f2f2"/>
+    <rect x="14" y="46" width="8" height="12" rx="3" fill="#ff7043"/>
+    <rect x="40" y="46" width="8" height="12" rx="3" fill="#ff7043"/>
+  </g>
+  <circle cx="46" cy="32" r="3.5" fill="#000"/>
+</svg>

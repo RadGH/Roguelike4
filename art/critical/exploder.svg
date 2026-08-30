@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Exploder body plan: round, bloated, spotted. Hue: sickly green. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <circle cx="32" cy="36" r="24" fill="#9acd32"/>
+    <circle cx="22" cy="28" r="5" fill="#6f9a1f" stroke-width="2"/>
+    <circle cx="42" cy="44" r="6" fill="#6f9a1f" stroke-width="2"/>
+    <circle cx="38" cy="24" r="3.5" fill="#6f9a1f" stroke-width="2"/>
+    <path d="M28 10 Q32 2 36 10" fill="none" stroke-width="3"/>
+  </g>
+  <circle cx="26" cy="38" r="3.5" fill="#000"/>
+  <circle cx="38" cy="34" r="3.5" fill="#000"/>
+</svg>

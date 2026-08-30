@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Burrower body plan: flat mound with a dorsal fin. Hue: brown. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M6 50 Q14 34 32 34 Q50 34 58 50 Q45 56 32 56 Q19 56 6 50 Z" fill="#b08a5a"/>
+    <path d="M28 34 L34 16 L42 34 Z" fill="#8a663d"/>
+  </g>
+  <circle cx="20" cy="44" r="3.5" fill="#000"/>
+  <circle cx="44" cy="44" r="3.5" fill="#000"/>
+</svg>

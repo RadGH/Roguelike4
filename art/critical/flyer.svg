@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Flyer body plan: winged, elevated. Hue: cyan. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M30 28 L4 14 Q10 34 26 36 Z" fill="#5ad9d9"/>
+    <path d="M34 28 L60 14 Q54 34 38 36 Z" fill="#5ad9d9"/>
+    <path d="M32 18 Q42 30 32 52 Q22 30 32 18 Z" fill="#2fa8a8"/>
+  </g>
+  <circle cx="32" cy="28" r="3" fill="#000"/>
+</svg>

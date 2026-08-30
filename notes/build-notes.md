@@ -138,5 +138,22 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
 - Loadout screen note: per the vault a slot with no choice is skipped entirely; since no
   current class offers alternatives, the loadout screen correctly does not exist yet. It
   arrives when a class first offers two starting options.
-- Next: pause menu w/ live attribution, character/details screens, soft draft timer; then
-  more content breadth (items system, more classes) and the simulation batch runner (M6).
+- Eighth chunk (2c96d97): the balance simulator exists and immediately earned its keep.
+  `npm run simulate -- --runs 40 --players 1 --skill 0.6` plays full headless runs and
+  reports win rate, death-wave histogram, economy, and damage shares.
+  **First findings, all acted on:**
+  - Initial state: 0% win rate, with death cliffs at wave 7 (Delver/Brood Sac) and 9, and
+    no healing anywhere between waves — a death spiral by design accident. Fix: survivors
+    recover a third of max health at wave start (design call, worth vault confirmation).
+  - Co-op was trivial (97% duo win) because spawn counts ignored player count. Fix: +50%
+    spawns per extra player. Post-fix: solo 38% / duo 53% / 4P 90% at mid skill — co-op
+    being easier is intended (the revive backstop), but 4P may still be too generous.
+  - Runs were build-capped, not skill-capped: shops sold identical white weapons all run.
+    Implemented the vault's weapon quality tiers (damage multipliers, better rolls in
+    later shops, tier pricing) — deaths now spread across waves 7–9 instead of one wall.
+  - **Honest caveat for the vault's Simulation Mode note:** the movement-policy skill knob
+    does not yet monotonically improve outcomes (0.85 skill scored below 0.6 in one
+    batch) — the policy is the dominant error term, exactly as the vault predicted. Treat
+    absolute win rates as rough; the histograms and A/B deltas are the trustworthy part.
+- Next: pause menu w/ live attribution + character/details screens + draft timer, then
+  content breadth (more classes/weapons/perks) with sim checks per addition.

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Retaliator body plan: low, armored, spiked shell. Hue: steel. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M20 26 L26 12 L30 26 Z" fill="#f2f2f2"/>
+    <path d="M32 24 L38 10 L42 25 Z" fill="#f2f2f2"/>
+    <path d="M44 28 L52 18 L52 30 Z" fill="#f2f2f2"/>
+    <path d="M8 46 Q10 26 32 26 Q54 26 56 46 Q44 52 32 52 Q20 52 8 46 Z" fill="#8a9ab0"/>
+    <path d="M16 34 Q32 28 48 34" fill="none" stroke-width="2.5" stroke="#5a6a80"/>
+  </g>
+  <circle cx="14" cy="46" r="3" fill="#000"/>
+</svg>

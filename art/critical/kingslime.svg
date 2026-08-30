@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The King Slime: blocker dome + crown. Tier colours applied by tint-free
+       size scaling; the crown is what says "boss". -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M8 52 Q8 18 32 18 Q56 18 56 52 Q44 58 32 58 Q20 58 8 52 Z" fill="#4fd97a"/>
+    <path d="M20 18 L20 6 L27 13 L32 4 L37 13 L44 6 L44 18 Q32 14 20 18 Z" fill="#ffd34d"/>
+  </g>
+  <circle cx="25" cy="40" r="4" fill="#000"/>
+  <circle cx="41" cy="40" r="4" fill="#000"/>
+  <path d="M28 48 Q32 51 36 48" fill="none" stroke="#000" stroke-width="2.5"/>
+</svg>

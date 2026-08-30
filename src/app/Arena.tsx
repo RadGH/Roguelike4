@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { Application, Container, Graphics, Text } from 'pixi.js'
+import { Application, Container, Graphics, Sprite, Text } from 'pixi.js'
 import { TICK_DT, TICK_RATE } from '../sim/core/sim'
 import type { Run } from '../sim/run/run'
 import { toScreen } from '../render/iso'
+import { loadCriticalTextures, type CriticalTextures } from '../render/sprites'
 
 /**
  * The arena canvas. Renders the run's sim with gameplay-critical primitives —
@@ -33,16 +34,51 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
     }
     const onKeyUp = (e: KeyboardEvent): void => { keys.delete(e.key.toLowerCase()) }
 
-    void app.init({ resizeTo: host, background: 0x1a1a22, antialias: true }).then(() => {
+    void app.init({ resizeTo: host, background: 0x1a1a22, antialias: true }).then(async () => {
       if (destroyed) return
       host.appendChild(app.canvas)
+
+      let textures: CriticalTextures | null = null
+      try {
+        textures = await loadCriticalTextures()
+      } catch {
+        textures = null // primitive-shape fallback keeps the game playable
+      }
+      if (destroyed) return
 
       const world = new Container()
       app.stage.addChild(world)
       const gGround = new Graphics()
       const gTelegraph = new Graphics()
+      const spriteLayer = new Container()
       const gCritical = new Graphics()
-      world.addChild(gGround, gTelegraph, gCritical)
+      world.addChild(gGround, gTelegraph, spriteLayer, gCritical)
+
+      // One pooled sprite per live entity, keyed by a stable string id.
+      const pool = new Map<string, Sprite>()
+      const seen = new Set<string>()
+      const sprite = (key: string, tex: import('pixi.js').Texture): Sprite => {
+        let sp = pool.get(key)
+        if (!sp) {
+          sp = new Sprite(tex)
+          sp.anchor.set(0.5, 0.8) // feet near the ground marker
+          pool.set(key, sp)
+          spriteLayer.addChild(sp)
+        }
+        if (sp.texture !== tex) sp.texture = tex
+        seen.add(key)
+        return sp
+      }
+      const sweepPool = (): void => {
+        for (const [key, sp] of pool) {
+          if (!seen.has(key)) {
+            spriteLayer.removeChild(sp)
+            sp.destroy()
+            pool.delete(key)
+          }
+        }
+        seen.clear()
+      }
 
       const hud = new Text({
         text: '',
@@ -103,9 +139,11 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           minX = Math.min(minX, pt.sx); maxX = Math.max(maxX, pt.sx)
           minY = Math.min(minY, pt.sy); maxY = Math.max(maxY, pt.sy)
         }
-        const pad2 = 220
+        // Zoom in tight when players are together (solo plays close), out to
+        // keep everyone framed — the min-size rules are judged at the low end.
+        const pad2 = 260
         const targetScale = Math.min(
-          1,
+          1.8,
           app.screen.width / (maxX - minX + pad2 * 2),
           app.screen.height / (maxY - minY + pad2 * 2),
         )
@@ -159,7 +197,15 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         if (!markersOnly) {
           for (const pk of sim.state.pickups) {
             const s = toScreen(pk.x, pk.y)
-            gCritical.circle(s.sx, s.sy, 5).fill(silho ? 0x000000 : pk.kind === 'gold' ? 0xffd34d : 0x7ee3ff)
+            if (textures) {
+              const sp = sprite(`pk${pk.id}`, pk.kind === 'gold' ? textures.gold : textures.xp)
+              sp.position.set(s.sx, s.sy + 4)
+              sp.width = 12
+              sp.height = 12
+              sp.tint = silho ? 0x000000 : 0xffffff
+            } else {
+              gCritical.circle(s.sx, s.sy, 5).fill(silho ? 0x000000 : pk.kind === 'gold' ? 0xffd34d : 0x7ee3ff)
+            }
           }
         }
 
@@ -174,23 +220,39 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
             continue
           }
           if (markersOnly) continue
-          // Reserved palette: colour encodes the archetype, i.e. the threat.
-          const ARCHETYPE_COLOR: Record<string, number> = {
-            swarm: 0xd94f4f, chaser: 0xe08a3a, ranged: 0xb44fd9,
-            charger: 0xff7043, exploder: 0x9acd32, flyer: 0x5ad9d9,
-            blocker: 0x4fd97a, burrower: 0xb08a5a, spawner: 0xd94fb0,
-            retaliator: 0x8a9ab0,
+          const lift = def.archetype === 'flyer' ? 22 : 0
+          const tex = textures?.enemy(e.defId, def.archetype) ?? null
+          if (tex) {
+            const sp = sprite(`e${e.id}`, tex)
+            const size = Math.max(20, r * 2.8)
+            sp.position.set(s.sx, s.sy - lift + 4)
+            sp.height = size
+            sp.width = size
+            // Facing follows horizontal velocity (art faces right).
+            sp.scale.x = (e.vx < -0.1 ? -1 : 1) * Math.abs(sp.scale.x)
+            sp.tint = silho ? 0x000000 : 0xffffff
+          } else {
+            // Primitive fallback keeps the reserved palette meaning intact.
+            const ARCHETYPE_COLOR: Record<string, number> = {
+              swarm: 0xd94f4f, chaser: 0xe08a3a, ranged: 0xb44fd9,
+              charger: 0xff7043, exploder: 0x9acd32, flyer: 0x5ad9d9,
+              blocker: 0x4fd97a, burrower: 0xb08a5a, spawner: 0xd94fb0,
+              retaliator: 0x8a9ab0,
+            }
+            const color = silho ? 0x000000 : (ARCHETYPE_COLOR[def.archetype] ?? 0x4fd97a)
+            gCritical.circle(s.sx, s.sy - lift - r / 2, r).fill(color).stroke({ width: 2, color: silho ? 0xffffff : 0x000000 })
           }
-          const color = silho ? 0x000000 : (ARCHETYPE_COLOR[def.archetype] ?? 0x4fd97a)
-          const lift = def.archetype === 'flyer' ? 22 : r / 2
-          gCritical.circle(s.sx, s.sy - lift, r).fill(color).stroke({ width: 2, color: silho ? 0xffffff : 0x000000 })
           // Charger windup: a bright pulse announces the committed charge.
           if (e.mode === 2) {
-            gCritical.circle(s.sx, s.sy - lift, r + 4).stroke({ width: 3, color: 0xffffff })
+            gCritical.circle(s.sx, s.sy - lift - r / 2, r + 5).stroke({ width: 3, color: 0xffffff })
           }
           // Flyers stay visually tied to their true ground position.
           if (def.archetype === 'flyer') {
-            gCritical.moveTo(s.sx, s.sy).lineTo(s.sx, s.sy - lift + r).stroke({ width: 1, color: 0x5ad9d9 })
+            gCritical.moveTo(s.sx, s.sy).lineTo(s.sx, s.sy - lift).stroke({ width: 1, color: 0x5ad9d9 })
+          }
+          // Elite ring: resistant elites read as armored.
+          if (e.elite === 'resistant') {
+            gCritical.ellipse(s.sx, s.sy, r + 6, (r + 6) / 2).stroke({ width: 2, color: 0xf2f2f2 })
           }
         }
 
@@ -211,19 +273,32 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           gGround.ellipse(s.sx, s.sy, 16, 8).stroke({ width: 2, color: ring })
           if (markersOnly) continue
 
+          const drawBody = (tint: number): void => {
+            if (textures) {
+              const sp = sprite(`p${p.id}`, textures.player)
+              sp.position.set(s.sx, s.sy + 4)
+              sp.height = 40
+              sp.width = 40
+              sp.scale.x = (p.moveX < -0.05 ? -1 : 1) * Math.abs(sp.scale.x)
+              sp.tint = tint
+            } else {
+              gCritical.circle(s.sx, s.sy - 10, 11).fill(tint === 0xffffff ? 0x3d7fbf : tint).stroke({ width: 2.5, color: ring })
+            }
+          }
+
           if (p.downed) {
             // Downed: grey body, shrinking bleed-out ring, revive progress bar.
-            gCritical.circle(s.sx, s.sy - 10, 11).fill(0x55555f).stroke({ width: 2.5, color: ring })
+            drawBody(0x55555f)
             const frac = Math.max(0, p.bleedOut / 15)
-            gCritical.circle(s.sx, s.sy - 10, 15).stroke({ width: 2, color: 0xd93a3a })
-            gCritical.rect(s.sx - 15, s.sy - 34, 30 * frac, 3).fill(0xd93a3a)
+            gCritical.circle(s.sx, s.sy - 12, 17).stroke({ width: 2, color: 0xd93a3a })
+            gCritical.rect(s.sx - 15, s.sy - 40, 30 * frac, 3).fill(0xd93a3a)
             if (p.reviveProgress > 0) {
-              gCritical.rect(s.sx - 15, s.sy - 40, 30 * (p.reviveProgress / 3), 4).fill(0x6dff6d)
+              gCritical.rect(s.sx - 15, s.sy - 46, 30 * (p.reviveProgress / 3), 4).fill(0x6dff6d)
             }
             continue
           }
 
-          gCritical.circle(s.sx, s.sy - 10, 11).fill(silho ? 0x000000 : 0x3d7fbf).stroke({ width: 2.5, color: ring })
+          drawBody(silho ? 0x000000 : 0xffffff)
 
           p.weapons.forEach((w, i) => {
             const def = registry.weapon(w.defId)
@@ -268,6 +343,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           playerLines.join('\n') +
           (bossPieces.length > 0 ? `\nKing Slime — ${bossPieces.length} piece${bossPieces.length > 1 ? 's' : ''}` : '') +
           (view !== 'normal' ? `\n[debug view: ${view} — F1 normal]` : '')
+
+        sweepPool()
       })
     })
 
