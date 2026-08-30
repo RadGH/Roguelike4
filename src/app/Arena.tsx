@@ -93,6 +93,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
       let acc = 0
       let prevStart = false
       let prevPadCount = 0
+      const prevA: boolean[] = []
+      const prevB: boolean[] = []
       let camScale = 1
       let camX = 0
       let camY = 0
@@ -138,6 +140,23 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           }
           // Screen-relative input mapped onto the iso ground plane.
           sim.setMoveIntent(p.id, my + mx, my - mx)
+
+          // The two-button budget: A = equipment, B = movement item.
+          // Keyboard (P1): Space = A, Shift = B. Pads: buttons 0 and 1.
+          let aDown = false
+          let bDown = false
+          if (p.id === 0) {
+            if (keys.has(' ')) aDown = true
+            if (keys.has('shift')) bDown = true
+          }
+          if (pad) {
+            if (pad.buttons[0]?.pressed) aDown = true
+            if (pad.buttons[1]?.pressed) bDown = true
+          }
+          if (aDown && !prevA[p.id]) sim.useEquipment(p.id)
+          if (bDown && !prevB[p.id]) sim.useMovement(p.id)
+          prevA[p.id] = aDown
+          prevB[p.id] = bDown
         }
 
         // Fixed-step run tick (run.tick only advances during the arena phase).
@@ -352,7 +371,13 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         const playerLines = sim.state.players.map((p) => {
           const status = !p.alive ? 'returning next wave' : p.downed ? 'DOWN — rescue!' :
             `HP ${Math.ceil(p.health)}/${p.maxHealth}`
-          return `P${p.id + 1}  ${status}  Lv ${p.level}  Gold ${p.gold}`
+          const slot = (label: string, s2: typeof p.equipment): string => {
+            if (!s2) return ''
+            const name = registry.active(s2.defId).name
+            return `  ${label}:${name}${s2.cdLeft > 0 ? ` ${Math.ceil(s2.cdLeft)}s` : ' ✓'}`
+          }
+          return `P${p.id + 1}  ${status}  Lv ${p.level}  Gold ${p.gold}` +
+            slot('A', p.equipment) + slot('B', p.movement)
         })
         hud.text =
           `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}   Enemies ${enemiesLeft}\n` +

@@ -29,6 +29,8 @@ export interface PlayerSave {
   health: number
   perks: OwnedPerk[]
   items: string[]
+  equipment: string | null
+  movement: string | null
   weapons: { defId: string; tier: number }[]
 }
 

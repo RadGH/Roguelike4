@@ -1,0 +1,62 @@
+[
+  {
+    "id": "repulse",
+    "name": "Repulse",
+    "description": "Push all nearby enemies away.",
+    "slot": "equipment",
+    "tags": ["Area", "Utility"],
+    "cooldown": 12,
+    "price": 50,
+    "effect": { "kind": "repulse", "radius": 3.5, "push": 3 }
+  },
+  {
+    "id": "maelstrom",
+    "name": "Maelstrom",
+    "description": "Drag nearby enemies together in front of you.",
+    "slot": "equipment",
+    "tags": ["Area", "Occult"],
+    "cooldown": 14,
+    "price": 55,
+    "effect": { "kind": "maelstrom", "radius": 5, "pull": 3 }
+  },
+  {
+    "id": "ground-slam",
+    "name": "Ground Slam",
+    "description": "Slam the ground: 8 damage to everything close.",
+    "slot": "equipment",
+    "tags": ["Area", "Melee"],
+    "cooldown": 10,
+    "price": 50,
+    "effect": { "kind": "groundSlam", "radius": 2.5, "damage": 8 }
+  },
+  {
+    "id": "lesser-heal",
+    "name": "Lesser Heal",
+    "description": "Heal yourself and nearby allies for 6.",
+    "slot": "equipment",
+    "tags": ["Healing"],
+    "cooldown": 16,
+    "price": 55,
+    "effect": { "kind": "heal", "radius": 3, "amount": 6 }
+  },
+  {
+    "id": "dash",
+    "name": "Dash",
+    "description": "A short burst of movement. No protection — just speed.",
+    "slot": "movement",
+    "tags": ["Movement"],
+    "cooldown": 3,
+    "price": 40,
+    "effect": { "kind": "dash", "distance": 3.2 }
+  },
+  {
+    "id": "blink",
+    "name": "Blink",
+    "description": "Teleport a short way, passing through everything.",
+    "slot": "movement",
+    "tags": ["Movement", "Occult"],
+    "cooldown": 5,
+    "price": 50,
+    "effect": { "kind": "blink", "distance": 5 }
+  }
+]

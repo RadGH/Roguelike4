@@ -35,6 +35,10 @@ export interface PlayerState {
   perks: OwnedPerk[]
   /** Passive items carried (the effects layer). Duplicates stack. */
   items: string[]
+  /** The A slot: one active equipment item, or empty. */
+  equipment: ActiveSlot | null
+  /** The B slot: one movement item, or empty. */
+  movement: ActiveSlot | null
   /** Whole-number percent modifiers derived from perks (see stats.ts). */
   meleePct: number
   rangedPct: number
@@ -56,6 +60,12 @@ export interface PlayerState {
   bleedOut: number
   /** Seconds of teammate proximity accumulated toward a revive. */
   reviveProgress: number
+}
+
+export interface ActiveSlot {
+  defId: string
+  /** Seconds until usable again. */
+  cdLeft: number
 }
 
 export interface OwnedPerk {

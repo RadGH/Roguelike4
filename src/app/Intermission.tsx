@@ -118,12 +118,16 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                 <div className="cards">
                   {screen.rewards.map((r, i) => {
                     if (r.resolved) return null
-                    const item = run.registry.item(r.itemId)
+                    const isActive = run.isActive(r.itemId)
+                    const item = isActive ? run.registry.active(r.itemId) : run.registry.item(r.itemId)
+                    const slotNote = isActive
+                      ? ` · ${(item as { slot: string }).slot === 'equipment' ? 'A slot' : 'B slot'} (replaces what you carry)`
+                      : ''
                     return (
                       <div className="card" key={i} style={{ cursor: 'default' }}>
                         <span>
                           <span className="name">{item.name}</span>
-                          <div className="desc">{item.description} · {item.tags.join(', ')}</div>
+                          <div className="desc">{item.description} · {item.tags.join(', ')}{slotNote}</div>
                         </span>
                         <span style={{ display: 'flex', gap: 6 }}>
                           <button data-testid={`keep-${i}`} onClick={() => { run.resolveReward(p.id, i, 'kept'); onChange() }}>

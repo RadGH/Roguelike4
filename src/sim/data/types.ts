@@ -96,6 +96,9 @@ export interface ClassDef {
   description: string
   weaponSlots: number
   startingWeapons: string[]
+  /** Slot items the class begins with (found/swappable content, not innate). */
+  startingEquipment?: string
+  startingMovement?: string
   /** Innate stat modifiers, applied before perks in the recompute. */
   mods?: Partial<Record<
     'maxHealth' | 'moveSpeedPct' | 'xpPct' | 'goldPct' | 'allPct' | 'armor' | 'regen',
@@ -125,6 +128,32 @@ export interface ItemDef {
   tags: Tag[]
   price: number
   effects: ItemEffect[]
+}
+
+/**
+ * Active slot items: the entire manual input surface beyond movement.
+ * Equipment fills the A slot (long cooldown, impactful, positional where
+ * possible); movement items fill the B slot (short cooldown repositioning,
+ * no invulnerability). One of each, exclusive, may be empty.
+ */
+export type ActiveEffect =
+  | { kind: 'repulse'; radius: number; push: number }
+  | { kind: 'maelstrom'; radius: number; pull: number }
+  | { kind: 'groundSlam'; radius: number; damage: number }
+  | { kind: 'heal'; radius: number; amount: number }
+  | { kind: 'dash'; distance: number }
+  | { kind: 'blink'; distance: number }
+
+export interface ActiveDef {
+  id: string
+  name: string
+  description: string
+  slot: 'equipment' | 'movement'
+  tags: Tag[]
+  /** Seconds between uses. Equipment: long. Movement: short. */
+  cooldown: number
+  price: number
+  effect: ActiveEffect
 }
 
 /** Behavioral unlock conditions — they ask you to DO something, not to grind. */

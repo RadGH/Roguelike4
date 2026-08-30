@@ -117,6 +117,22 @@ export function moveIntent(sim: Sim, p: PlayerState, skill: number, rng: Rng): {
   return norm(vx, vy)
 }
 
+/** Spend the A/B buttons on sensible moments (crowds, low health, escape). */
+export function useActives(sim: Sim, p: PlayerState, rng: Rng): void {
+  let nearby = 0
+  for (const e of sim.state.enemies) {
+    const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2
+    if (d2 < 16) nearby++
+  }
+  if (p.equipment && p.equipment.cdLeft <= 0) {
+    const hurt = p.health < p.maxHealth * 0.5
+    if (nearby >= 4 || (hurt && rng.next() < 0.1)) sim.useEquipment(p.id)
+  }
+  if (p.movement && p.movement.cdLeft <= 0 && nearby >= 5) {
+    sim.useMovement(p.id)
+  }
+}
+
 /**
  * Intermission policy: a simulated shopper needs a decision rule, and this
  * rule encodes an opinion about what is good — stated here so it can be

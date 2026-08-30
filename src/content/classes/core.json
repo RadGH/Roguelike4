@@ -20,6 +20,7 @@
     "description": "Quick on their feet. Hits harder with Light weapons, worse with Heavy ones.",
     "weaponSlots": 2,
     "startingWeapons": ["practice-sword"],
+    "startingMovement": "dash",
     "mods": { "moveSpeedPct": 12 },
     "affinities": [
       { "tag": "Light", "pct": 20 },
@@ -32,6 +33,7 @@
     "description": "Attuned to Magic. Weapons carrying the Magic tag hit harder.",
     "weaponSlots": 2,
     "startingWeapons": ["practice-wand"],
+    "startingMovement": "blink",
     "affinities": [
       { "tag": "Magic", "pct": 25 }
     ]
@@ -42,6 +44,7 @@
     "description": "Slow and armored. Starts with more health and takes less from everything.",
     "weaponSlots": 2,
     "startingWeapons": ["practice-sword"],
+    "startingEquipment": "repulse",
     "mods": { "maxHealth": 8, "armor": 15, "moveSpeedPct": -10 }
   }
 ]

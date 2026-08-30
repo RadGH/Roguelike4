@@ -6,7 +6,7 @@ import type {
   ProjectileState, SimState, TelegraphSeverity, WeaponInstance,
 } from './state'
 import type { Registry } from '../data/registry'
-import type { EnemyDef, WaveDef } from '../data/types'
+import type { ActiveDef, EnemyDef, WaveDef } from '../data/types'
 import type { DamageType } from '../data/tags'
 import { Tracker } from '../systems/tracker'
 import { emptyDefenses, resolveDamage, xpForLevel } from '../systems/damage'
@@ -99,6 +99,8 @@ export class Sim {
       pickupRadius: 1.5,
       perks: [],
       items: [],
+      equipment: null,
+      movement: null,
       meleePct: 0,
       rangedPct: 0,
       magicPct: 0,
@@ -312,6 +314,99 @@ export class Sim {
       p.y = clamp(p.y + p.moveY * speed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
       if (p.regen > 0 && p.health < p.maxHealth) {
         p.health = Math.min(p.maxHealth, p.health + p.regen * TICK_DT)
+      }
+      if (p.equipment && p.equipment.cdLeft > 0) p.equipment.cdLeft -= TICK_DT
+      if (p.movement && p.movement.cdLeft > 0) p.movement.cdLeft -= TICK_DT
+    }
+  }
+
+  /** Equip a slot item, replacing whatever occupied the slot (exclusive). */
+  equipActive(playerId: number, defId: string): void {
+    const def = this.registry.active(defId)
+    const p = this.player(playerId)
+    const slot = { defId: def.id, cdLeft: 0 }
+    if (def.slot === 'equipment') p.equipment = slot
+    else p.movement = slot
+  }
+
+  /** The A button: fire the equipment item if ready. */
+  useEquipment(playerId: number): boolean {
+    const p = this.player(playerId)
+    if (!p.alive || p.downed || !p.equipment || p.equipment.cdLeft > 0) return false
+    const def = this.registry.active(p.equipment.defId)
+    this.executeActive(p, def)
+    p.equipment.cdLeft = def.cooldown
+    return true
+  }
+
+  /** The B button: fire the movement item if ready. */
+  useMovement(playerId: number): boolean {
+    const p = this.player(playerId)
+    if (!p.alive || p.downed || !p.movement || p.movement.cdLeft > 0) return false
+    const def = this.registry.active(p.movement.defId)
+    this.executeActive(p, def)
+    p.movement.cdLeft = def.cooldown
+    return true
+  }
+
+  private executeActive(p: PlayerState, def: ActiveDef): void {
+    const s = this.state
+    const eff = def.effect
+    switch (eff.kind) {
+      case 'repulse': {
+        // Moves the horde without disabling it — space, not control.
+        const r2 = eff.radius * eff.radius
+        for (const e of s.enemies) {
+          if (distSq(e, p) > r2) continue
+          const n = norm(e.x - p.x, e.y - p.y)
+          e.x = clamp(e.x + n.x * eff.push, -s.arenaW / 2, s.arenaW / 2)
+          e.y = clamp(e.y + n.y * eff.push, -s.arenaH / 2, s.arenaH / 2)
+        }
+        break
+      }
+      case 'maelstrom': {
+        // The offensive mirror of flocking: compress the horde yourself.
+        const r2 = eff.radius * eff.radius
+        for (const e of s.enemies) {
+          if (distSq(e, p) > r2) continue
+          const n = norm(p.x - e.x, p.y - e.y)
+          const d = dist(e, p)
+          const pull = Math.min(eff.pull, Math.max(0, d - 1))
+          e.x = clamp(e.x + n.x * pull, -s.arenaW / 2, s.arenaW / 2)
+          e.y = clamp(e.y + n.y * pull, -s.arenaH / 2, s.arenaH / 2)
+        }
+        break
+      }
+      case 'groundSlam': {
+        const r2 = eff.radius * eff.radius
+        for (const e of [...s.enemies]) {
+          if (!this.isTargetable(e)) continue
+          if (distSq(e, p) <= r2) {
+            this.damageEnemy(e, eff.damage, p.id, def.id, 'Melee')
+          }
+        }
+        break
+      }
+      case 'heal': {
+        const r2 = eff.radius * eff.radius
+        for (const ally of s.players) {
+          if (!ally.alive || ally.downed) continue
+          if (ally.id === p.id || distSq(ally, p) <= r2) {
+            ally.health = Math.min(ally.maxHealth, ally.health + eff.amount)
+          }
+        }
+        break
+      }
+      case 'dash':
+      case 'blink': {
+        // Purely positional; no invulnerability, no consequences cancelled.
+        const dir = (p.moveX !== 0 || p.moveY !== 0)
+          ? { x: p.moveX, y: p.moveY }
+          : { x: 1, y: 0 }
+        const n = norm(dir.x, dir.y)
+        p.x = clamp(p.x + n.x * eff.distance, -s.arenaW / 2, s.arenaW / 2)
+        p.y = clamp(p.y + n.y * eff.distance, -s.arenaH / 2, s.arenaH / 2)
+        break
       }
     }
   }

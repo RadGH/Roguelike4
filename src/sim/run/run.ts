@@ -102,6 +102,8 @@ export class Run {
         p.pendingDrafts = ps.pendingDrafts
         p.perks = ps.perks.map((o) => ({ ...o }))
         p.items = [...(ps.items ?? [])]
+        if (ps.equipment) this.sim.equipActive(ps.id, ps.equipment)
+        if (ps.movement) this.sim.equipActive(ps.id, ps.movement)
         for (const w of ps.weapons) this.sim.equipWeapon(ps.id, w.defId, w.tier ?? 0)
         recomputePlayer(p, registry)
         p.health = Math.min(ps.health, p.maxHealth)
@@ -112,12 +114,15 @@ export class Run {
       return
     }
 
-    // Each class defines its starting kit.
+    // Each class defines its starting kit — including slot items, which are
+    // ordinary content the class simply begins with (findable, swappable).
     for (const p of this.sim.state.players) {
       const cls = registry.class(p.classId)
       for (const weaponId of cls.startingWeapons) {
         this.sim.equipWeapon(p.id, weaponId)
       }
+      if (cls.startingEquipment) this.sim.equipActive(p.id, cls.startingEquipment)
+      if (cls.startingMovement) this.sim.equipActive(p.id, cls.startingMovement)
     }
     this.sim.startWave(this.act.waves, 1)
   }
@@ -144,6 +149,8 @@ export class Run {
         health: Math.max(1, Math.round(p.health)),
         perks: p.perks.map((o) => ({ ...o })),
         items: [...p.items],
+        equipment: p.equipment?.defId ?? null,
+        movement: p.movement?.defId ?? null,
         weapons: p.weapons.map((w) => ({ defId: w.defId, tier: w.tier })),
       })),
       lootIndex: this.lootIndex,
@@ -197,14 +204,22 @@ export class Run {
       })
     }
     // Unveil the wave's chests: items go to players round-robin, no scramble.
+    // Most chests hold passives; some hold slot items (equipment/movement).
     const items = [...this.registry.items.values()]
+    const actives = [...this.registry.actives.values()]
     const players = this.sim.state.players
     for (let i = 0; i < this.sim.state.wave.chestsDropped && items.length > 0; i++) {
       const receiver = players[this.lootIndex % players.length]
       this.lootIndex++
-      const item = this.rngRun.pick(items)
-      this.personal.get(receiver.id)?.rewards.push({ itemId: item.id, resolved: null })
+      const rollActive = actives.length > 0 && this.rngRun.chance(0.25)
+      const id = rollActive ? this.rngRun.pick(actives).id : this.rngRun.pick(items).id
+      this.personal.get(receiver.id)?.rewards.push({ itemId: id, resolved: null })
     }
+  }
+
+  /** Is a reward id a slot item rather than a passive? */
+  isActive(id: string): boolean {
+    return this.registry.actives.has(id)
   }
 
   /** Resolve a reward: keep it (equip the passive) or sell it for gold. */
@@ -215,6 +230,20 @@ export class Run {
     const entry = screen.rewards[index]
     if (!entry || entry.resolved) return
     entry.resolved = choice
+    if (this.isActive(entry.itemId)) {
+      const def = this.registry.active(entry.itemId)
+      if (choice === 'kept') {
+        // Slots are exclusive: the replaced item is sold automatically.
+        const old = def.slot === 'equipment' ? p.equipment : p.movement
+        if (old) {
+          p.gold += Math.round(this.registry.active(old.defId).price * SELL_FRACTION)
+        }
+        this.sim.equipActive(playerId, def.id)
+      } else {
+        p.gold += Math.round(def.price * SELL_FRACTION)
+      }
+      return
+    }
     if (choice === 'kept') {
       p.items.push(entry.itemId)
       recomputePlayer(p, this.registry)

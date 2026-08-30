@@ -2,7 +2,7 @@ import { Rng } from '../core/rng'
 import { TICK_RATE } from '../core/sim'
 import { Run } from '../run/run'
 import { loadContent } from '../data/loadContent'
-import { moveIntent, playIntermission } from './policy'
+import { moveIntent, playIntermission, useActives } from './policy'
 
 /**
  * Batch run simulator. Plays full runs headlessly with the policy players,
@@ -65,6 +65,7 @@ export function simulateOne(opts: { seed: number; players: number; skill: number
         if (!p.alive || p.downed) continue
         const intent = moveIntent(run.sim, p, opts.skill, policyRng)
         run.sim.setMoveIntent(p.id, intent.x, intent.y)
+        useActives(run.sim, p, policyRng)
       }
       run.tick()
     }
@@ -121,6 +122,7 @@ export function simulateBatch(opts: SimulateOptions): BatchReport {
           if (!p.alive || p.downed) continue
           const intent = moveIntent(run.sim, p, opts.skill, policyRng)
           run.sim.setMoveIntent(p.id, intent.x, intent.y)
+          useActives(run.sim, p, policyRng)
         }
         run.tick()
       }

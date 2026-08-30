@@ -165,5 +165,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
 - Tenth chunk (2931622): pause menu (Esc/Start — per-player weapons, perks, whole-number
   stats, live damage breakdown), soft intermission timer for multiplayer (35s grace,
   countdown, auto-resolve at 50s), and pad-disconnect auto-pause.
-- Next: content breadth — the items system (passive items as drops, equipment/movement
-  slots per the Control Budget), more classes, with sim checks per addition.
+- Eleventh chunk (9fc3203): the items system. Chest drops capped at 2/wave per the
+  drop-discipline rule, items unveiled at a rewards screen and dealt round-robin, keep-or-
+  sell as a mandatory decision, 14 passives including triggered effects (kill-explosions,
+  pickup-zaps) with damage attributed to the item — so "41% of your damage came from
+  Killing Blow" already works in the pause menu.
+- Next: the A/B slots (equipment + movement items — Control Budget's core), then more
+  content breadth.
