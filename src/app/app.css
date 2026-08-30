@@ -34,6 +34,10 @@ button {
   cursor: pointer;
 }
 button:hover:not(:disabled) { border-color: var(--accent); }
+button.pad-focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+}
 button:disabled { opacity: 0.45; cursor: default; }
 
 .screen-center {

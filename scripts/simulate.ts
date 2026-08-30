@@ -14,6 +14,7 @@ const players = Number(arg('players', '1'))
 const skill = Number(arg('skill', '0.6'))
 const seed = Number(arg('seed', '1000'))
 const cls = arg('class', 'student')
+const act = arg('act', 'act1')
 
 const started = Date.now()
 const report = simulateBatch({
@@ -22,6 +23,7 @@ const report = simulateBatch({
   skill,
   seed,
   classIds: Array.from({ length: players }, () => cls),
+  actId: act,
 })
 console.log(formatReport(report))
 console.log(`\n(${((Date.now() - started) / 1000).toFixed(1)}s wall clock)`)

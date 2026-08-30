@@ -17,6 +17,7 @@ export interface SimulateOptions {
   /** Base seed; run i uses seed base + i, so batches are reproducible. */
   seed: number
   classIds?: string[]
+  actId?: string
 }
 
 export interface RunOutcome {
@@ -42,12 +43,12 @@ export interface BatchReport {
   avgFirstWeaponBuyWave: number | null
 }
 
-export function simulateOne(opts: { seed: number; players: number; skill: number; classIds?: string[] }): RunOutcome {
+export function simulateOne(opts: { seed: number; players: number; skill: number; classIds?: string[]; actId?: string }): RunOutcome {
   const registry = loadContent()
   const run = new Run(registry, {
     seed: opts.seed,
     playerCount: opts.players,
-    actId: 'act1',
+    actId: opts.actId ?? 'act1',
     classIds: opts.classIds,
   })
   const policyRng = new Rng(opts.seed ^ 0x9a17)
@@ -103,14 +104,14 @@ export function simulateBatch(opts: SimulateOptions): BatchReport {
 
   for (let i = 0; i < opts.runs; i++) {
     const seed = opts.seed + i
-    outcomes.push(simulateOne({ seed, players: opts.players, skill: opts.skill, classIds: opts.classIds }))
+    outcomes.push(simulateOne({ seed, players: opts.players, skill: opts.skill, classIds: opts.classIds, actId: opts.actId }))
   }
 
   // Re-run one representative seed to collect a damage-by-source profile
   // (cheaper than accumulating across every run, close enough for shares).
   {
     const registry = loadContent()
-    const run = new Run(registry, { seed: opts.seed, playerCount: opts.players, actId: 'act1', classIds: opts.classIds })
+    const run = new Run(registry, { seed: opts.seed, playerCount: opts.players, actId: opts.actId ?? 'act1', classIds: opts.classIds })
     const policyRng = new Rng(opts.seed ^ 0x9a17)
     let guard = 0
     while (run.phase !== 'victory' && run.phase !== 'defeat' && guard < 40) {

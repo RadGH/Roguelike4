@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PadPanel } from './padNav'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
 
@@ -36,7 +37,7 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
 
   return (
     <div className="overlay">
-      <div className="panel" data-testid="pause-menu" style={{ maxHeight: '88vh', minWidth: 380 }}>
+      <PadPanel padIndex={-1} className="panel" data-testid="pause-menu" style={{ maxHeight: '88vh', minWidth: 380 }}>
         <h2>Paused</h2>
         <div className="toolbar">
           {run.sim.state.players.map((pl) => (
@@ -123,7 +124,7 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
         <div className="toolbar">
           <button autoFocus onClick={onResume} data-testid="resume">Resume</button>
         </div>
-      </div>
+      </PadPanel>
     </div>
   )
 }

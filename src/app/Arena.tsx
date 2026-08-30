@@ -190,8 +190,10 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
             if (pad.buttons[0]?.pressed) aDown = true
             if (pad.buttons[1]?.pressed) bDown = true
           }
-          if (aDown && !prevA[p.id]) sim.useEquipment(p.id)
-          if (bDown && !prevB[p.id]) sim.useMovement(p.id)
+          // Buttons act only in the live arena — menus own A/B elsewhere.
+          const inArena = currentRun.phase === 'arena' && !currentRun.paused
+          if (inArena && aDown && !prevA[p.id]) sim.useEquipment(p.id)
+          if (inArena && bDown && !prevB[p.id]) sim.useMovement(p.id)
           prevA[p.id] = aDown
           prevB[p.id] = bDown
         }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { PadPanel, padIndexForPlayer } from './padNav'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
 
@@ -8,8 +9,8 @@ const AUTO_AT_S = 50
 
 /**
  * Intermission overlays. Personal screens are designed quarter-screen-first;
- * with one player they simply get the whole panel. Gamepad 2-button menu
- * navigation lands with the co-op milestone — mouse/keyboard for now.
+ * with one player they simply get the whole panel. Each player's own pad
+ * navigates their own panel (see padNav) alongside mouse and keyboard.
  */
 
 const ATTRIBUTE_LABEL: Record<string, string> = {
@@ -35,7 +36,7 @@ export function Recap({ run, onContinue }: { run: Run; onContinue: () => void })
   const wave = run.sim.state.wave.number
   return (
     <div className="overlay">
-      <div className="panel" data-testid="recap">
+      <PadPanel padIndex={-1} className="panel" data-testid="recap">
         <h2>Wave {wave} clear</h2>
         {run.sim.state.players.map((p) => {
           const s = run.sim.tracker.waveSummary(p.id, wave)
@@ -51,7 +52,7 @@ export function Recap({ run, onContinue }: { run: Run; onContinue: () => void })
         <div className="toolbar">
           <button autoFocus onClick={onContinue} data-testid="recap-continue">Continue</button>
         </div>
-      </div>
+      </PadPanel>
     </div>
   )
 }
@@ -94,7 +95,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
         if (!screen) return null
         if (screen.done) {
           return (
-            <div className="panel" key={p.id} data-testid={`personal-${p.id}`}>
+            <PadPanel padIndex={padIndexForPlayer(p.id, run.sim.state.players.length)} className="panel" key={p.id} data-testid={`personal-${p.id}`}>
               <h2>Player {p.id + 1}</h2>
               <div className="panel-ready">
                 Ready — waiting on {run.sim.state.players
@@ -102,11 +103,11 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                   .map((o) => `P${o.id + 1}`)
                   .join(', ') || '…'}
               </div>
-            </div>
+            </PadPanel>
           )
         }
         return (
-          <div className="panel" key={p.id} data-testid={`personal-${p.id}`}>
+          <PadPanel padIndex={padIndexForPlayer(p.id, run.sim.state.players.length)} className="panel" key={p.id} data-testid={`personal-${p.id}`}>
             <h2>
               Player {p.id + 1} <span className="gold-display">{p.gold} gold</span>
               {countdown !== null && <span className="hint"> · auto in {countdown}s</span>}
@@ -295,7 +296,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                 </div>
               </>
             )}
-          </div>
+          </PadPanel>
         )
       })}
     </div>
@@ -310,7 +311,7 @@ export function RunEnd({ run, unlockedNow, onRestart }: {
   const won = run.phase === 'victory'
   return (
     <div className="overlay">
-      <div className="panel" data-testid="run-end">
+      <PadPanel padIndex={-1} className="panel" data-testid="run-end">
         <h2>{won ? 'Act complete!' : 'The run is over'}</h2>
         {unlockedNow.length > 0 && (
           <div data-testid="unlocks">
@@ -350,7 +351,7 @@ export function RunEnd({ run, unlockedNow, onRestart }: {
         <div className="toolbar">
           <button autoFocus onClick={onRestart} data-testid="restart">Back to title</button>
         </div>
-      </div>
+      </PadPanel>
     </div>
   )
 }

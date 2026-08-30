@@ -229,4 +229,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   pets), gold-pickup damage (Scavenger + Gold Strike with chance-not-magnitude stacking),
   unresistable Void (Warlock + Void Scepter), ignition, close-range spread, and lightning
   chains. 13 classes, 12 weapons, 24 items, 101 tests.
-- Next: gamepad menu navigation (2-button strip), hot-join, act 2 authoring.
+- Twenty-first chunk (98f2067): **Act 2 exists.** Six enemies straight from the vault's
+  wider pool (Leaper, Sprayer, Fumer, Bannerman, Shielder, Caller), the Broodmother boss
+  (slams and spawns, frenzy below half health — designed by me since the vault only has
+  the act-1 boss; worth a vault entry), ten authored waves, and an act picker once act 1
+  is won. Support enemies finally give co-op a target-priority conversation.
+- Next: act-2 balance pass via the simulator, then gamepad menu nav, audio, variants.
