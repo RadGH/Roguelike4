@@ -1,0 +1,36 @@
+{
+  "id": "act1",
+  "name": "Act 1",
+  "boss": "king-slime",
+  "waves": [
+    {
+      "wave": 1,
+      "groups": [
+        { "at": 1, "enemy": "nibbler", "count": 10, "spacing": 0.4 },
+        { "at": 12, "enemy": "scurrier", "count": 3, "spacing": 1.5 },
+        { "at": 25, "enemy": "nibbler", "count": 12, "spacing": 0.3 },
+        { "at": 38, "enemy": "scurrier", "count": 4, "spacing": 1.2 }
+      ]
+    },
+    {
+      "wave": 2,
+      "groups": [
+        { "at": 1, "enemy": "nibbler", "count": 14, "spacing": 0.3 },
+        { "at": 10, "enemy": "spitter", "count": 3, "spacing": 2 },
+        { "at": 22, "enemy": "scurrier", "count": 5, "spacing": 1 },
+        { "at": 35, "enemy": "spitter", "count": 3, "spacing": 1.5 },
+        { "at": 45, "enemy": "nibbler", "count": 16, "spacing": 0.25 }
+      ]
+    },
+    {
+      "wave": 3,
+      "groups": [
+        { "at": 1, "enemy": "slime", "count": 2, "spacing": 3 },
+        { "at": 10, "enemy": "nibbler", "count": 12, "spacing": 0.3 },
+        { "at": 20, "enemy": "spitter", "count": 4, "spacing": 1.5 },
+        { "at": 32, "enemy": "slime", "count": 3, "spacing": 2 },
+        { "at": 45, "enemy": "scurrier", "count": 6, "spacing": 0.8 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "practice-sword",
+    "name": "Practice Sword",
+    "tags": ["Melee", "Light"],
+    "damageType": "Melee",
+    "damage": 3,
+    "cooldown": 0.8,
+    "range": 1.8,
+    "targeting": "nearest",
+    "price": 20
+  },
+  {
+    "id": "practice-wand",
+    "name": "Practice Wand",
+    "tags": ["Magic", "Light"],
+    "damageType": "Magic",
+    "damage": 2,
+    "cooldown": 0.7,
+    "range": 8,
+    "targeting": "nearest",
+    "projectileSpeed": 12,
+    "price": 20
+  },
+  {
+    "id": "shortbow",
+    "name": "Shortbow",
+    "tags": ["Ranged", "Projectile", "Light"],
+    "damageType": "Ranged",
+    "damage": 3,
+    "cooldown": 1.0,
+    "range": 9,
+    "targeting": "farthest",
+    "projectileSpeed": 14,
+    "price": 25
+  }
+]

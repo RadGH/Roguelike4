@@ -1,0 +1,61 @@
+[
+  {
+    "id": "nibbler",
+    "name": "Nibbler",
+    "archetype": "swarm",
+    "health": 3,
+    "damage": 1,
+    "speed": 2.6,
+    "radius": 0.25,
+    "xp": 1,
+    "gold": 1,
+    "flock": { "separation": 1.4, "alignment": 0.6, "cohesion": 0.5 }
+  },
+  {
+    "id": "scurrier",
+    "name": "Scurrier",
+    "archetype": "chaser",
+    "health": 6,
+    "damage": 2,
+    "speed": 3.4,
+    "radius": 0.35,
+    "xp": 2,
+    "gold": 2
+  },
+  {
+    "id": "spitter",
+    "name": "Spitter",
+    "archetype": "ranged",
+    "health": 5,
+    "damage": 2,
+    "speed": 2.0,
+    "radius": 0.35,
+    "xp": 3,
+    "gold": 2,
+    "props": { "standoff": 6 }
+  },
+  {
+    "id": "slime",
+    "name": "Slime",
+    "archetype": "blocker",
+    "health": 14,
+    "damage": 2,
+    "speed": 1.2,
+    "radius": 0.55,
+    "xp": 4,
+    "gold": 3,
+    "splitInto": 2,
+    "splitTo": "slimeling"
+  },
+  {
+    "id": "slimeling",
+    "name": "Slimeling",
+    "archetype": "blocker",
+    "health": 5,
+    "damage": 1,
+    "speed": 1.8,
+    "radius": 0.35,
+    "xp": 1,
+    "gold": 1
+  }
+]
