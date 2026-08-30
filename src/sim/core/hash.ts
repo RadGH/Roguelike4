@@ -24,6 +24,7 @@ export function hashState(s: SimState): number {
   mix(s.nextEntityId)
   for (const p of s.players) {
     mix(p.x); mix(p.y); mix(p.health); mix(p.xp); mix(p.gold); mix(p.level)
+    mix(p.downed ? 1 : 0); mix(p.bleedOut)
   }
   for (const e of s.enemies) {
     mix(e.id); mix(e.x); mix(e.y); mix(e.health); mix(e.mode)

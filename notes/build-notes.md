@@ -112,4 +112,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
 - Design note while authoring waves: the wave table lives in `src/content/acts/act1.json`
   and reads exactly like the vault's schema wants (composition, order, timing, elites) —
   worth copying back into the vault's Act Catalog as the reference example.
-- Next: save-after-every-wave + resume, equip prompt, run history; then co-op (M4).
+- Fifth chunk (3aca710): persistence. Saves are written at every wave clear (a closed tab
+  costs at most one wave), the title screen offers continue/export/import, run history
+  keeps the last 50 runs with each player's top damage sources, and buying with full
+  weapon slots now opens a replace prompt with a half-price refund. The tracker was
+  refactored to savable aggregates. 45 unit + 2 E2E green.
+- Next: co-op (M4) — multi-player join, shared zoom camera, downed/revive, quarter-screen
+  simultaneous intermission panels.

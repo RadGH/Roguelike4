@@ -15,6 +15,7 @@ export function App(): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null)
   const [save, setSave] = useState<RunSave | null>(() => loadSave())
   const [showHistory, setShowHistory] = useState(false)
+  const [playerCount, setPlayerCount] = useState(1)
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const onChange = useCallback(() => bump(), [])
   const savedWave = useRef(0)
@@ -74,7 +75,7 @@ export function App(): React.JSX.Element {
     setSave(null)
     beginRun(new Run(loadContent(), {
       seed: Date.now() >>> 0,
-      playerCount: 1,
+      playerCount,
       actId: 'act1',
     }))
   }
@@ -102,6 +103,20 @@ export function App(): React.JSX.Element {
       <div className="screen-center">
         <div className="title-name">{GAME_TITLE}</div>
         <div className="hint">Move with WASD, arrows, or a gamepad stick. Weapons fire themselves.</div>
+        <div className="toolbar" data-testid="player-count">
+          {[1, 2, 3, 4].map((n) => (
+            <button
+              key={n}
+              onClick={() => setPlayerCount(n)}
+              style={playerCount === n ? { borderColor: 'var(--accent)' } : undefined}
+            >
+              {n} player{n > 1 ? 's' : ''}
+            </button>
+          ))}
+        </div>
+        {playerCount > 1 && (
+          <div className="hint">Player 1: keyboard · players 2–{playerCount}: gamepads in order</div>
+        )}
         <div className="toolbar">
           {save && (
             <button autoFocus onClick={continueRun} data-testid="continue-run">

@@ -55,25 +55,38 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
       window.addEventListener('keyup', onKeyUp)
 
       let acc = 0
+      let camScale = 1
+      let camX = 0
+      let camY = 0
+      let camInit = false
       app.ticker.add((t) => {
         const currentRun = runRef.current
         const sim = currentRun.sim
         const registry = currentRun.registry
+        const playerCount = sim.state.players.length
 
-        // Input → move intent (keyboard; first connected gamepad's left stick).
-        let mx = 0
-        let my = 0
-        if (keys.has('a') || keys.has('arrowleft')) mx -= 1
-        if (keys.has('d') || keys.has('arrowright')) mx += 1
-        if (keys.has('w') || keys.has('arrowup')) my -= 1
-        if (keys.has('s') || keys.has('arrowdown')) my += 1
-        const pads = navigator.getGamepads?.() ?? []
-        const pad = pads.find((p) => p && p.connected)
-        if (pad && (Math.abs(pad.axes[0]) > 0.2 || Math.abs(pad.axes[1]) > 0.2)) {
-          mx = pad.axes[0]
-          my = pad.axes[1]
+        // Input assignment: player 1 owns the keyboard. With one player a
+        // gamepad also drives them; with more, pads map to players in order.
+        const pads = (navigator.getGamepads?.() ?? []).filter((p) => p && p.connected)
+        for (const p of sim.state.players) {
+          let mx = 0
+          let my = 0
+          if (p.id === 0) {
+            if (keys.has('a') || keys.has('arrowleft')) mx -= 1
+            if (keys.has('d') || keys.has('arrowright')) mx += 1
+            if (keys.has('w') || keys.has('arrowup')) my -= 1
+            if (keys.has('s') || keys.has('arrowdown')) my += 1
+          }
+          const pad = playerCount === 1
+            ? pads[0]
+            : p.id === 0 ? null : pads[p.id - 1]
+          if (pad && (Math.abs(pad.axes[0]) > 0.2 || Math.abs(pad.axes[1]) > 0.2)) {
+            mx = pad.axes[0]
+            my = pad.axes[1]
+          }
+          // Screen-relative input mapped onto the iso ground plane.
+          sim.setMoveIntent(p.id, my + mx, my - mx)
         }
-        sim.setMoveIntent(0, my + mx, my - mx)
 
         // Fixed-step run tick (run.tick only advances during the arena phase).
         acc += t.deltaMS / 1000
@@ -82,11 +95,32 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           acc -= TICK_DT
         }
 
-        // Camera: center on player 1 for now (zoom-to-fit arrives with co-op).
-        const p0 = sim.state.players[0]
-        const c = toScreen(p0.x, p0.y)
-        world.x = app.screen.width / 2 - c.sx
-        world.y = app.screen.height / 2 - c.sy
+        // Camera: one shared view that zooms out to keep everyone framed.
+        const framed = sim.state.players.filter((p) => p.alive)
+        const pts = (framed.length > 0 ? framed : sim.state.players).map((p) => toScreen(p.x, p.y))
+        let minX = pts[0].sx, maxX = pts[0].sx, minY = pts[0].sy, maxY = pts[0].sy
+        for (const pt of pts) {
+          minX = Math.min(minX, pt.sx); maxX = Math.max(maxX, pt.sx)
+          minY = Math.min(minY, pt.sy); maxY = Math.max(maxY, pt.sy)
+        }
+        const pad2 = 220
+        const targetScale = Math.min(
+          1,
+          app.screen.width / (maxX - minX + pad2 * 2),
+          app.screen.height / (maxY - minY + pad2 * 2),
+        )
+        const targetX = app.screen.width / 2 - ((minX + maxX) / 2) * targetScale
+        const targetY = app.screen.height / 2 - ((minY + maxY) / 2) * targetScale
+        if (!camInit) {
+          camScale = targetScale; camX = targetX; camY = targetY; camInit = true
+        } else {
+          camScale += (targetScale - camScale) * 0.08
+          camX += (targetX - camX) * 0.12
+          camY += (targetY - camY) * 0.12
+        }
+        world.scale.set(camScale)
+        world.x = camX
+        world.y = camY
 
         // ---- draw ----
         gGround.clear()
@@ -167,11 +201,29 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           }
         }
 
+        // Reserved identity rings: each player finds themselves by ring colour.
+        const PLAYER_COLORS = [0x4da6ff, 0xf5f5f5, 0xff6de3, 0xffd34d]
         for (const p of sim.state.players) {
+          if (!p.alive) continue // dead players return at wave clear
           const s = toScreen(p.x, p.y)
+          const ring = PLAYER_COLORS[p.id % PLAYER_COLORS.length]
           gGround.ellipse(s.sx, s.sy, 14, 7).fill({ color: 0x000000, alpha: 0.4 })
+          gGround.ellipse(s.sx, s.sy, 16, 8).stroke({ width: 2, color: ring })
           if (markersOnly) continue
-          gCritical.circle(s.sx, s.sy - 10, 11).fill(silho ? 0x000000 : 0x4da6ff).stroke({ width: 2.5, color: 0xffffff })
+
+          if (p.downed) {
+            // Downed: grey body, shrinking bleed-out ring, revive progress bar.
+            gCritical.circle(s.sx, s.sy - 10, 11).fill(0x55555f).stroke({ width: 2.5, color: ring })
+            const frac = Math.max(0, p.bleedOut / 15)
+            gCritical.circle(s.sx, s.sy - 10, 15).stroke({ width: 2, color: 0xd93a3a })
+            gCritical.rect(s.sx - 15, s.sy - 34, 30 * frac, 3).fill(0xd93a3a)
+            if (p.reviveProgress > 0) {
+              gCritical.rect(s.sx - 15, s.sy - 40, 30 * (p.reviveProgress / 3), 4).fill(0x6dff6d)
+            }
+            continue
+          }
+
+          gCritical.circle(s.sx, s.sy - 10, 11).fill(silho ? 0x000000 : 0x3d7fbf).stroke({ width: 2.5, color: ring })
 
           p.weapons.forEach((w, i) => {
             const def = registry.weapon(w.defId)
@@ -206,10 +258,14 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           sim.state.wave.pendingSpawns.reduce((a, g) => a + g.remaining, 0) +
           sim.state.wave.deferred.length
         const bossPieces = sim.state.enemies.filter((e) => e.defId.startsWith('kingslime'))
+        const playerLines = sim.state.players.map((p) => {
+          const status = !p.alive ? 'returning next wave' : p.downed ? 'DOWN — rescue!' :
+            `HP ${Math.ceil(p.health)}/${p.maxHealth}`
+          return `P${p.id + 1}  ${status}  Lv ${p.level}  Gold ${p.gold}`
+        })
         hud.text =
           `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}   Enemies ${enemiesLeft}\n` +
-          `HP ${Math.ceil(p0.health)}/${p0.maxHealth}   Lv ${p0.level}` +
-          `   XP ${Math.floor(p0.xp)}   Gold ${p0.gold}` +
+          playerLines.join('\n') +
           (bossPieces.length > 0 ? `\nKing Slime — ${bossPieces.length} piece${bossPieces.length > 1 ? 's' : ''}` : '') +
           (view !== 'normal' ? `\n[debug view: ${view} — F1 normal]` : '')
       })

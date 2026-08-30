@@ -128,7 +128,9 @@ export class Run {
     if (this.phase !== 'arena') return
     this.sim.tick()
 
-    if (this.sim.state.players.every((p) => !p.alive)) {
+    // The run ends only when nobody is left standing — a single survivor
+    // keeps it alive, and everyone else returns at the next wave clear.
+    if (this.sim.activePlayers().length === 0) {
       this.phase = 'defeat'
       return
     }
@@ -277,8 +279,11 @@ export class Run {
     }
     // Everyone returns at the wave boundary (the wave-clear backstop).
     for (const p of this.sim.state.players) {
-      if (!p.alive) {
+      if (!p.alive || p.downed) {
         p.alive = true
+        p.downed = false
+        p.bleedOut = 0
+        p.reviveProgress = 0
         p.health = Math.round(p.maxHealth / 2)
       }
     }

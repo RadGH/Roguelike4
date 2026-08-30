@@ -26,6 +26,12 @@ export const TICK_DT = 1 / TICK_RATE
 /** Enemies on the field above this count are deferred, not stacked (readability rule). */
 export const DENSITY_CAP = 220
 
+/** Downed-and-revive tuning (fun over punishment — nobody sits out long). */
+export const BLEED_OUT_SECONDS = 15
+export const REVIVE_RADIUS = 1.6
+export const REVIVE_SECONDS = 3
+export const REVIVE_HEALTH_FRACTION = 0.5
+
 export interface SimOptions {
   seed: number
   playerCount: number
@@ -93,8 +99,16 @@ export class Sim {
       xpPct: 0,
       weapons: [],
       alive: true,
+      downed: false,
+      bleedOut: 0,
+      reviveProgress: 0,
     }
     this.state.players.push(p)
+  }
+
+  /** Players who can act: standing, not downed. */
+  activePlayers(): PlayerState[] {
+    return this.state.players.filter((p) => p.alive && !p.downed)
   }
 
   equipWeapon(playerId: number, weaponDefId: string): void {
@@ -253,8 +267,31 @@ export class Sim {
 
   private tickPlayers(): void {
     const s = this.state
+    const active = this.activePlayers()
     for (const p of s.players) {
       if (!p.alive) continue
+
+      if (p.downed) {
+        // Rescue is a positional problem: a teammate must stand close and stay.
+        const reviver = active.find((a) => dist(a, p) <= REVIVE_RADIUS)
+        if (reviver) {
+          p.reviveProgress += TICK_DT
+          if (p.reviveProgress >= REVIVE_SECONDS) {
+            p.downed = false
+            p.reviveProgress = 0
+            p.health = Math.max(1, Math.round(p.maxHealth * REVIVE_HEALTH_FRACTION))
+          }
+        } else {
+          p.reviveProgress = Math.max(0, p.reviveProgress - TICK_DT)
+        }
+        p.bleedOut -= TICK_DT
+        if (p.downed && p.bleedOut <= 0) {
+          p.downed = false
+          p.alive = false // bled out; returns at wave clear
+        }
+        continue
+      }
+
       const speed = p.moveSpeed * this.slowFactorFor(p)
       p.x = clamp(p.x + p.moveX * speed * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
       p.y = clamp(p.y + p.moveY * speed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
@@ -266,7 +303,9 @@ export class Sim {
 
   private tickEnemies(): void {
     const s = this.state
-    const alivePlayers = s.players.filter((p) => p.alive)
+    // Enemies ignore downed players entirely — kicking someone who is down
+    // adds nothing but misery, and the bleed-out timer is pressure enough.
+    const alivePlayers = this.activePlayers()
     if (alivePlayers.length === 0) return
 
     for (const e of s.enemies) {
@@ -541,7 +580,7 @@ export class Sim {
       if (!beat) continue
       const r2 = pool.radius * pool.radius
       for (const p of s.players) {
-        if (!p.alive) continue
+        if (!p.alive || p.downed) continue
         if (distSq(pool, p) <= r2) {
           this.damagePlayer(p, pool.dps * 0.5, 'Magic', pool.sourceId, false)
         }
@@ -570,7 +609,7 @@ export class Sim {
       done.push(t.id)
       const r2 = t.radius * t.radius
       for (const p of s.players) {
-        if (!p.alive) continue
+        if (!p.alive || p.downed) continue
         if (distSq(t, p) <= r2) {
           // Zone damage is a hazard: avoidable by moving, not by dodge chance.
           this.damagePlayer(p, t.damage, t.damageType, t.sourceId, false)
@@ -602,14 +641,23 @@ export class Sim {
     p.health -= result.taken
     if (p.health <= 0) {
       p.health = 0
-      p.alive = false
+      const others = this.activePlayers().filter((o) => o.id !== p.id)
+      if (others.length > 0) {
+        // Downed, not dead: teammates can still reach them.
+        p.downed = true
+        p.bleedOut = BLEED_OUT_SECONDS
+        p.reviveProgress = 0
+      } else {
+        // Nobody left standing to attempt a rescue.
+        p.alive = false
+      }
     }
   }
 
   private tickWeapons(): void {
     const s = this.state
     for (const p of s.players) {
-      if (!p.alive) continue
+      if (!p.alive || p.downed) continue
       for (const w of p.weapons) {
         w.cooldownLeft -= TICK_DT
         if (w.cooldownLeft > 0) continue
@@ -824,8 +872,8 @@ export class Sim {
         magnetTarget = s.players.find((p) => p.id === pk.magnetTo) ?? null
       } else {
         for (const p of s.players) {
-          if (!p.alive) continue
-          if (distSq(pk, p) < 2.25) { magnetTarget = p; break }
+          if (!p.alive || p.downed) continue
+          if (distSq(pk, p) < p.pickupRadius * p.pickupRadius) { magnetTarget = p; break }
         }
       }
       if (magnetTarget) {
@@ -866,7 +914,7 @@ export class Sim {
 
     // Auto-collect: everything remaining flies to the nearest living player
     // before any intermission screen may open.
-    const living = s.players.filter((p) => p.alive)
+    const living = this.activePlayers()
     if (living.length > 0) {
       for (const pk of s.pickups) {
         if (pk.magnetTo !== null) continue

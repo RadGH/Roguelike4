@@ -41,7 +41,17 @@ export interface PlayerState {
   xpPct: number
   /** Equipped weapon instance list (ids into registry + per-instance state). */
   weapons: WeaponInstance[]
+  /** False only when fully dead (bled out); dead players return at wave clear. */
   alive: boolean
+  /**
+   * Downed: at zero health with teammates still standing. Immobile, holds
+   * fire, ignored by enemies, revivable in place. Bleeding out leads to dead.
+   */
+  downed: boolean
+  /** Seconds until a downed player bleeds out. */
+  bleedOut: number
+  /** Seconds of teammate proximity accumulated toward a revive. */
+  reviveProgress: number
 }
 
 export interface OwnedPerk {

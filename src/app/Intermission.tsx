@@ -60,6 +60,19 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
       {run.sim.state.players.map((p) => {
         const screen = run.personal.get(p.id)
         if (!screen) return null
+        if (screen.done) {
+          return (
+            <div className="panel" key={p.id} data-testid={`personal-${p.id}`}>
+              <h2>Player {p.id + 1}</h2>
+              <div className="panel-ready">
+                Ready — waiting on {run.sim.state.players
+                  .filter((o) => !run.personal.get(o.id)?.done)
+                  .map((o) => `P${o.id + 1}`)
+                  .join(', ') || '…'}
+              </div>
+            </div>
+          )
+        }
         return (
           <div className="panel" key={p.id} data-testid={`personal-${p.id}`}>
             <h2>Player {p.id + 1} <span className="gold-display">{p.gold} gold</span></h2>

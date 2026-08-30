@@ -56,20 +56,36 @@ button:disabled { opacity: 0.45; cursor: default; }
   position: fixed;
   inset: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  align-content: center;
+  gap: 12px;
+  padding: 12px;
   background: rgba(10, 10, 14, 0.72);
 }
 
+/* Personal screens are designed quarter-screen-first: four panels must fit. */
 .panel {
   background: var(--panel);
   border: 1px solid var(--panel-edge);
   border-radius: 10px;
-  padding: 20px;
-  min-width: 300px;
+  padding: 16px;
+  min-width: 280px;
   max-width: min(92vw, 560px);
-  max-height: 88vh;
+  flex: 0 1 auto;
+  max-height: 44vh;
   overflow-y: auto;
+}
+
+.overlay .panel:only-child { max-height: 88vh; }
+
+.panel-ready {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--dim);
 }
 
 .panel h2 { margin: 0 0 4px; font-size: 20px; }
