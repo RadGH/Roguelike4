@@ -104,5 +104,12 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   drafts (16 attribute perks, rolled tiers) → shop (buy/sell/reroll, wave-scaled prices)
   → next wave → victory/defeat with a damage-by-source run summary. Stats recompute from
   scratch on every build change so nothing drifts. 33 unit + 2 E2E green.
-- Next: saves after every wave + resume, equip prompt, character/details screens, then
-  M3 (remaining act-1 enemies + authored 10-wave table + King Slime).
+- Fourth chunk (dbce3b3): act 1 is content-complete. All 11 enemy types with real behavior
+  machines (charging, diving, burrowing, spawning, webbing, death-bursts, retaliation),
+  elite modifiers, ground hazard pools, the authored 10-wave table following the vault's
+  curriculum, and King Slime splitting 1→3→9→27 while changing archetype per tier. Tests
+  prove the boss chain resolves and the fight ends. 42 unit + 2 E2E green.
+- Design note while authoring waves: the wave table lives in `src/content/acts/act1.json`
+  and reads exactly like the vault's schema wants (composition, order, timing, elites) —
+  worth copying back into the vault's Act Catalog as the reference example.
+- Next: save-after-every-wave + resume, equip prompt, run history; then co-op (M4).

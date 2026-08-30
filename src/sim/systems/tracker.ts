@@ -3,6 +3,10 @@
  * turns an accidental build into a noticed build. Everything that deals or
  * mitigates damage reports here, keyed so views can drill down
  * run → player → source → target.
+ *
+ * Aggregates are maintained incrementally so they can be saved with a run and
+ * restored after a reload. Raw events are kept for live drill-down but are
+ * not persisted (a full run generates far too many).
  */
 
 export interface DamageEvent {
@@ -32,63 +36,103 @@ export interface TakenEvent {
   dodged: boolean
 }
 
+interface TakenTotals { taken: number; mitigated: number; dodges: number }
+interface WaveTotals { kills: number; dealt: number; taken: number }
+
+export interface TrackerSnapshot {
+  dealtTotal: [number, number][]
+  dealtBySource: [string, number][]
+  takenTotals: [number, TakenTotals][]
+  waveTotals: [string, WaveTotals][]
+}
+
+const MAX_RAW_EVENTS = 20000
+
 export class Tracker {
   readonly events: DamageEvent[] = []
   readonly takenEvents: TakenEvent[] = []
-  /** playerId -> total damage dealt (fast HUD read). */
-  private totals = new Map<number, number>()
+  private dealtTotal = new Map<number, number>()
+  /** key `${playerId}:${sourceId}` */
+  private dealtBySource = new Map<string, number>()
+  private takenTotals = new Map<number, TakenTotals>()
+  /** key `${playerId}:${wave}` */
+  private waveTotals = new Map<string, WaveTotals>()
 
   recordDamage(e: DamageEvent): void {
     this.events.push(e)
-    this.totals.set(e.playerId, (this.totals.get(e.playerId) ?? 0) + e.amount)
+    if (this.events.length > MAX_RAW_EVENTS) this.events.splice(0, 5000)
+    this.dealtTotal.set(e.playerId, (this.dealtTotal.get(e.playerId) ?? 0) + e.amount)
+    const sk = `${e.playerId}:${e.sourceId}`
+    this.dealtBySource.set(sk, (this.dealtBySource.get(sk) ?? 0) + e.amount)
+    const wk = `${e.playerId}:${e.wave}`
+    const w = this.waveTotals.get(wk) ?? { kills: 0, dealt: 0, taken: 0 }
+    w.dealt += e.amount
+    if (e.kill) w.kills++
+    this.waveTotals.set(wk, w)
   }
 
   recordTaken(e: TakenEvent): void {
     this.takenEvents.push(e)
-  }
-
-  /** Per-wave recap numbers for one player. */
-  waveSummary(playerId: number, wave: number): { kills: number; dealt: number; taken: number } {
-    let kills = 0
-    let dealt = 0
-    let taken = 0
-    for (const e of this.events) {
-      if (e.playerId !== playerId || e.wave !== wave) continue
-      dealt += e.amount
-      if (e.kill) kills++
-    }
-    for (const e of this.takenEvents) {
-      if (e.playerId !== playerId || e.wave !== wave) continue
-      taken += e.taken
-    }
-    return { kills, dealt, taken }
-  }
-
-  /** Totals of damage taken/mitigated/dodge count for one player. */
-  takenSummary(playerId: number): { taken: number; mitigated: number; dodges: number } {
-    let taken = 0
-    let mitigated = 0
-    let dodges = 0
-    for (const e of this.takenEvents) {
-      if (e.playerId !== playerId) continue
-      taken += e.taken
-      mitigated += e.mitigated
-      if (e.dodged) dodges++
-    }
-    return { taken, mitigated, dodges }
+    if (this.takenEvents.length > MAX_RAW_EVENTS) this.takenEvents.splice(0, 5000)
+    const t = this.takenTotals.get(e.playerId) ?? { taken: 0, mitigated: 0, dodges: 0 }
+    t.taken += e.taken
+    t.mitigated += e.mitigated
+    if (e.dodged) t.dodges++
+    this.takenTotals.set(e.playerId, t)
+    const wk = `${e.playerId}:${e.wave}`
+    const w = this.waveTotals.get(wk) ?? { kills: 0, dealt: 0, taken: 0 }
+    w.taken += e.taken
+    this.waveTotals.set(wk, w)
   }
 
   totalFor(playerId: number): number {
-    return this.totals.get(playerId) ?? 0
+    return this.dealtTotal.get(playerId) ?? 0
   }
 
   /** Damage grouped by source for one player — the "where did my damage come from" view. */
   bySource(playerId: number): Map<string, number> {
     const out = new Map<string, number>()
-    for (const e of this.events) {
-      if (e.playerId !== playerId) continue
-      out.set(e.sourceId, (out.get(e.sourceId) ?? 0) + e.amount)
+    const prefix = `${playerId}:`
+    for (const [key, amount] of this.dealtBySource) {
+      if (key.startsWith(prefix)) out.set(key.slice(prefix.length), amount)
     }
     return out
+  }
+
+  /** Per-wave recap numbers for one player. */
+  waveSummary(playerId: number, wave: number): WaveTotals {
+    return this.waveTotals.get(`${playerId}:${wave}`) ?? { kills: 0, dealt: 0, taken: 0 }
+  }
+
+  /** Totals of damage taken/mitigated/dodge count for one player. */
+  takenSummary(playerId: number): TakenTotals {
+    return this.takenTotals.get(playerId) ?? { taken: 0, mitigated: 0, dodges: 0 }
+  }
+
+  killsFor(playerId: number): number {
+    let kills = 0
+    const prefix = `${playerId}:`
+    for (const [key, w] of this.waveTotals) {
+      if (key.startsWith(prefix)) kills += w.kills
+    }
+    return kills
+  }
+
+  snapshot(): TrackerSnapshot {
+    return {
+      dealtTotal: [...this.dealtTotal.entries()],
+      dealtBySource: [...this.dealtBySource.entries()],
+      takenTotals: [...this.takenTotals.entries()].map(([k, v]) => [k, { ...v }]),
+      waveTotals: [...this.waveTotals.entries()].map(([k, v]) => [k, { ...v }]),
+    }
+  }
+
+  restore(snap: TrackerSnapshot): void {
+    this.dealtTotal = new Map(snap.dealtTotal)
+    this.dealtBySource = new Map(snap.dealtBySource)
+    this.takenTotals = new Map(snap.takenTotals.map(([k, v]) => [k, { ...v }]))
+    this.waveTotals = new Map(snap.waveTotals.map(([k, v]) => [k, { ...v }]))
+    this.events.length = 0
+    this.takenEvents.length = 0
   }
 }

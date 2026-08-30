@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
 
@@ -52,6 +53,8 @@ export function Recap({ run, onContinue }: { run: Run; onContinue: () => void })
 }
 
 export function Intermission({ run, onChange }: { run: Run; onChange: () => void }): React.JSX.Element {
+  // Per-player equip prompt: which shop entry is waiting for a slot choice.
+  const [replacing, setReplacing] = useState<Record<number, number | null>>({})
   return (
     <div className="overlay">
       {run.sim.state.players.map((p) => {
@@ -96,9 +99,16 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                       <button
                         className="card"
                         key={i}
-                        disabled={entry.sold || p.gold < entry.price || full}
+                        disabled={entry.sold || p.gold < entry.price}
                         data-testid={`shop-${i}`}
-                        onClick={() => { run.buyWeapon(p.id, i); onChange() }}
+                        onClick={() => {
+                          if (full) {
+                            setReplacing((r) => ({ ...r, [p.id]: i }))
+                          } else {
+                            run.buyWeapon(p.id, i)
+                          }
+                          onChange()
+                        }}
                       >
                         <span>
                           <span className="name">{def.name}</span>
@@ -111,6 +121,38 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                     )
                   })}
                 </div>
+
+                {replacing[p.id] != null && !screen.shop[replacing[p.id] as number]?.sold && (
+                  <>
+                    <h3>Slots are full — replace which weapon?</h3>
+                    <div className="cards">
+                      {p.weapons.map((w, slot) => {
+                        const def = run.registry.weapon(w.defId)
+                        return (
+                          <button
+                            className="card"
+                            key={slot}
+                            data-testid={`replace-${slot}`}
+                            onClick={() => {
+                              run.buyReplacing(p.id, replacing[p.id] as number, slot)
+                              setReplacing((r) => ({ ...r, [p.id]: null }))
+                              onChange()
+                            }}
+                          >
+                            <span className="name">{def.name}</span>
+                            <span className="price">sold for {Math.round(def.price / 2)}g</span>
+                          </button>
+                        )
+                      })}
+                      <button
+                        className="card"
+                        onClick={() => { setReplacing((r) => ({ ...r, [p.id]: null })); onChange() }}
+                      >
+                        <span className="name">Keep what I have</span>
+                      </button>
+                    </div>
+                  </>
+                )}
 
                 <h3>Your weapons {p.weapons.length}/{run.weaponSlots(p.id)} — sell for half</h3>
                 <div className="cards">

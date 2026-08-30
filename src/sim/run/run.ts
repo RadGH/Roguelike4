@@ -4,6 +4,7 @@ import type { Registry } from '../data/registry'
 import type { OwnedPerk } from '../core/state'
 import type { ActDef, PerkDef, WeaponDef } from '../data/types'
 import { recomputePlayer } from '../systems/stats'
+import type { RunSave } from './save'
 
 /**
  * The run controller: everything above the arena tick. Owns the intermission
@@ -56,16 +57,70 @@ export class Run {
 
   constructor(
     readonly registry: Registry,
-    opts: { seed: number; playerCount: number; actId: string },
+    opts: { seed: number; playerCount: number; actId: string; save?: RunSave },
   ) {
     this.sim = new Sim(registry, opts)
     this.rngRun = new Rng(opts.seed ^ 0x5eed).fork('run')
     this.act = registry.act(opts.actId)
+
+    if (opts.save) {
+      // Resume: rebuild every player's run-state, then start the next wave.
+      for (const ps of opts.save.players) {
+        const p = this.sim.player(ps.id)
+        p.gold = ps.gold
+        p.xp = ps.xp
+        p.level = ps.level
+        p.pendingDrafts = ps.pendingDrafts
+        p.perks = ps.perks.map((o) => ({ ...o }))
+        for (const weaponId of ps.weapons) this.sim.equipWeapon(ps.id, weaponId)
+        recomputePlayer(p, registry)
+        p.health = Math.min(ps.health, p.maxHealth)
+      }
+      this.sim.tracker.restore(opts.save.tracker)
+      this.sim.startWave(this.act.waves, opts.save.nextWave)
+      return
+    }
+
     // Starting kit until classes arrive: one wand. (Loadout screens are M2+.)
     for (const p of this.sim.state.players) {
       this.sim.equipWeapon(p.id, 'practice-wand')
     }
     this.sim.startWave(this.act.waves, 1)
+  }
+
+  /**
+   * Snapshot the run for save-after-every-wave. Call at recap/intermission —
+   * the resumed run begins at the NEXT wave with everyone alive.
+   * `freshSeed` reseeds the resumed portion (the sim owns no clock).
+   */
+  serialize(freshSeed: number): RunSave {
+    return {
+      version: 1,
+      actId: this.act.id,
+      playerCount: this.sim.state.players.length,
+      seed: freshSeed,
+      nextWave: this.sim.state.wave.number + 1,
+      players: this.sim.state.players.map((p) => ({
+        id: p.id,
+        gold: p.gold,
+        xp: p.xp,
+        level: p.level,
+        pendingDrafts: p.pendingDrafts,
+        health: Math.max(1, Math.round(p.health)),
+        perks: p.perks.map((o) => ({ ...o })),
+        weapons: p.weapons.map((w) => w.defId),
+      })),
+      tracker: this.sim.tracker.snapshot(),
+    }
+  }
+
+  static resume(registry: Registry, save: RunSave): Run {
+    return new Run(registry, {
+      seed: save.seed,
+      playerCount: save.playerCount,
+      actId: save.actId,
+      save,
+    })
   }
 
   /** Advance the arena; call once per fixed tick while in the arena phase. */
@@ -156,6 +211,26 @@ export class Run {
     if (p.gold < entry.price) return 'poor'
     if (p.weapons.length >= this.weaponSlots(playerId)) return 'full'
     p.gold -= entry.price
+    entry.sold = true
+    this.sim.equipWeapon(playerId, entry.weaponId)
+    return 'ok'
+  }
+
+  /**
+   * Buy a shop weapon while slots are full by replacing an equipped one.
+   * The replaced weapon is sold for half — the equip prompt's backing logic.
+   */
+  buyReplacing(playerId: number, shopIndex: number, slotIndex: number): 'ok' | 'poor' | 'invalid' {
+    const screen = this.personal.get(playerId)
+    const p = this.sim.player(playerId)
+    if (!screen || this.phase !== 'intermission') return 'invalid'
+    const entry = screen.shop[shopIndex]
+    const old = p.weapons[slotIndex]
+    if (!entry || entry.sold || !old) return 'invalid'
+    const refund = Math.round(this.registry.weapon(old.defId).price * SELL_FRACTION)
+    if (p.gold + refund < entry.price) return 'poor'
+    p.weapons.splice(slotIndex, 1)
+    p.gold += refund - entry.price
     entry.sold = true
     this.sim.equipWeapon(playerId, entry.weaponId)
     return 'ok'
