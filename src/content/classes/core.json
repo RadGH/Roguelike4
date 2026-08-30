@@ -41,6 +41,16 @@
         "tag": "Heavy",
         "pct": -25
       }
+    ],
+    "grants": [
+      {
+        "level": 4,
+        "options": [
+          "quick-gloves",
+          "fleet-boots",
+          "blink"
+        ]
+      }
     ]
   },
   {
@@ -70,7 +80,17 @@
     "startingEquipment": "lesser-heal",
     "mods": {
       "regen": 4
-    }
+    },
+    "grants": [
+      {
+        "level": 4,
+        "options": [
+          "soothing-herbs",
+          "restorative-greed",
+          "lesser-heal"
+        ]
+      }
+    ]
   },
   {
     "id": "marksman",
@@ -120,7 +140,16 @@
     "mods": {
       "lifesteal": 20,
       "maxHealth": 10
-    }
+    },
+    "grants": [
+      {
+        "level": 4,
+        "options": [
+          "leech-fang",
+          "berserker-charm"
+        ]
+      }
+    ]
   },
   {
     "id": "sentinel",
@@ -135,7 +164,17 @@
       "maxHealth": 10,
       "armor": 20,
       "moveSpeedPct": -5
-    }
+    },
+    "grants": [
+      {
+        "level": 4,
+        "options": [
+          "titan-belt",
+          "iron-plating",
+          "ground-slam"
+        ]
+      }
+    ]
   },
   {
     "id": "engineer",
@@ -152,6 +191,16 @@
       {
         "tag": "Pets",
         "pct": 25
+      }
+    ],
+    "grants": [
+      {
+        "level": 4,
+        "options": [
+          "turret-kit",
+          "war-drum",
+          "summon-wolf"
+        ]
       }
     ]
   }

@@ -28,6 +28,8 @@ export interface PlayerState {
   level: number
   /** Level-ups not yet spent on a perk draft (drafts open at intermission). */
   pendingDrafts: number
+  /** How many class item grants have been claimed. */
+  grantsClaimed: number
   gold: number
   /** Pickup attraction radius in world units. */
   pickupRadius: number

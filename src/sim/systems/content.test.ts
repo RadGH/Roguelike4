@@ -31,7 +31,7 @@ describe('new weapons', () => {
     run.sim.equipWeapon(0, 'shield')
     expect(p.defenses.block).toBe(base + (registry.weapon('shield').grantsBlock ?? 0))
     run.phase = 'intermission'
-    run.personal.set(0, { rewards: [], draft: null, shop: [], rerollPrice: 10, done: false })
+    run.personal.set(0, { rewards: [], draft: null, grant: null, shop: [], rerollPrice: 10, done: false })
     run.sellWeapon(0, p.weapons.length - 1)
     expect(p.defenses.block).toBe(base)
   })
@@ -72,6 +72,7 @@ describe('new classes', () => {
         { itemId: 'lucky-coin', resolved: null },
       ],
       draft: null,
+      grant: null,
       shop: [],
       rerollPrice: 10,
       done: false,

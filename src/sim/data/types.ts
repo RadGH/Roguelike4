@@ -105,6 +105,12 @@ export interface ClassDef {
   startingMovement?: string
   /** Passive items the class begins with (e.g. the Engineer's turret kit). */
   startingItems?: string[]
+  /**
+   * Class item grants: at the listed level, the intermission offers a free
+   * choice among the class's signature items — identity guaranteed, choice
+   * preserved. Options are item or slot-item ids.
+   */
+  grants?: { level: number; options: string[] }[]
   /** Innate stat modifiers, applied before perks in the recompute. */
   mods?: Partial<Record<
     'maxHealth' | 'moveSpeedPct' | 'xpPct' | 'goldPct' | 'allPct' | 'armor' | 'regen' | 'lifesteal',

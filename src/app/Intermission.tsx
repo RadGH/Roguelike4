@@ -144,6 +144,31 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
               </>
             )}
 
+            {screen.grant && (
+              <>
+                <h3>Class gift — choose one</h3>
+                <div className="cards">
+                  {screen.grant.map((id, i) => {
+                    const isActive = run.isActive(id)
+                    const def = isActive ? run.registry.active(id) : run.registry.item(id)
+                    return (
+                      <button
+                        className="card"
+                        key={i}
+                        data-testid={`grant-${i}`}
+                        onClick={() => { run.pickGrant(p.id, i); onChange() }}
+                      >
+                        <span>
+                          <span className="name">{def.name}</span>
+                          <div className="desc">{def.description}</div>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
             {screen.draft ? (
               <>
                 <h3>Level up — choose a perk ({p.pendingDrafts} left)</h3>

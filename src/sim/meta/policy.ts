@@ -175,6 +175,9 @@ export function playIntermission(run: Run, playerId: number): void {
     })
   }
 
+  // Class item grants: take the first option.
+  if (run.personal.get(playerId)?.grant) run.pickGrant(playerId, 0)
+
   while (run.personal.get(playerId)?.draft) {
     const screen = run.personal.get(playerId)
     if (!screen?.draft) break

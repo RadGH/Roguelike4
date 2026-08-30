@@ -95,6 +95,7 @@ describe('classes and rewards with slot items', () => {
     run.personal.set(0, {
       rewards: [{ itemId: 'blink', resolved: null }],
       draft: null,
+      grant: null,
       shop: [],
       rerollPrice: 10,
       done: false,

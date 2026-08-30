@@ -124,3 +124,35 @@ describe('triggered item effects', () => {
     expect(healed).toBe(true)
   })
 })
+
+describe('class item grants', () => {
+  it('offers the class gift at the grant level and awards the choice', () => {
+    const run = new Run(registry, { seed: 40, playerCount: 1, actId: 'act1', classIds: ['vampire'] })
+    const p = run.sim.state.players[0]
+    p.level = 4
+    run.phase = 'recap'
+    run.proceedFromRecap()
+    const screen = run.personal.get(0)
+    expect(screen?.grant).toEqual(['leech-fang', 'berserker-charm'])
+
+    run.setReady(0)
+    expect(run.phase).toBe('intermission') // grant is a mandatory decision
+
+    run.pickGrant(0, 0)
+    expect(p.items).toContain('leech-fang')
+    expect(p.grantsClaimed).toBe(1)
+    expect(run.personal.get(0)?.grant).toBeNull()
+
+    // The same grant never re-offers.
+    run.phase = 'recap'
+    run.proceedFromRecap()
+    expect(run.personal.get(0)?.grant).toBeNull()
+  })
+
+  it('no grant before the level threshold', () => {
+    const run = new Run(registry, { seed: 41, playerCount: 1, actId: 'act1', classIds: ['vampire'] })
+    run.phase = 'recap'
+    run.proceedFromRecap()
+    expect(run.personal.get(0)?.grant).toBeNull()
+  })
+})

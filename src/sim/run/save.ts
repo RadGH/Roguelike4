@@ -26,6 +26,7 @@ export interface PlayerSave {
   xp: number
   level: number
   pendingDrafts: number
+  grantsClaimed: number
   health: number
   perks: OwnedPerk[]
   items: string[]

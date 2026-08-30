@@ -96,6 +96,7 @@ export class Sim {
       xp: 0,
       level: 1,
       pendingDrafts: 0,
+      grantsClaimed: 0,
       gold: 0,
       pickupRadius: 1.5,
       perks: [],

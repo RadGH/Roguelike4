@@ -48,6 +48,8 @@ export interface PersonalScreen {
   rewards: RewardEntry[]
   /** Draft offers for the current pending draft, or null when drafting is done. */
   draft: PerkOffer[] | null
+  /** Class item grant: a free choice among signature items, or null. */
+  grant: string[] | null
   shop: ShopEntry[]
   rerollPrice: number
   /** Player pressed "ready" — waiting on the others. */
@@ -100,6 +102,7 @@ export class Run {
         p.xp = ps.xp
         p.level = ps.level
         p.pendingDrafts = ps.pendingDrafts
+        p.grantsClaimed = ps.grantsClaimed ?? 0
         p.perks = ps.perks.map((o) => ({ ...o }))
         p.items = [...(ps.items ?? [])]
         if (ps.equipment) this.sim.equipActive(ps.id, ps.equipment)
@@ -150,6 +153,7 @@ export class Run {
         xp: p.xp,
         level: p.level,
         pendingDrafts: p.pendingDrafts,
+        grantsClaimed: p.grantsClaimed,
         health: Math.max(1, Math.round(p.health)),
         perks: p.perks.map((o) => ({ ...o })),
         items: [...p.items],
@@ -199,9 +203,12 @@ export class Run {
     this.phase = 'intermission'
     this.personal.clear()
     for (const p of this.sim.state.players) {
+      const cls = this.registry.class(p.classId)
+      const nextGrant = cls.grants?.[p.grantsClaimed]
       this.personal.set(p.id, {
         rewards: [],
         draft: p.pendingDrafts > 0 ? this.rollDraft(p.perks) : null,
+        grant: nextGrant && p.level >= nextGrant.level ? [...nextGrant.options] : null,
         shop: this.rollShop(p.id),
         rerollPrice: 10,
         done: false,
@@ -224,6 +231,23 @@ export class Run {
   /** Is a reward id a slot item rather than a passive? */
   isActive(id: string): boolean {
     return this.registry.actives.has(id)
+  }
+
+  /** Claim a class item grant: free, guaranteed identity, chosen not given. */
+  pickGrant(playerId: number, index: number): void {
+    const screen = this.personal.get(playerId)
+    const p = this.sim.player(playerId)
+    if (!screen?.grant || this.phase !== 'intermission') return
+    const id = screen.grant[index]
+    if (!id) return
+    if (this.isActive(id)) {
+      this.sim.equipActive(playerId, id)
+    } else {
+      p.items.push(id)
+      recomputePlayer(p, this.registry)
+    }
+    p.grantsClaimed++
+    screen.grant = null
   }
 
   /** Resolve a reward: keep it (equip the passive) or sell it for gold. */
@@ -403,8 +427,9 @@ export class Run {
   setReady(playerId: number): void {
     const screen = this.personal.get(playerId)
     if (!screen || this.phase !== 'intermission') return
-    // Rewards and drafts are mandatory decisions before readying.
+    // Rewards, drafts, and grants are mandatory decisions before readying.
     if (screen.draft) return
+    if (screen.grant) return
     if (screen.rewards.some((r) => !r.resolved)) return
     screen.done = true
     if ([...this.personal.values()].every((s) => s.done)) {

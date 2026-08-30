@@ -198,5 +198,13 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   after tuning, the band is Sentinel/Fighter ~5-15%, Student/Rogue/Looter ~15-30%,
   Vampire 30%, Mage/Marksman 40%, Priest 50%, Engineer 75%. Engineer's turret is clearly
   strong — vault's "pet damage is free" warning showing up in numbers. Worth a nerf watch.
-- Next: class-grant screen + achievements distinction, then M8 (website reading the same
-  JSON, deploy workflow, player docs).
+- Sixteenth chunk (7fc41e4): the companion manual is live at /manual.html — the full
+  content catalog (classes, weapon stat tables, items, slot items, companions, perks,
+  enemies, unlock conditions) rendered from the exact JSON the game runs on, plus a
+  spoiler-free player guide and a how-to-play section. Linked from the title screen.
+- **Two things only Radley can do for the live deploy:**
+  1. Enable Pages: repo Settings → Pages → Source: "GitHub Actions".
+  2. Move `docs/dev/github-pages-deploy.yml` to `.github/workflows/deploy.yml` and push
+     (my token lacks the `workflow` scope to push workflow files; a token with that scope
+     would also work).
+- Next: internal dev docs, class-grant screen, achievements note, release checklist.
