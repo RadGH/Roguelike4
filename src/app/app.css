@@ -122,3 +122,34 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .toolbar { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .gold-display { color: var(--gold); font-weight: 600; }
+
+/* Touch controls: stick zone on the left, A/B bottom-right. Sized and placed
+   to survive a quarter-screen layout without covering the player. */
+.touch-btn {
+  position: fixed;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid var(--panel-edge);
+  background: rgba(31, 31, 42, 0.75);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+  z-index: 5;
+}
+.touch-btn:active { border-color: var(--accent); }
+.touch-a { right: 24px; bottom: 100px; }
+.touch-b { right: 100px; bottom: 32px; }
+
+.touch-stick {
+  position: fixed;
+  border-radius: 50%;
+  border: 2px solid rgba(154, 154, 176, 0.5);
+  pointer-events: none;
+  z-index: 5;
+}

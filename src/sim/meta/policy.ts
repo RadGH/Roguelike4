@@ -18,15 +18,40 @@ export function moveIntent(sim: Sim, p: PlayerState, skill: number, rng: Rng): {
   let vx = 0
   let vy = 0
 
+  // A build's reach decides its footwork: ranged builds kite at distance,
+  // melee builds orbit the edge of their swing instead of running forever.
+  let maxRange = 0
+  for (const w of p.weapons) {
+    maxRange = Math.max(maxRange, sim.registry.weapon(w.defId).range)
+  }
+  const meleeBuild = maxRange > 0 && maxRange <= 2.4
+  const fleeRadius2 = meleeBuild ? 2.25 : 64
+
   // Flee threat: enemies push away with 1/d² weighting.
   for (const e of s.enemies) {
     if (!sim.isTargetable(e) && rng.next() < skill) continue // skilled players ignore burrowed fake-outs
     const dx = p.x - e.x
     const dy = p.y - e.y
     const d2 = Math.max(0.4, dx * dx + dy * dy)
-    if (d2 > 64) continue
+    if (d2 > fleeRadius2) continue
     vx += (dx / d2) * 3
     vy += (dy / d2) * 3
+  }
+
+  // Melee builds close to the edge of their own reach.
+  if (meleeBuild) {
+    let nearest = null as { x: number; y: number } | null
+    let best = Infinity
+    for (const e of s.enemies) {
+      if (!sim.isTargetable(e)) continue
+      const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2
+      if (d2 < best) { best = d2; nearest = e }
+    }
+    if (nearest && best > (maxRange * 0.7) ** 2) {
+      const n = norm(nearest.x - p.x, nearest.y - p.y)
+      vx += n.x * 1.6
+      vy += n.y * 1.6
+    }
   }
 
   // Avoid telegraphed zones and pools — reliability scales with skill.

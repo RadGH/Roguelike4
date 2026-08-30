@@ -184,5 +184,11 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   the pool behind unlocks and affinity classes make those weapons good, so this is a
   watch item, not a crisis — but it confirms the vault's warning that every pool addition
   is a balance event. The simulator's A/B mode made this visible in minutes.
-- Next: class-grant screen, more art (weapon/pickup sprites in shop UI), then M7 polish
-  and M8 website/deploy prep.
+- Fourteenth chunk (adf696d): pets and structures, the last big v1 system. The mortality
+  split works as the vault argues it should — wolves body-block and die to incidental
+  contact then respawn in 8s, while turrets and ravens can't be hurt. Pets rebuild from
+  carried summon items at every wave start (which quietly answers the vault's open
+  question: structures re-deploy per wave, and saves don't need pet state at all).
+  Engineer class + Kinship perk + 3 summon items + 3 ally SVGs.
+- Next: class-grant screen, remaining M4 (touch input, hot-join), balance pass 2, then
+  M7 polish and the M8 website/deploy.

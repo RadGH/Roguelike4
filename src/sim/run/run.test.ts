@@ -107,6 +107,7 @@ describe('Run flow', () => {
         playWave(run)
         if (run.phase === 'recap') {
           run.proceedFromRecap()
+          run.personal.get(0)?.rewards.forEach((_, i) => run.resolveReward(0, i, 'kept'))
           while (run.personal.get(0)?.draft) run.pickPerk(0, 0)
           run.setReady(0)
         }

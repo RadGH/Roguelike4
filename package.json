@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "simulate": "tsx scripts/simulate.ts",
+    "stress": "tsx scripts/stress.ts",
     "lint": "eslint src"
   },
   "dependencies": {

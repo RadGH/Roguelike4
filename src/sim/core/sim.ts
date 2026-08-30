@@ -55,7 +55,7 @@ export class Sim {
   private readonly rngCombat: Rng
   private waveTable: WaveDef[] = []
 
-  constructor(private readonly registry: Registry, opts: SimOptions) {
+  constructor(readonly registry: Registry, opts: SimOptions) {
     this.rng = new Rng(opts.seed)
     this.rngSpawn = this.rng.fork('spawn')
     this.rngCombat = this.rng.fork('combat')

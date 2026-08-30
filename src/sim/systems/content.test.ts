@@ -48,7 +48,7 @@ describe('new classes', () => {
     const sim = new Sim(registry, { seed: 4, playerCount: 1, classIds: ['vampire'] })
     sim.startWave(quiet, 1)
     const p = sim.state.players[0]
-    expect(p.lifesteal).toBeCloseTo(0.15)
+    expect(p.lifesteal).toBeCloseTo(0.2)
     const h0 = p.health
     for (let i = 0; i < TICK_RATE * 3; i++) sim.tick()
     expect(p.health).toBeCloseTo(h0 - 3, 0)

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Application, Container, Graphics, Sprite, Text } from 'pixi.js'
 import { TICK_DT, TICK_RATE } from '../sim/core/sim'
 import type { Run } from '../sim/run/run'
@@ -17,6 +17,37 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const runRef = useRef(run)
   runRef.current = run
+  // Touch: a drag anywhere on the arena is a virtual stick for player 1.
+  const touchVec = useRef({ x: 0, y: 0 })
+  const touchOrigin = useRef<{ x: number; y: number; id: number } | null>(null)
+  const [stickPos, setStickPos] = useState<{ x: number; y: number } | null>(null)
+  const touchCapable = typeof window !== 'undefined' &&
+    (('ontouchstart' in window) || window.matchMedia?.('(pointer: coarse)').matches ||
+      window.location.search.includes('touch'))
+
+  const onPointerDown = (e: React.PointerEvent): void => {
+    if (e.pointerType !== 'touch') return
+    touchOrigin.current = { x: e.clientX, y: e.clientY, id: e.pointerId }
+    setStickPos({ x: e.clientX, y: e.clientY })
+  }
+  const onPointerMove = (e: React.PointerEvent): void => {
+    const origin = touchOrigin.current
+    if (!origin || e.pointerId !== origin.id) return
+    const dx = (e.clientX - origin.x) / 45
+    const dy = (e.clientY - origin.y) / 45
+    const len = Math.hypot(dx, dy) || 1
+    const clampLen = Math.min(1, len)
+    touchVec.current = { x: (dx / len) * clampLen, y: (dy / len) * clampLen }
+  }
+  const onPointerEnd = (e: React.PointerEvent): void => {
+    if (touchOrigin.current && e.pointerId === touchOrigin.current.id) {
+      touchOrigin.current = null
+      touchVec.current = { x: 0, y: 0 }
+      setStickPos(null)
+    }
+  }
+
+  const touchVecRef = touchVec
 
   useEffect(() => {
     const host = hostRef.current
@@ -130,6 +161,12 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
             if (keys.has('d') || keys.has('arrowright')) mx += 1
             if (keys.has('w') || keys.has('arrowup')) my -= 1
             if (keys.has('s') || keys.has('arrowdown')) my += 1
+            // Virtual stick (touch) overrides keys while active.
+            const tv = touchVecRef.current
+            if (tv.x !== 0 || tv.y !== 0) {
+              mx = tv.x
+              my = tv.y
+            }
           }
           const pad = playerCount === 1
             ? pads[0]
@@ -428,5 +465,41 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
     }
   }, [])
 
-  return <div ref={hostRef} style={{ position: 'fixed', inset: 0 }} data-testid="arena" />
+  return (
+    <>
+      <div
+        ref={hostRef}
+        style={{ position: 'fixed', inset: 0, touchAction: 'none' }}
+        data-testid="arena"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
+      />
+      {touchCapable && (
+        <>
+          {stickPos && (
+            <div
+              className="touch-stick"
+              style={{ left: stickPos.x - 40, top: stickPos.y - 40, width: 80, height: 80 }}
+            />
+          )}
+          <button
+            className="touch-btn touch-a"
+            data-testid="touch-a"
+            onPointerDown={(e) => { e.stopPropagation(); runRef.current.sim.useEquipment(0) }}
+          >
+            A
+          </button>
+          <button
+            className="touch-btn touch-b"
+            data-testid="touch-b"
+            onPointerDown={(e) => { e.stopPropagation(); runRef.current.sim.useMovement(0) }}
+          >
+            B
+          </button>
+        </>
+      )}
+    </>
+  )
 }
