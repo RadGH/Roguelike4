@@ -9,6 +9,8 @@ import type { Defenses } from '../systems/damage'
 
 export interface PlayerState {
   id: number
+  /** Class def id — the starting configuration this character was built from. */
+  classId: string
   x: number
   y: number
   /** Unit movement intent from input, applied at tick time. */

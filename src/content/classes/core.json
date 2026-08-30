@@ -1,0 +1,47 @@
+[
+  {
+    "id": "student",
+    "name": "Student",
+    "description": "Learns fast. No strengths, no weaknesses — the baseline everything else is measured against.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-wand"],
+    "mods": { "xpPct": 25 }
+  },
+  {
+    "id": "fighter",
+    "name": "Fighter",
+    "description": "An extra weapon slot. More arms, more steel.",
+    "weaponSlots": 3,
+    "startingWeapons": ["practice-sword"]
+  },
+  {
+    "id": "rogue",
+    "name": "Rogue",
+    "description": "Quick on their feet. Hits harder with Light weapons, worse with Heavy ones.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-sword"],
+    "mods": { "moveSpeedPct": 12 },
+    "affinities": [
+      { "tag": "Light", "pct": 20 },
+      { "tag": "Heavy", "pct": -25 }
+    ]
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "description": "Attuned to Magic. Weapons carrying the Magic tag hit harder.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-wand"],
+    "affinities": [
+      { "tag": "Magic", "pct": 25 }
+    ]
+  },
+  {
+    "id": "sentinel",
+    "name": "Sentinel",
+    "description": "Slow and armored. Starts with more health and takes less from everything.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-sword"],
+    "mods": { "maxHealth": 8, "armor": 15, "moveSpeedPct": -10 }
+  }
+]

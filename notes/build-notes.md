@@ -117,5 +117,15 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   keeps the last 50 runs with each player's top damage sources, and buying with full
   weapon slots now opens a replace prompt with a half-price refund. The tracker was
   refactored to savable aggregates. 45 unit + 2 E2E green.
-- Next: co-op (M4) — multi-player join, shared zoom camera, downed/revive, quarter-screen
-  simultaneous intermission panels.
+- Sixth chunk (8450d7e): co-op works. 1–4 players (P1 keyboard, pads in order), one shared
+  camera that zooms out to frame everyone, downed/bleed-out/proximity-revive exactly per
+  the vault (enemies ignore downed players; run ends only when nobody stands; the dead
+  return at wave clear at half health), identity rings, and simultaneous quarter-screen
+  intermission panels with a "waiting on P2" readout. 52 unit + 2 E2E green.
+- Design call logged: solo down = immediate death (no pointless 15s wait with no possible
+  rescuer). Second Wind stays the findable solo answer once items land in M5.
+- Palette note for the vault: with players, pickups, telegraphs, tiers, and ten archetypes
+  all claiming hues, the palette is exactly as crowded as Art Direction predicted. Player
+  identity went to ring outlines rather than body hues to dodge collisions — worth
+  recording as the chosen mechanism.
+- Next: M5 meta — unlock engine + codex + class ladder (Student → Fighter/Rogue/Mage).

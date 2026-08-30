@@ -1,0 +1,41 @@
+[
+  {
+    "id": "graduation",
+    "name": "Graduation",
+    "description": "Finish a run as the Student — win or lose.",
+    "condition": { "type": "run-as-class", "classId": "student" },
+    "rewards": [
+      { "kind": "class", "id": "fighter" },
+      { "kind": "class", "id": "rogue" },
+      { "kind": "class", "id": "mage" }
+    ]
+  },
+  {
+    "id": "hold-the-line",
+    "name": "Hold the Line",
+    "description": "Complete Act 1.",
+    "condition": { "type": "win-act", "actId": "act1" },
+    "rewards": [{ "kind": "class", "id": "sentinel" }]
+  },
+  {
+    "id": "deep-delver",
+    "name": "Deep Delver",
+    "description": "Reach wave 7 in any run.",
+    "condition": { "type": "reach-wave", "wave": 7 },
+    "rewards": [{ "kind": "weapon", "id": "javelin" }]
+  },
+  {
+    "id": "hundred-hands",
+    "name": "Hundred Hands",
+    "description": "Defeat 300 enemies across all runs.",
+    "condition": { "type": "total-kills", "count": 300 },
+    "rewards": [{ "kind": "weapon", "id": "hammer" }]
+  },
+  {
+    "id": "reaper",
+    "name": "Reaper",
+    "description": "Defeat 60 enemies in a single wave.",
+    "condition": { "type": "kills-in-one-wave", "count": 60 },
+    "rewards": [{ "kind": "perk", "id": "leeching" }]
+  }
+]

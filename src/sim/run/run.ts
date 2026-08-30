@@ -55,10 +55,24 @@ export class Run {
   private readonly rngRun: Rng
   private readonly act: ActDef
 
+  /** Content available to this run (unlock gating). Null = everything. */
+  private readonly pool: { weapons: Set<string>; perks: Set<string> } | null
+
   constructor(
     readonly registry: Registry,
-    opts: { seed: number; playerCount: number; actId: string; save?: RunSave },
+    opts: {
+      seed: number
+      playerCount: number
+      actId: string
+      classIds?: string[]
+      /** Unlocked content ids; anything absent never appears in this run. */
+      unlocked?: { weapons: string[]; perks: string[] }
+      save?: RunSave
+    },
   ) {
+    this.pool = opts.unlocked
+      ? { weapons: new Set(opts.unlocked.weapons), perks: new Set(opts.unlocked.perks) }
+      : null
     this.sim = new Sim(registry, opts)
     this.rngRun = new Rng(opts.seed ^ 0x5eed).fork('run')
     this.act = registry.act(opts.actId)
@@ -81,9 +95,12 @@ export class Run {
       return
     }
 
-    // Starting kit until classes arrive: one wand. (Loadout screens are M2+.)
+    // Each class defines its starting kit.
     for (const p of this.sim.state.players) {
-      this.sim.equipWeapon(p.id, 'practice-wand')
+      const cls = registry.class(p.classId)
+      for (const weaponId of cls.startingWeapons) {
+        this.sim.equipWeapon(p.id, weaponId)
+      }
     }
     this.sim.startWave(this.act.waves, 1)
   }
@@ -102,6 +119,7 @@ export class Run {
       nextWave: this.sim.state.wave.number + 1,
       players: this.sim.state.players.map((p) => ({
         id: p.id,
+        classId: p.classId,
         gold: p.gold,
         xp: p.xp,
         level: p.level,
@@ -114,11 +132,17 @@ export class Run {
     }
   }
 
-  static resume(registry: Registry, save: RunSave): Run {
+  static resume(
+    registry: Registry,
+    save: RunSave,
+    unlocked?: { weapons: string[]; perks: string[] },
+  ): Run {
     return new Run(registry, {
       seed: save.seed,
       playerCount: save.playerCount,
       actId: save.actId,
+      classIds: save.players.map((p) => p.classId ?? 'student'),
+      unlocked,
       save,
     })
   }
@@ -156,6 +180,7 @@ export class Run {
 
   private rollDraft(owned: OwnedPerk[]): PerkOffer[] {
     const all = [...this.registry.perks.values()]
+      .filter((perk) => !this.pool || this.pool.perks.has(perk.id))
     // Prefer offering distinct perks; duplicates allowed once the pool thins.
     const pool = all.length >= DRAFT_OPTIONS ? this.rngRun.shuffle(all.slice()) : all
     void owned
@@ -177,6 +202,7 @@ export class Run {
 
   private rollShop(): ShopEntry[] {
     const weapons = [...this.registry.weapons.values()]
+      .filter((w) => !this.pool || this.pool.weapons.has(w.id))
     const stock: ShopEntry[] = []
     for (let i = 0; i < SHOP_STOCK; i++) {
       const w = this.rngRun.pick(weapons)
@@ -291,8 +317,8 @@ export class Run {
     this.sim.startWave(this.act.waves, next)
   }
 
-  weaponSlots(_playerId: number): number {
-    return 2 // class trait later; Student baseline for now
+  weaponSlots(playerId: number): number {
+    return this.registry.class(this.sim.player(playerId).classId).weaponSlots
   }
 
   /** Convenience for UIs and sim policies. */

@@ -209,12 +209,24 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
   )
 }
 
-export function RunEnd({ run, onRestart }: { run: Run; onRestart: () => void }): React.JSX.Element {
+export function RunEnd({ run, unlockedNow, onRestart }: {
+  run: Run
+  unlockedNow: string[]
+  onRestart: () => void
+}): React.JSX.Element {
   const won = run.phase === 'victory'
   return (
     <div className="overlay">
       <div className="panel" data-testid="run-end">
         <h2>{won ? 'Act complete!' : 'The run is over'}</h2>
+        {unlockedNow.length > 0 && (
+          <div data-testid="unlocks">
+            <h3>Unlocked</h3>
+            {unlockedNow.map((u, i) => (
+              <div className="recap-row" key={i}><span className="name">★ {u}</span></div>
+            ))}
+          </div>
+        )}
         {run.sim.state.players.map((p) => {
           const total = run.sim.tracker.totalFor(p.id)
           const taken = run.sim.tracker.takenSummary(p.id)

@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useRef, useState, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useReducer } from 'react'
 import { GAME_TITLE } from '../branding'
 import { Run } from '../sim/run/run'
 import { loadContent } from '../sim/data/loadContent'
+import {
+  applyRunResult, availableContent, conditionProgress, evaluateUnlocks,
+} from '../sim/meta/unlocks'
 import { Arena } from './Arena'
 import { Intermission, Recap, RunEnd } from './Intermission'
+import { ClassSelect, Codex } from './Codex'
+import { loadProfile, storeProfile } from './profile'
 import {
   appendHistory, clearSave, exportSave, importSaveFile,
   loadHistory, loadSave, storeSave,
@@ -11,15 +16,23 @@ import {
 import type { RunSave } from '../sim/run/save'
 import './app.css'
 
+const registry = loadContent()
+
 export function App(): React.JSX.Element {
   const [run, setRun] = useState<Run | null>(null)
   const [save, setSave] = useState<RunSave | null>(() => loadSave())
+  const [profile, setProfile] = useState(() => loadProfile())
+  const [screen, setScreen] = useState<'title' | 'classes' | 'codex'>('title')
   const [showHistory, setShowHistory] = useState(false)
   const [playerCount, setPlayerCount] = useState(1)
+  const [chosenClasses, setChosenClasses] = useState<string[]>(['student'])
+  const [unlockedNow, setUnlockedNow] = useState<string[]>([])
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const onChange = useCallback(() => bump(), [])
   const savedWave = useRef(0)
   const recorded = useRef(false)
+
+  const available = useMemo(() => availableContent(profile, registry), [profile])
 
   // The run's phase changes inside the Pixi ticker, outside React's view —
   // poll it cheaply so overlays appear the moment the sim settles a wave.
@@ -29,7 +42,8 @@ export function App(): React.JSX.Element {
     return () => clearInterval(id)
   }, [run])
 
-  // Save after every wave; archive and clear on run end.
+  // Save after every wave; on run end fold the result into the profile,
+  // evaluate unlocks, archive history, and clear the wave save.
   useEffect(() => {
     if (!run) return
     const id = setInterval(() => {
@@ -44,10 +58,35 @@ export function App(): React.JSX.Element {
         recorded.current = true
         clearSave()
         setSave(null)
+
+        const won = run.phase === 'victory'
+        let nextProfile = applyRunResult(profile, {
+          actId: 'act1',
+          won,
+          waveReached: wave,
+          players: run.sim.state.players.map((p) => ({
+            classId: p.classId,
+            kills: run.sim.tracker.killsFor(p.id),
+          })),
+          bestKillsInOneWave: run.sim.tracker.bestTeamWaveKills(),
+        })
+        const earned = evaluateUnlocks(nextProfile, registry)
+        nextProfile = {
+          ...nextProfile,
+          unlockedIds: [...nextProfile.unlockedIds, ...earned.map((u) => u.id)],
+        }
+        storeProfile(nextProfile)
+        setProfile(nextProfile)
+        setUnlockedNow(earned.map((u) =>
+          `${u.name}: ${u.rewards.map((r) => registry[
+            r.kind === 'class' ? 'classes' : r.kind === 'weapon' ? 'weapons' : 'perks'
+          ].get(r.id)?.name ?? r.id).join(', ')}`,
+        ))
+
         appendHistory({
           date: new Date().toISOString().slice(0, 16).replace('T', ' '),
-          result: run.phase === 'victory' ? 'victory' : 'defeat',
-          waveReached: run.sim.state.wave.number,
+          result: won ? 'victory' : 'defeat',
+          waveReached: wave,
           players: run.sim.state.players.map((p) => ({
             id: p.id,
             level: p.level,
@@ -62,27 +101,38 @@ export function App(): React.JSX.Element {
       }
     }, 300)
     return () => clearInterval(id)
-  }, [run])
+  }, [run, profile])
 
   const beginRun = (r: Run): void => {
     savedWave.current = 0
     recorded.current = false
+    setUnlockedNow([])
     setRun(r)
+  }
+
+  const openClassSelect = (): void => {
+    setChosenClasses(Array.from({ length: playerCount }, (_, i) =>
+      available.classes.includes(chosenClasses[i]) ? chosenClasses[i] : 'student',
+    ))
+    setScreen('classes')
   }
 
   const startRun = (): void => {
     clearSave()
     setSave(null)
-    beginRun(new Run(loadContent(), {
+    setScreen('title')
+    beginRun(new Run(registry, {
       seed: Date.now() >>> 0,
       playerCount,
       actId: 'act1',
+      classIds: chosenClasses,
+      unlocked: { weapons: available.weapons, perks: available.perks },
     }))
   }
 
   const continueRun = (): void => {
     if (!save) return
-    beginRun(Run.resume(loadContent(), save))
+    beginRun(Run.resume(registry, save, { weapons: available.weapons, perks: available.perks }))
   }
 
   const onImport = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -97,7 +147,37 @@ export function App(): React.JSX.Element {
     e.target.value = ''
   }
 
+  const lockLineFor = (classId: string): string | null => {
+    for (const def of registry.unlocks.values()) {
+      if (def.rewards.some((r) => r.kind === 'class' && r.id === classId)) {
+        return `${def.description} (${conditionProgress(profile, def)})`
+      }
+    }
+    return null
+  }
+
   if (!run) {
+    if (screen === 'codex') {
+      return <Codex registry={registry} profile={profile} available={available} onClose={() => setScreen('title')} />
+    }
+    if (screen === 'classes') {
+      return (
+        <ClassSelect
+          registry={registry}
+          available={available.classes}
+          playerCount={playerCount}
+          chosen={chosenClasses}
+          onChoose={(pi, id) => setChosenClasses((prev) => {
+            const next = [...prev]
+            next[pi] = id
+            return next
+          })}
+          onStart={startRun}
+          onBack={() => setScreen('title')}
+          lockLineFor={lockLineFor}
+        />
+      )
+    }
     const history = showHistory ? loadHistory() : []
     return (
       <div className="screen-center">
@@ -123,9 +203,10 @@ export function App(): React.JSX.Element {
               Continue — wave {save.nextWave}
             </button>
           )}
-          <button autoFocus={!save} onClick={startRun} data-testid="start-run">New run</button>
+          <button autoFocus={!save} onClick={openClassSelect} data-testid="start-run">New run</button>
         </div>
         <div className="toolbar">
+          <button onClick={() => setScreen('codex')} data-testid="open-codex">Codex</button>
           {save && <button onClick={() => exportSave(save)}>Export save</button>}
           <label>
             <span className="hint" style={{ cursor: 'pointer' }}>Import save </span>
@@ -164,7 +245,7 @@ export function App(): React.JSX.Element {
       )}
       {run.phase === 'intermission' && <Intermission run={run} onChange={onChange} />}
       {(run.phase === 'victory' || run.phase === 'defeat') && (
-        <RunEnd run={run} onRestart={() => setRun(null)} />
+        <RunEnd run={run} unlockedNow={unlockedNow} onRestart={() => setRun(null)} />
       )}
     </>
   )

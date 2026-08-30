@@ -10,7 +10,7 @@ import type { EnemyDef, WaveDef } from '../data/types'
 import type { DamageType } from '../data/tags'
 import { Tracker } from '../systems/tracker'
 import { emptyDefenses, resolveDamage, xpForLevel } from '../systems/damage'
-import { damageMultiplier } from '../systems/stats'
+import { damageMultiplier, recomputePlayer } from '../systems/stats'
 
 /** Telegraph severities: the longer the window, the larger the payload. */
 export const TELEGRAPH_WINDOWS: Record<TelegraphSeverity, number> = {
@@ -35,6 +35,8 @@ export const REVIVE_HEALTH_FRACTION = 0.5
 export interface SimOptions {
   seed: number
   playerCount: number
+  /** Class per player id; defaults to the Student for any unspecified. */
+  classIds?: string[]
 }
 
 /**
@@ -68,12 +70,15 @@ export class Sim {
       arenaW: 28,
       arenaH: 20,
     }
-    for (let i = 0; i < opts.playerCount; i++) this.addPlayer(i)
+    for (let i = 0; i < opts.playerCount; i++) {
+      this.addPlayer(i, opts.classIds?.[i] ?? 'student')
+    }
   }
 
-  private addPlayer(id: number): void {
+  private addPlayer(id: number, classId: string): void {
     const p: PlayerState = {
       id,
+      classId,
       x: -2 + id * 1.5,
       y: 0,
       moveX: 0,
@@ -104,6 +109,9 @@ export class Sim {
       reviveProgress: 0,
     }
     this.state.players.push(p)
+    // Apply the class's innate modifiers immediately.
+    recomputePlayer(p, this.registry)
+    p.health = p.maxHealth
   }
 
   /** Players who can act: standing, not downed. */
@@ -667,7 +675,7 @@ export class Sim {
         if (!target) continue // hold fire — no sensible target
         w.cooldownLeft = def.cooldown * (1 - p.cooldownPct / 100)
         w.firedTick = s.tick
-        const damage = def.damage * damageMultiplier(p, def.damageType)
+        const damage = def.damage * damageMultiplier(p, def, this.registry)
 
         if (def.projectileSpeed) {
           const n = norm(target.x - p.x, target.y - p.y)

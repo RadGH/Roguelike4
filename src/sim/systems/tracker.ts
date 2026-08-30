@@ -109,6 +109,18 @@ export class Tracker {
     return this.takenTotals.get(playerId) ?? { taken: 0, mitigated: 0, dodges: 0 }
   }
 
+  /** Highest team kill total in any single wave (for behavioral unlocks). */
+  bestTeamWaveKills(): number {
+    const perWave = new Map<number, number>()
+    for (const [key, w] of this.waveTotals) {
+      const wave = Number(key.split(':')[1])
+      perWave.set(wave, (perWave.get(wave) ?? 0) + w.kills)
+    }
+    let best = 0
+    for (const v of perWave.values()) best = Math.max(best, v)
+    return best
+  }
+
   killsFor(playerId: number): number {
     let kills = 0
     const prefix = `${playerId}:`

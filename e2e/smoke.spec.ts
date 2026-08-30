@@ -5,6 +5,7 @@ test('title → start run → arena boots and the sim runs', async ({ page }) =>
   page.on('pageerror', (e) => errors.push(e.message))
   await page.goto('/')
   await page.getByTestId('start-run').click()
+  await page.getByTestId('begin-run').click()
   await expect(page.getByTestId('arena')).toBeVisible()
   // Pixi must have attached its canvas and be rendering.
   await expect(page.locator('canvas')).toBeVisible()

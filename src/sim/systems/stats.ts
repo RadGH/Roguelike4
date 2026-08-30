@@ -1,6 +1,6 @@
 import type { PlayerState } from '../core/state'
 import type { Registry } from '../data/registry'
-import { TIER_MULTIPLIER } from '../data/types'
+import { TIER_MULTIPLIER, type WeaponDef } from '../data/types'
 import { emptyDefenses } from './damage'
 
 /**
@@ -34,6 +34,19 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
   p.goldPct = 0
   p.xpPct = 0
 
+  // Class innate modifiers apply first — they are what the class IS.
+  const cls = registry.classes.get(p.classId)
+  if (cls?.mods) {
+    const m = cls.mods
+    if (m.maxHealth) p.maxHealth += m.maxHealth
+    if (m.regen) p.regen += m.regen
+    if (m.armor) p.defenses.armor += m.armor
+    if (m.moveSpeedPct) p.moveSpeed += (BASE.moveSpeed * m.moveSpeedPct) / 100
+    if (m.xpPct) p.xpPct += m.xpPct
+    if (m.goldPct) p.goldPct += m.goldPct
+    if (m.allPct) p.allPct += m.allPct
+  }
+
   for (const owned of p.perks) {
     const def = registry.perk(owned.perkId)
     const amount = def.amount * TIER_MULTIPLIER[owned.tier]
@@ -66,11 +79,25 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
   p.health = Math.max(1, p.maxHealth - healthMissing)
 }
 
-/** Damage multiplier for a weapon's damage type, from the owner's build. */
-export function damageMultiplier(p: PlayerState, damageType: string): number {
+/**
+ * Damage multiplier for a specific weapon, from the owner's build:
+ * type bonus + all-damage bonus + the class's tag affinities.
+ */
+export function damageMultiplier(
+  p: PlayerState,
+  weapon: WeaponDef,
+  registry: Registry,
+): number {
   const typePct =
-    damageType === 'Melee' ? p.meleePct :
-    damageType === 'Ranged' ? p.rangedPct :
-    damageType === 'Magic' ? p.magicPct : 0
-  return 1 + (p.allPct + typePct) / 100
+    weapon.damageType === 'Melee' ? p.meleePct :
+    weapon.damageType === 'Ranged' ? p.rangedPct :
+    weapon.damageType === 'Magic' ? p.magicPct : 0
+  let affinityPct = 0
+  const cls = registry.classes.get(p.classId)
+  if (cls?.affinities) {
+    for (const a of cls.affinities) {
+      if (weapon.tags.includes(a.tag)) affinityPct += a.pct
+    }
+  }
+  return Math.max(0.1, 1 + (p.allPct + typePct + affinityPct) / 100)
 }

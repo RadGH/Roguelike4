@@ -19,6 +19,7 @@ export interface RunSave {
 
 export interface PlayerSave {
   id: number
+  classId: string
   gold: number
   xp: number
   level: number

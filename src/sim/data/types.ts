@@ -85,6 +85,43 @@ export interface PerkDef {
 export const TIER_MULTIPLIER = [1, 2, 3, 4] as const
 export const TIER_NAMES = ['White', 'Blue', 'Yellow', 'Green'] as const
 
+/**
+ * A class is a starting configuration plus tag relationships — never a
+ * bundle of unique abilities. Later classes are differently shaped, not
+ * stronger (the sidegrade rule).
+ */
+export interface ClassDef {
+  id: string
+  name: string
+  description: string
+  weaponSlots: number
+  startingWeapons: string[]
+  /** Innate stat modifiers, applied before perks in the recompute. */
+  mods?: Partial<Record<
+    'maxHealth' | 'moveSpeedPct' | 'xpPct' | 'goldPct' | 'allPct' | 'armor' | 'regen',
+    number
+  >>
+  /** Tag affinities: percent damage bonus/penalty when a weapon carries the tag. */
+  affinities?: { tag: Tag; pct: number }[]
+}
+
+/** Behavioral unlock conditions — they ask you to DO something, not to grind. */
+export type UnlockCondition =
+  | { type: 'run-as-class'; classId: string }   // finish a run, win or lose
+  | { type: 'win-act'; actId: string }
+  | { type: 'reach-wave'; wave: number }
+  | { type: 'total-kills'; count: number }      // lifetime, any run
+  | { type: 'kills-in-one-wave'; count: number }
+
+export interface UnlockDef {
+  id: string
+  name: string
+  /** Player-facing condition text (visible before it is met — codex rule). */
+  description: string
+  condition: UnlockCondition
+  rewards: { kind: 'class' | 'weapon' | 'perk'; id: string }[]
+}
+
 export interface SpawnGroup {
   /** Seconds after wave start. */
   at: number
