@@ -1,0 +1,53 @@
+/* Manual layout: a readable single-column document over the app palette. */
+
+.manual {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+  line-height: 1.55;
+}
+
+.manual header h1 { margin: 0 0 6px; letter-spacing: 1px; }
+
+.manual nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 14px 0 8px;
+}
+.manual nav a { color: var(--accent); text-decoration: none; }
+.manual nav a:hover { text-decoration: underline; }
+
+.manual section { margin-top: 40px; }
+.manual h2 {
+  border-bottom: 1px solid var(--panel-edge);
+  padding-bottom: 6px;
+}
+
+.manual .entry { margin: 14px 0; }
+.manual .entry h3 { margin: 0 0 2px; }
+.manual .entry p { margin: 2px 0; }
+
+.manual .entry-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 200px;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--panel-edge);
+}
+@media (max-width: 640px) {
+  .manual .entry-row { grid-template-columns: 1fr; gap: 2px; }
+}
+
+.manual table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.manual th, .manual td {
+  text-align: left;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--panel-edge);
+}
+
+.manual footer { margin-top: 60px; }

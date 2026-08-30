@@ -229,6 +229,9 @@ export function App(): React.JSX.Element {
           <button onClick={() => setShowHistory((v) => !v)} data-testid="history-toggle">
             Run history
           </button>
+          <a href="manual.html" target="_blank" rel="noreferrer">
+            <button>Manual</button>
+          </a>
         </div>
         {showHistory && (
           <div className="panel" data-testid="history">

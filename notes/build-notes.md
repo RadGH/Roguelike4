@@ -190,5 +190,13 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   carried summon items at every wave start (which quietly answers the vault's open
   question: structures re-deploy per wave, and saves don't need pet state at all).
   Engineer class + Kinship perk + 3 summon items + 3 ally SVGs.
-- Next: class-grant screen, remaining M4 (touch input, hot-join), balance pass 2, then
-  M7 polish and the M8 website/deploy.
+- Fifteenth chunk (8cf1afd): touch input (virtual stick + A/B, shown on touch devices or
+  with ?touch in the URL), a worst-case sim stress benchmark (220 enemies + 16 pets =
+  0.22ms/tick — 0.7% of the frame budget, so no spatial partitioning needed), and a class
+  win-rate sweep. **Findings:** ranged starts beat melee starts by a wide margin (the
+  policy's kiting couldn't land melee at all until I taught it to orbit its own reach);
+  after tuning, the band is Sentinel/Fighter ~5-15%, Student/Rogue/Looter ~15-30%,
+  Vampire 30%, Mage/Marksman 40%, Priest 50%, Engineer 75%. Engineer's turret is clearly
+  strong — vault's "pet damage is free" warning showing up in numbers. Worth a nerf watch.
+- Next: class-grant screen + achievements distinction, then M8 (website reading the same
+  JSON, deploy workflow, player docs).

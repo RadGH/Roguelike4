@@ -7,6 +7,10 @@ export default defineConfig({
   plugins: [react()],
   build: {
     rollupOptions: {
+      input: {
+        main: 'index.html',
+        manual: 'manual.html',
+      },
       output: {
         manualChunks: {
           pixi: ['pixi.js'],

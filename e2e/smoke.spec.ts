@@ -31,3 +31,11 @@ test('escape opens the pause menu with stats and damage breakdown', async ({ pag
   await page.getByTestId('resume').click()
   await expect(page.getByTestId('pause-menu')).not.toBeVisible()
 })
+
+test('the manual page renders every content section from live data', async ({ page }) => {
+  await page.goto('/manual.html')
+  await expect(page.getByRole('heading', { name: 'Classes' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Student' })).toBeVisible()
+  await expect(page.getByText('Practice Wand').first()).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Unlocks' })).toBeVisible()
+})
