@@ -162,5 +162,8 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   primitive-shape fallback if loading ever fails. Screenshot-reviewed per the art doc's
   gate (scripts/screenshot-live.mjs) — fixed a real finding: the camera never zoomed in,
   so solo play failed the squint test; it now zooms to 1.8x when players are close.
-- Next: pause menu w/ live attribution + character/details screens + draft timer, then
-  content breadth (more classes/weapons/perks) with sim checks per addition.
+- Tenth chunk (2931622): pause menu (Esc/Start — per-player weapons, perks, whole-number
+  stats, live damage breakdown), soft intermission timer for multiplayer (35s grace,
+  countdown, auto-resolve at 50s), and pad-disconnect auto-pause.
+- Next: content breadth — the items system (passive items as drops, equipment/movement
+  slots per the Control Budget), more classes, with sim checks per addition.

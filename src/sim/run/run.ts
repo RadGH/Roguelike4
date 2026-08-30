@@ -35,8 +35,17 @@ export interface ShopEntry {
   sold: boolean
 }
 
+/** An item found during the wave, unveiled at the rewards screen. */
+export interface RewardEntry {
+  itemId: string
+  /** null = undecided; then 'kept' or 'sold'. */
+  resolved: 'kept' | 'sold' | null
+}
+
 /** What one player's personal intermission currently shows. */
 export interface PersonalScreen {
+  /** Items found this wave (round-robin assigned), each kept or sold. */
+  rewards: RewardEntry[]
   /** Draft offers for the current pending draft, or null when drafting is done. */
   draft: PerkOffer[] | null
   shop: ShopEntry[]
@@ -61,6 +70,8 @@ export class Run {
 
   /** Content available to this run (unlock gating). Null = everything. */
   private readonly pool: { weapons: Set<string>; perks: Set<string> } | null
+  /** Round-robin loot pointer: items go to players in strict rotation. */
+  private lootIndex = 0
 
   constructor(
     readonly registry: Registry,
@@ -90,10 +101,12 @@ export class Run {
         p.level = ps.level
         p.pendingDrafts = ps.pendingDrafts
         p.perks = ps.perks.map((o) => ({ ...o }))
+        p.items = [...(ps.items ?? [])]
         for (const w of ps.weapons) this.sim.equipWeapon(ps.id, w.defId, w.tier ?? 0)
         recomputePlayer(p, registry)
         p.health = Math.min(ps.health, p.maxHealth)
       }
+      this.lootIndex = opts.save.lootIndex ?? 0
       this.sim.tracker.restore(opts.save.tracker)
       this.sim.startWave(this.act.waves, opts.save.nextWave)
       return
@@ -130,8 +143,10 @@ export class Run {
         pendingDrafts: p.pendingDrafts,
         health: Math.max(1, Math.round(p.health)),
         perks: p.perks.map((o) => ({ ...o })),
+        items: [...p.items],
         weapons: p.weapons.map((w) => ({ defId: w.defId, tier: w.tier })),
       })),
+      lootIndex: this.lootIndex,
       tracker: this.sim.tracker.snapshot(),
     }
   }
@@ -174,11 +189,37 @@ export class Run {
     this.personal.clear()
     for (const p of this.sim.state.players) {
       this.personal.set(p.id, {
+        rewards: [],
         draft: p.pendingDrafts > 0 ? this.rollDraft(p.perks) : null,
         shop: this.rollShop(),
         rerollPrice: 10,
         done: false,
       })
+    }
+    // Unveil the wave's chests: items go to players round-robin, no scramble.
+    const items = [...this.registry.items.values()]
+    const players = this.sim.state.players
+    for (let i = 0; i < this.sim.state.wave.chestsDropped && items.length > 0; i++) {
+      const receiver = players[this.lootIndex % players.length]
+      this.lootIndex++
+      const item = this.rngRun.pick(items)
+      this.personal.get(receiver.id)?.rewards.push({ itemId: item.id, resolved: null })
+    }
+  }
+
+  /** Resolve a reward: keep it (equip the passive) or sell it for gold. */
+  resolveReward(playerId: number, index: number, choice: 'kept' | 'sold'): void {
+    const screen = this.personal.get(playerId)
+    const p = this.sim.player(playerId)
+    if (!screen || this.phase !== 'intermission') return
+    const entry = screen.rewards[index]
+    if (!entry || entry.resolved) return
+    entry.resolved = choice
+    if (choice === 'kept') {
+      p.items.push(entry.itemId)
+      recomputePlayer(p, this.registry)
+    } else {
+      p.gold += Math.round(this.registry.item(entry.itemId).price * SELL_FRACTION)
     }
   }
 
@@ -309,8 +350,9 @@ export class Run {
   setReady(playerId: number): void {
     const screen = this.personal.get(playerId)
     if (!screen || this.phase !== 'intermission') return
-    // Drafts are mandatory: a banked level-up must be spent before readying.
+    // Rewards and drafts are mandatory decisions before readying.
     if (screen.draft) return
+    if (screen.rewards.some((r) => !r.resolved)) return
     screen.done = true
     if ([...this.personal.values()].every((s) => s.done)) {
       this.advanceWave()

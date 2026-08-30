@@ -17,6 +17,27 @@ export const BASE = {
   lifesteal: 0,
 } as const
 
+function applyAttribute(p: PlayerState, attribute: string, amount: number): void {
+  switch (attribute) {
+    case 'maxHealth': p.maxHealth += amount; break
+    case 'regen': p.regen += amount * 0.1; break // shown as whole "Recovery", ticks smoothly
+    case 'armor': p.defenses.armor += amount; break
+    case 'dodge': p.defenses.dodge += amount / 100; break
+    case 'flatReduction': p.defenses.flatReduction += amount; break
+    case 'resist': p.defenses.resist += amount / 100; break
+    case 'lifesteal': p.lifesteal += amount / 100; break
+    case 'moveSpeed': p.moveSpeed += (BASE.moveSpeed * amount) / 100; break
+    case 'pickupRadius': p.pickupRadius += (BASE.pickupRadius * amount) / 100; break
+    case 'meleePct': p.meleePct += amount; break
+    case 'rangedPct': p.rangedPct += amount; break
+    case 'magicPct': p.magicPct += amount; break
+    case 'allPct': p.allPct += amount; break
+    case 'cooldownPct': p.cooldownPct += amount; break
+    case 'goldPct': p.goldPct += amount; break
+    case 'xpPct': p.xpPct += amount; break
+  }
+}
+
 export function recomputePlayer(p: PlayerState, registry: Registry): void {
   const healthMissing = p.maxHealth - p.health
 
@@ -47,27 +68,18 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
     if (m.allPct) p.allPct += m.allPct
   }
 
+  // Passive items: stat effects stack per copy carried.
+  for (const itemId of p.items) {
+    const item = registry.item(itemId)
+    for (const eff of item.effects) {
+      if (eff.kind !== 'stat') continue
+      applyAttribute(p, eff.attribute, eff.amount)
+    }
+  }
+
   for (const owned of p.perks) {
     const def = registry.perk(owned.perkId)
-    const amount = def.amount * TIER_MULTIPLIER[owned.tier]
-    switch (def.attribute) {
-      case 'maxHealth': p.maxHealth += amount; break
-      case 'regen': p.regen += amount * 0.1; break // shown as whole "Recovery", ticks smoothly
-      case 'armor': p.defenses.armor += amount; break
-      case 'dodge': p.defenses.dodge += amount / 100; break
-      case 'flatReduction': p.defenses.flatReduction += amount; break
-      case 'resist': p.defenses.resist += amount / 100; break
-      case 'lifesteal': p.lifesteal += amount / 100; break
-      case 'moveSpeed': p.moveSpeed += (BASE.moveSpeed * amount) / 100; break
-      case 'pickupRadius': p.pickupRadius += (BASE.pickupRadius * amount) / 100; break
-      case 'meleePct': p.meleePct += amount; break
-      case 'rangedPct': p.rangedPct += amount; break
-      case 'magicPct': p.magicPct += amount; break
-      case 'allPct': p.allPct += amount; break
-      case 'cooldownPct': p.cooldownPct += amount; break
-      case 'goldPct': p.goldPct += amount; break
-      case 'xpPct': p.xpPct += amount; break
-    }
+    applyAttribute(p, def.attribute, def.amount * TIER_MULTIPLIER[owned.tier])
   }
 
   // Caps that keep stacking honest.

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "iron-plating",
+    "name": "Iron Plating",
+    "description": "+10 Armor.",
+    "tags": ["Heavy", "Utility"],
+    "price": 25,
+    "effects": [{ "kind": "stat", "attribute": "armor", "amount": 10 }]
+  },
+  {
+    "id": "fleet-boots",
+    "name": "Fleet Boots",
+    "description": "+8 Move Speed.",
+    "tags": ["Light", "Movement"],
+    "price": 25,
+    "effects": [{ "kind": "stat", "attribute": "moveSpeed", "amount": 8 }]
+  },
+  {
+    "id": "heartstone",
+    "name": "Heartstone",
+    "description": "+6 Max Health.",
+    "tags": ["Utility"],
+    "price": 25,
+    "effects": [{ "kind": "stat", "attribute": "maxHealth", "amount": 6 }]
+  },
+  {
+    "id": "whetstone-charm",
+    "name": "Whetstone Charm",
+    "description": "+8 Melee Damage.",
+    "tags": ["Melee"],
+    "price": 30,
+    "effects": [{ "kind": "stat", "attribute": "meleePct", "amount": 8 }]
+  },
+  {
+    "id": "eagle-feather",
+    "name": "Eagle Feather",
+    "description": "+8 Ranged Damage.",
+    "tags": ["Ranged", "Nature"],
+    "price": 30,
+    "effects": [{ "kind": "stat", "attribute": "rangedPct", "amount": 8 }]
+  },
+  {
+    "id": "focus-crystal",
+    "name": "Focus Crystal",
+    "description": "+8 Magic Damage.",
+    "tags": ["Magic"],
+    "price": 30,
+    "effects": [{ "kind": "stat", "attribute": "magicPct", "amount": 8 }]
+  },
+  {
+    "id": "quick-gloves",
+    "name": "Quick Gloves",
+    "description": "+5 Attack Speed.",
+    "tags": ["Light", "Utility"],
+    "price": 35,
+    "effects": [{ "kind": "stat", "attribute": "cooldownPct", "amount": 5 }]
+  },
+  {
+    "id": "lucky-coin",
+    "name": "Lucky Coin",
+    "description": "+12 Gold Gain.",
+    "tags": ["Luck"],
+    "price": 30,
+    "effects": [{ "kind": "stat", "attribute": "goldPct", "amount": 12 }]
+  },
+  {
+    "id": "lodestone",
+    "name": "Lodestone",
+    "description": "+40 Pickup Radius.",
+    "tags": ["Luck", "Utility"],
+    "price": 25,
+    "effects": [{ "kind": "stat", "attribute": "pickupRadius", "amount": 40 }]
+  },
+  {
+    "id": "leech-fang",
+    "name": "Leech Fang",
+    "description": "+3 Lifesteal.",
+    "tags": ["Occult"],
+    "price": 35,
+    "effects": [{ "kind": "stat", "attribute": "lifesteal", "amount": 3 }]
+  },
+  {
+    "id": "killing-blow",
+    "name": "Killing Blow",
+    "description": "25 chance: kills explode for 4 damage nearby.",
+    "tags": ["Area"],
+    "price": 45,
+    "effects": [{ "kind": "onKillExplode", "chance": 0.25, "radius": 1.8, "damage": 4 }]
+  },
+  {
+    "id": "bloodletting",
+    "name": "Bloodletting",
+    "description": "20 chance: heal 1 on kill.",
+    "tags": ["Healing", "Occult"],
+    "price": 40,
+    "effects": [{ "kind": "onKillHeal", "chance": 0.2, "amount": 1 }]
+  },
+  {
+    "id": "static-charm",
+    "name": "Static Charm",
+    "description": "30 chance: picking anything up zaps nearby enemies for 3.",
+    "tags": ["Luck", "Lightning"],
+    "price": 45,
+    "effects": [{ "kind": "onPickupDamage", "chance": 0.3, "radius": 2.2, "damage": 3 }]
+  },
+  {
+    "id": "restorative-greed",
+    "name": "Restorative Greed",
+    "description": "20 chance: heal 1 on any pickup.",
+    "tags": ["Luck", "Healing"],
+    "price": 40,
+    "effects": [{ "kind": "onPickupHeal", "chance": 0.2, "amount": 1 }]
+  }
+]

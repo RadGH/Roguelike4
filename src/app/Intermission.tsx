@@ -112,6 +112,34 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
               {countdown !== null && <span className="hint"> · auto in {countdown}s</span>}
             </h2>
 
+            {screen.rewards.some((r) => !r.resolved) && (
+              <>
+                <h3>Found this wave</h3>
+                <div className="cards">
+                  {screen.rewards.map((r, i) => {
+                    if (r.resolved) return null
+                    const item = run.registry.item(r.itemId)
+                    return (
+                      <div className="card" key={i} style={{ cursor: 'default' }}>
+                        <span>
+                          <span className="name">{item.name}</span>
+                          <div className="desc">{item.description} · {item.tags.join(', ')}</div>
+                        </span>
+                        <span style={{ display: 'flex', gap: 6 }}>
+                          <button data-testid={`keep-${i}`} onClick={() => { run.resolveReward(p.id, i, 'kept'); onChange() }}>
+                            Keep
+                          </button>
+                          <button onClick={() => { run.resolveReward(p.id, i, 'sold'); onChange() }}>
+                            Sell {Math.round(item.price / 2)}g
+                          </button>
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+
             {screen.draft ? (
               <>
                 <h3>Level up — choose a perk ({p.pendingDrafts} left)</h3>

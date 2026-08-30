@@ -118,6 +118,7 @@ describe('run end rules', () => {
     expect(run.phase).toBe('recap')
     run.proceedFromRecap()
     for (const p of run.sim.state.players) {
+      run.personal.get(p.id)?.rewards.forEach((_, i) => run.resolveReward(p.id, i, 'sold'))
       while (run.personal.get(p.id)?.draft) run.pickPerk(p.id, 0)
       run.setReady(p.id)
     }

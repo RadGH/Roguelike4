@@ -14,6 +14,8 @@ export interface RunSave {
   /** The next wave to play. */
   nextWave: number
   players: PlayerSave[]
+  /** Round-robin loot pointer, preserved so fairness survives a reload. */
+  lootIndex: number
   tracker: TrackerSnapshot
 }
 
@@ -26,6 +28,7 @@ export interface PlayerSave {
   pendingDrafts: number
   health: number
   perks: OwnedPerk[]
+  items: string[]
   weapons: { defId: string; tier: number }[]
 }
 

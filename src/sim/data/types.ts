@@ -105,6 +105,28 @@ export interface ClassDef {
   affinities?: { tag: Tag; pct: number }[]
 }
 
+/**
+ * Passive items: found in chests during waves (capped per wave — difficulty
+ * is not luck), unveiled at the rewards screen, kept or sold. They accumulate;
+ * stacking a second copy compounds. Effects are authored, not emergent.
+ */
+export type ItemEffect =
+  | { kind: 'stat'; attribute: PerkAttribute; amount: number }
+  | { kind: 'onKillExplode'; chance: number; radius: number; damage: number }
+  | { kind: 'onKillHeal'; chance: number; amount: number }
+  | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number }
+  | { kind: 'onPickupHeal'; chance: number; amount: number }
+
+export interface ItemDef {
+  id: string
+  name: string
+  /** One-line, quarter-screen legible. */
+  description: string
+  tags: Tag[]
+  price: number
+  effects: ItemEffect[]
+}
+
 /** Behavioral unlock conditions — they ask you to DO something, not to grind. */
 export type UnlockCondition =
   | { type: 'run-as-class'; classId: string }   // finish a run, win or lose

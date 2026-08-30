@@ -69,7 +69,7 @@ export class Sim {
       pickups: [],
       telegraphs: [],
       pools: [],
-      wave: { number: 0, elapsed: 0, pendingSpawns: [], deferred: [], cleared: true },
+      wave: { number: 0, elapsed: 0, pendingSpawns: [], deferred: [], chestsDropped: 0, cleared: true },
       arenaW: 28,
       arenaH: 20,
     }
@@ -98,6 +98,7 @@ export class Sim {
       gold: 0,
       pickupRadius: 1.5,
       perks: [],
+      items: [],
       meleePct: 0,
       rangedPct: 0,
       magicPct: 0,
@@ -159,6 +160,7 @@ export class Sim {
       elapsed: 0,
       cleared: false,
       deferred: [],
+      chestsDropped: 0,
       pendingSpawns: def.groups.map((g) => ({
         at: g.at,
         enemy: g.enemy,
@@ -785,7 +787,55 @@ export class Sim {
     if (owner && owner.alive && owner.lifesteal > 0) {
       owner.health = Math.min(owner.maxHealth, owner.health + amount * owner.lifesteal)
     }
-    if (killed) this.killEnemy(e)
+    if (killed) {
+      this.killEnemy(e)
+      if (owner) this.triggerOnKill(owner, e)
+    }
+  }
+
+  /** Item on-kill effects — attributed to the item, so builds become visible. */
+  private triggerOnKill(owner: PlayerState, at: { x: number; y: number }): void {
+    for (const itemId of owner.items) {
+      const item = this.registry.item(itemId)
+      for (const eff of item.effects) {
+        if (eff.kind === 'onKillExplode' && this.rngCombat.chance(eff.chance)) {
+          const r2 = eff.radius * eff.radius
+          for (const other of [...this.state.enemies]) {
+            if (distSq(other, at) <= r2) {
+              this.damageEnemy(other, eff.damage, owner.id, item.id, 'Magic')
+            }
+          }
+        } else if (eff.kind === 'onKillHeal' && this.rngCombat.chance(eff.chance)) {
+          owner.health = Math.min(owner.maxHealth, owner.health + eff.amount)
+        }
+      }
+    }
+  }
+
+  /**
+   * Item on-pickup effects. Universal trigger: every player's items react to
+   * ANY pickup, not only their own kills — each build stays maximally active.
+   */
+  private triggerOnPickup(at: { x: number; y: number }): void {
+    for (const p of this.state.players) {
+      if (!p.alive || p.downed) continue
+      for (const itemId of p.items) {
+        const item = this.registry.item(itemId)
+        for (const eff of item.effects) {
+          if (eff.kind === 'onPickupDamage' && this.rngCombat.chance(eff.chance)) {
+            const r2 = eff.radius * eff.radius
+            for (const e of [...this.state.enemies]) {
+              if (distSq(e, p) <= r2) {
+                this.damageEnemy(e, eff.damage, p.id, item.id, 'Magic')
+              }
+            }
+          } else if (eff.kind === 'onPickupHeal' && this.rngCombat.chance(eff.chance)) {
+            p.health = Math.min(p.maxHealth, p.health + eff.amount)
+          }
+        }
+      }
+    }
+    void at
   }
 
   private killEnemy(e: EnemyState): void {
@@ -829,6 +879,11 @@ export class Sim {
 
     if (def.gold > 0) this.dropPickup('gold', def.gold, e.x, e.y)
     if (def.xp > 0) this.dropPickup('xp', def.xp, e.x, e.y)
+
+    // Chest drops: capped per wave so reward pacing stays authored, not lucky.
+    if (s.wave.chestsDropped < 2 && !e.defId.startsWith('kingslime')) {
+      if (this.rngCombat.chance(0.018)) s.wave.chestsDropped++
+    }
   }
 
   private childSplitDef(childId: string) {
@@ -903,6 +958,7 @@ export class Sim {
   }
 
   private collect(pk: PickupState, _byPlayer: PlayerState): void {
+    this.triggerOnPickup(pk)
     // Gold and XP are shared and multiplied: every player receives the full amount.
     for (const p of this.state.players) {
       if (pk.kind === 'gold') {

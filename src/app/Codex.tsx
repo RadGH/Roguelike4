@@ -52,6 +52,14 @@ export function Codex({ registry, profile, available, onClose }: {
           )
         })}
 
+        <h3>Items</h3>
+        {[...registry.items.values()].map((item) => (
+          <div className="recap-row" key={item.id}>
+            <span className="name">{item.name}</span>
+            <span className="hint">{item.description}</span>
+          </div>
+        ))}
+
         <h3>Perks</h3>
         {[...registry.perks.values()].map((perk) => {
           const locked = !available.perks.includes(perk.id)

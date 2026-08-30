@@ -63,6 +63,19 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
           )
         })}
 
+        <h3>Items</h3>
+        {p.items.length === 0 && <div className="hint">None yet.</div>}
+        {[...new Set(p.items)].map((itemId) => {
+          const def = run.registry.item(itemId)
+          const count = p.items.filter((i) => i === itemId).length
+          return (
+            <div className="recap-row" key={itemId}>
+              <span className="name">{def.name}{count > 1 ? ` ×${count}` : ''}</span>
+              <span className="hint">{def.description}</span>
+            </div>
+          )
+        })}
+
         <h3>Perks</h3>
         {p.perks.length === 0 && <div className="hint">None yet.</div>}
         {p.perks.map((owned, i) => {

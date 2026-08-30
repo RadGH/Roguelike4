@@ -126,6 +126,14 @@ export function moveIntent(sim: Sim, p: PlayerState, skill: number, rng: Rng): {
 export function playIntermission(run: Run, playerId: number): void {
   const p = run.sim.player(playerId)
 
+  // Rewards: the policy keeps everything (selling is a human judgement call).
+  const rewardsScreen = run.personal.get(playerId)
+  if (rewardsScreen) {
+    rewardsScreen.rewards.forEach((r, i) => {
+      if (!r.resolved) run.resolveReward(playerId, i, 'kept')
+    })
+  }
+
   while (run.personal.get(playerId)?.draft) {
     const screen = run.personal.get(playerId)
     if (!screen?.draft) break

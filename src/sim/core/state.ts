@@ -33,6 +33,8 @@ export interface PlayerState {
   pickupRadius: number
   /** Drafted perks (the numbers layer of the build). */
   perks: OwnedPerk[]
+  /** Passive items carried (the effects layer). Duplicates stack. */
+  items: string[]
   /** Whole-number percent modifiers derived from perks (see stats.ts). */
   meleePct: number
   rangedPct: number
@@ -183,6 +185,8 @@ export interface WaveRuntime {
   pendingSpawns: PendingSpawn[]
   /** Enemies deferred by the density cap, spawned as space frees up. */
   deferred: DeferredSpawn[]
+  /** Chests found this wave (capped — difficulty is not luck). */
+  chestsDropped: number
   cleared: boolean
 }
 
