@@ -1,11 +1,19 @@
+# Private planning material — never publish (contains external references)
+new/
+references/
+
+# Dependencies and build output
 node_modules/
 dist/
-.DS_Store
-*.local
-.env
-.env.*
 coverage/
-playwright-report/
+
+# Test artifacts
 test-results/
-ds-bundle/
-.ds-sync/
+playwright-report/
+*.tsbuildinfo
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.log
