@@ -13,6 +13,9 @@ import retaliatorUrl from '../../art/critical/retaliator.svg'
 import kingslimeUrl from '../../art/critical/kingslime.svg'
 import goldUrl from '../../art/critical/gold.svg'
 import xpUrl from '../../art/critical/xp.svg'
+import wolfUrl from '../../art/critical/wolf.svg'
+import ravenUrl from '../../art/critical/raven.svg'
+import turretUrl from '../../art/critical/turret.svg'
 
 /**
  * Gameplay-critical sprite textures, rasterized from the SVG files in
@@ -40,17 +43,25 @@ const ENEMY_URL_OVERRIDE: Record<string, string> = {
   'kingslime-t2': kingslimeUrl,
 }
 
+const PET_URL: Record<string, string> = {
+  wolf: wolfUrl,
+  raven: ravenUrl,
+  'minigun-turret': turretUrl,
+}
+
 export interface CriticalTextures {
   player: Texture
   gold: Texture
   xp: Texture
   enemy: (defId: string, archetype: string) => Texture | null
+  pet: (defId: string) => Texture | null
 }
 
 export async function loadCriticalTextures(): Promise<CriticalTextures> {
   const urls = [
     playerUrl, goldUrl, xpUrl,
     ...Object.values(ARCHETYPE_URL),
+    ...Object.values(PET_URL),
     kingslimeUrl,
   ]
   await Assets.load(urls.map((src) => ({ src, data: { resolution: 2 } })))
@@ -61,6 +72,10 @@ export async function loadCriticalTextures(): Promise<CriticalTextures> {
     xp: get(xpUrl),
     enemy: (defId, archetype) => {
       const url = ENEMY_URL_OVERRIDE[defId] ?? ARCHETYPE_URL[archetype]
+      return url ? get(url) : null
+    },
+    pet: (defId) => {
+      const url = PET_URL[defId]
       return url ? get(url) : null
     },
   }

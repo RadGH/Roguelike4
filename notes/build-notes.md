@@ -175,5 +175,14 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   content that classes start with, chests drop, and saves keep. Rogue/Mage/Sentinel now
   have their identity items. Mid-skill solo win rate is ~47% with the policy spending
   both buttons — right in the band I was aiming for.
-- Next: content breadth in tranches (more classes/weapons/perks/items per the catalogs)
-  and the class-grant screen; then M7 polish and the M8 website/deploy.
+- Thirteenth chunk (d11d0ed): content tranche. 4 weapons (incl. Magic-damage-in-melee and
+  a 3-pellet shotgun), 4 classes (Priest/Marksman/Looter/Vampire — the Vampire's 1 dmg/s
+  clock and the Looter's health-per-item both work as vault-specced), 8 items, shop stock
+  widened to 4 and build-weighted by tag overlap.
+- **Balance finding worth keeping:** adding situational weapons diluted the shop enough to
+  crater the no-affinity Student's full-pool win rate (43%→20% in A/B). Real play gates
+  the pool behind unlocks and affinity classes make those weapons good, so this is a
+  watch item, not a crisis — but it confirms the vault's warning that every pool addition
+  is a balance event. The simulator's A/B mode made this visible in minutes.
+- Next: class-grant screen, more art (weapon/pickup sprites in shop UI), then M7 polish
+  and M8 website/deploy prep.

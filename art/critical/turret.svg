@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ally structure: minigun turret. Squat tripod, ally-blue core. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M16 58 L32 44 L48 58 Z" fill="#6a6a7a"/>
+    <rect x="24" y="28" width="16" height="18" rx="4" fill="#8a8a9c"/>
+    <rect x="38" y="32" width="20" height="7" rx="3" fill="#5a5a68"/>
+    <circle cx="32" cy="24" r="7" fill="#8a8a9c"/>
+  </g>
+  <circle cx="32" cy="24" r="3" fill="#4da6ff"/>
+</svg>

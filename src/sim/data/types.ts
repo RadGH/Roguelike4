@@ -73,7 +73,7 @@ export interface EnemyDef {
 export type PerkAttribute =
   | 'maxHealth' | 'regen' | 'armor' | 'dodge' | 'flatReduction' | 'resist'
   | 'lifesteal' | 'moveSpeed' | 'pickupRadius'
-  | 'meleePct' | 'rangedPct' | 'magicPct' | 'allPct'
+  | 'meleePct' | 'rangedPct' | 'magicPct' | 'petPct' | 'allPct'
   | 'cooldownPct' | 'goldPct' | 'xpPct'
 
 export interface PerkDef {
@@ -103,6 +103,8 @@ export interface ClassDef {
   /** Slot items the class begins with (found/swappable content, not innate). */
   startingEquipment?: string
   startingMovement?: string
+  /** Passive items the class begins with (e.g. the Engineer's turret kit). */
+  startingItems?: string[]
   /** Innate stat modifiers, applied before perks in the recompute. */
   mods?: Partial<Record<
     'maxHealth' | 'moveSpeedPct' | 'xpPct' | 'goldPct' | 'allPct' | 'armor' | 'regen' | 'lifesteal',
@@ -125,6 +127,7 @@ export interface ClassDef {
  */
 export type ItemEffect =
   | { kind: 'stat'; attribute: PerkAttribute; amount: number }
+  | { kind: 'summon'; petId: string; count: number }
   | { kind: 'onKillExplode'; chance: number; radius: number; damage: number }
   | { kind: 'onKillHeal'; chance: number; amount: number }
   | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number }
@@ -164,6 +167,32 @@ export interface ActiveDef {
   cooldown: number
   price: number
   effect: ActiveEffect
+}
+
+/**
+ * Pets and structures: entities that fight for a player without being
+ * controlled. The mortality split is the interesting part — structures and
+ * tiny creatures are invulnerable (the player cannot protect them, so they
+ * cannot die); large companions are mortal with a short respawn.
+ * All pet damage is the Pet type and scales with the owner's pet bonuses.
+ */
+export interface PetDef {
+  id: string
+  name: string
+  kind: 'companion' | 'structure'
+  mortal: boolean
+  health?: number
+  /** Seconds until a killed mortal companion returns. */
+  respawn?: number
+  damage: number
+  cooldown: number
+  range: number
+  /** Companions move; structures have speed 0. */
+  speed: number
+  radius: number
+  targeting: TargetingRule
+  /** Ranged pets emit projectiles at this speed; melee pets lunge. */
+  projectileSpeed?: number
 }
 
 /** Behavioral unlock conditions — they ask you to DO something, not to grind. */

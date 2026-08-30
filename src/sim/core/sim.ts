@@ -2,7 +2,7 @@ import { Rng } from './rng'
 import { hashState } from './hash'
 import { clamp, dist, distSq, moveToward, norm } from './math'
 import type {
-  DeferredSpawn, EliteKind, EnemyState, PickupState, PlayerState,
+  DeferredSpawn, EliteKind, EnemyState, PetState, PickupState, PlayerState,
   ProjectileState, SimState, TelegraphSeverity, WeaponInstance,
 } from './state'
 import type { Registry } from '../data/registry'
@@ -69,6 +69,7 @@ export class Sim {
       pickups: [],
       telegraphs: [],
       pools: [],
+      pets: [],
       wave: { number: 0, elapsed: 0, pendingSpawns: [], deferred: [], chestsDropped: 0, cleared: true },
       arenaW: 28,
       arenaH: 20,
@@ -104,6 +105,7 @@ export class Sim {
       meleePct: 0,
       rangedPct: 0,
       magicPct: 0,
+      petPct: 0,
       allPct: 0,
       cooldownPct: 0,
       goldPct: 0,
@@ -174,6 +176,144 @@ export class Sim {
         elite: g.elite ?? null,
       })),
     }
+    this.rebuildPets()
+  }
+
+  /**
+   * Pets are rebuilt from carried summon items at every wave start:
+   * structures deploy at a random arena point (the player does not place
+   * them), companions gather at their owner. Deaths never outlive a wave.
+   */
+  private rebuildPets(): void {
+    const s = this.state
+    s.pets = []
+    for (const p of s.players) {
+      for (const itemId of p.items) {
+        const item = this.registry.item(itemId)
+        for (const eff of item.effects) {
+          if (eff.kind !== 'summon') continue
+          for (let i = 0; i < eff.count; i++) this.spawnPet(p, eff.petId)
+        }
+      }
+    }
+  }
+
+  private spawnPet(owner: PlayerState, petId: string): void {
+    const s = this.state
+    const def = this.registry.pet(petId)
+    const structure = def.kind === 'structure'
+    const x = structure
+      ? (this.rngSpawn.next() - 0.5) * s.arenaW * 0.7
+      : clamp(owner.x + (this.rngSpawn.next() - 0.5) * 2, -s.arenaW / 2, s.arenaW / 2)
+    const y = structure
+      ? (this.rngSpawn.next() - 0.5) * s.arenaH * 0.7
+      : clamp(owner.y + (this.rngSpawn.next() - 0.5) * 2, -s.arenaH / 2, s.arenaH / 2)
+    s.pets.push({
+      id: s.nextEntityId++,
+      defId: petId,
+      ownerId: owner.id,
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      health: def.health ?? 1,
+      maxHealth: def.health ?? 1,
+      respawnLeft: 0,
+      cooldownLeft: 0,
+      targetId: null,
+      firedTick: -1000,
+    })
+  }
+
+  private tickPets(): void {
+    const s = this.state
+    for (const pet of s.pets) {
+      const def = this.registry.pet(pet.defId)
+      const owner = s.players.find((p) => p.id === pet.ownerId)
+      if (!owner) continue
+
+      // Mortal companions respawn at their owner after a short wait.
+      if (pet.respawnLeft > 0) {
+        pet.respawnLeft -= TICK_DT
+        if (pet.respawnLeft <= 0) {
+          pet.health = pet.maxHealth
+          pet.x = owner.x
+          pet.y = owner.y
+        }
+        continue
+      }
+
+      pet.cooldownLeft -= TICK_DT
+
+      // Companions follow: chase nearby enemies, else return to the owner.
+      if (def.kind === 'companion') {
+        let target: EnemyState | null = null
+        let best = 36 // engage within 6 units of the pet
+        for (const e of s.enemies) {
+          if (!this.isTargetable(e)) continue
+          const d2 = distSq(e, pet)
+          if (d2 < best) { best = d2; target = e }
+        }
+        const goal = target ?? owner
+        const d = dist(pet, goal)
+        const keep = target ? def.range * 0.7 : 1.2
+        if (d > keep) {
+          const n = norm(goal.x - pet.x, goal.y - pet.y)
+          pet.vx = n.x * def.speed
+          pet.vy = n.y * def.speed
+          pet.x = clamp(pet.x + pet.vx * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
+          pet.y = clamp(pet.y + pet.vy * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
+        } else {
+          pet.vx = 0
+          pet.vy = 0
+        }
+      }
+
+      // Attack: same hold-fire discipline as weapons, Pet damage type.
+      if (pet.cooldownLeft <= 0) {
+        let target: EnemyState | null = null
+        let bestD = def.range * def.range
+        for (const e of s.enemies) {
+          if (!this.isTargetable(e)) continue
+          const d2 = distSq(e, pet)
+          if (d2 <= bestD) { bestD = d2; target = e }
+        }
+        pet.targetId = target?.id ?? null
+        if (target) {
+          pet.cooldownLeft = def.cooldown
+          pet.firedTick = s.tick
+          const damage = def.damage * (1 + (owner.allPct + owner.petPct) / 100)
+          if (def.projectileSpeed) {
+            const n = norm(target.x - pet.x, target.y - pet.y)
+            s.projectiles.push({
+              id: s.nextEntityId++,
+              x: pet.x,
+              y: pet.y,
+              vx: n.x * def.projectileSpeed,
+              vy: n.y * def.projectileSpeed,
+              damage,
+              damageType: 'Pet',
+              ownerId: owner.id,
+              sourceId: def.id,
+              ttl: def.range / def.projectileSpeed + 0.2,
+            })
+          } else {
+            this.damageEnemy(target, damage, owner.id, def.id, 'Pet')
+          }
+        }
+      }
+    }
+  }
+
+  /** Enemy contact hits a mortal pet standing in the way (incidental, not hunted). */
+  private damagePet(pet: PetState, amount: number): void {
+    const def = this.registry.pet(pet.defId)
+    if (!def.mortal || pet.respawnLeft > 0) return
+    pet.health -= amount
+    if (pet.health <= 0) {
+      pet.health = 0
+      pet.respawnLeft = def.respawn ?? 8
+    }
   }
 
   /** Advance exactly one fixed tick. */
@@ -186,6 +326,7 @@ export class Sim {
     this.tickSpawns()
     this.tickPlayers()
     this.tickEnemies()
+    this.tickPets()
     this.tickTelegraphs()
     this.tickPools()
     this.tickWeapons()
@@ -455,12 +596,25 @@ export class Sim {
       // Suppressed while airborne (mode 1) or burrowed.
       const canTouch = e.mode !== 1 && e.mode !== 2 && this.isTargetable(e) && def.damage > 0
       if (canTouch && e.touchCdLeft <= 0) {
+        let hit = false
         for (const p of alivePlayers) {
           const touch = this.radiusOf(e) + 0.4
           if (distSq(e, p) < touch * touch) {
             this.damagePlayer(p, def.damage, 'Melee', def.id, true)
             e.touchCdLeft = def.props?.touchCd ?? 0.8
+            hit = true
             break
+          }
+        }
+        // A mortal pet standing in the way soaks the hit instead (body-block).
+        if (!hit) {
+          for (const pet of s.pets) {
+            const touch = this.radiusOf(e) + 0.3
+            if (pet.respawnLeft <= 0 && distSq(e, pet) < touch * touch) {
+              this.damagePet(pet, def.damage)
+              e.touchCdLeft = def.props?.touchCd ?? 0.8
+              break
+            }
           }
         }
       }

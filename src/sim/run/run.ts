@@ -123,6 +123,10 @@ export class Run {
       }
       if (cls.startingEquipment) this.sim.equipActive(p.id, cls.startingEquipment)
       if (cls.startingMovement) this.sim.equipActive(p.id, cls.startingMovement)
+      if (cls.startingItems) {
+        p.items.push(...cls.startingItems)
+        recomputePlayer(p, registry)
+      }
     }
     this.sim.startWave(this.act.waves, 1)
   }

@@ -32,6 +32,9 @@ export function hashState(s: SimState): number {
   for (const pool of s.pools) {
     mix(pool.id); mix(pool.x); mix(pool.y); mix(pool.ttl)
   }
+  for (const pet of s.pets) {
+    mix(pet.id); mix(pet.x); mix(pet.y); mix(pet.health); mix(pet.respawnLeft)
+  }
   for (const pr of s.projectiles) {
     mix(pr.id); mix(pr.x); mix(pr.y)
   }

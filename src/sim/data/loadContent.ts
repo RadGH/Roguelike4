@@ -1,5 +1,5 @@
 import { Registry } from './registry'
-import type { ActDef, ActiveDef, ClassDef, EnemyDef, ItemDef, PerkDef, UnlockDef, WeaponDef } from './types'
+import type { ActDef, ActiveDef, ClassDef, EnemyDef, ItemDef, PerkDef, PetDef, UnlockDef, WeaponDef } from './types'
 import enemiesAct1 from '../../content/enemies/act1.json'
 import weaponsStarter from '../../content/weapons/starter.json'
 import act1 from '../../content/acts/act1.json'
@@ -8,6 +8,7 @@ import classesCore from '../../content/classes/core.json'
 import unlocksCore from '../../content/unlocks/core.json'
 import itemsCore from '../../content/items/core.json'
 import activesCore from '../../content/actives/core.json'
+import petsCore from '../../content/pets/core.json'
 
 /** Build a registry with all shipped content. One call, one source of truth. */
 export function loadContent(): Registry {
@@ -20,5 +21,6 @@ export function loadContent(): Registry {
   registry.registerUnlocks(unlocksCore as UnlockDef[])
   registry.registerItems(itemsCore as ItemDef[])
   registry.registerActives(activesCore as ActiveDef[])
+  registry.registerPets(petsCore as PetDef[])
   return registry
 }

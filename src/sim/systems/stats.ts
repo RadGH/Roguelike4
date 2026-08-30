@@ -31,6 +31,7 @@ function applyAttribute(p: PlayerState, attribute: string, amount: number): void
     case 'meleePct': p.meleePct += amount; break
     case 'rangedPct': p.rangedPct += amount; break
     case 'magicPct': p.magicPct += amount; break
+    case 'petPct': p.petPct += amount; break
     case 'allPct': p.allPct += amount; break
     case 'cooldownPct': p.cooldownPct += amount; break
     case 'goldPct': p.goldPct += amount; break
@@ -50,6 +51,7 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
   p.meleePct = 0
   p.rangedPct = 0
   p.magicPct = 0
+  p.petPct = 0
   p.allPct = 0
   p.cooldownPct = 0
   p.goldPct = 0

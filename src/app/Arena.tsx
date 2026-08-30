@@ -298,6 +298,37 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           }
         }
 
+        // Pets: allied entities wear the ally-blue ground ring. Mortal pets
+        // waiting to respawn are not drawn at all.
+        for (const pet of sim.state.pets) {
+          if (pet.respawnLeft > 0) continue
+          const def = registry.pet(pet.defId)
+          const s = toScreen(pet.x, pet.y)
+          const r = def.radius * 32
+          gGround.ellipse(s.sx, s.sy, r + 3, (r + 3) / 2).fill({ color: 0x000000, alpha: 0.3 })
+          gGround.ellipse(s.sx, s.sy, r + 5, (r + 5) / 2).stroke({ width: 1.5, color: 0x4da6ff })
+          if (markersOnly) continue
+          const tex = textures?.pet(pet.defId) ?? null
+          if (tex) {
+            const sp = sprite(`pet${pet.id}`, tex)
+            const size = Math.max(18, r * 2.6)
+            sp.position.set(s.sx, s.sy + 4)
+            sp.height = size
+            sp.width = size
+            sp.scale.x = (pet.vx < -0.1 ? -1 : 1) * Math.abs(sp.scale.x)
+            sp.tint = silho ? 0x000000 : 0xffffff
+          } else {
+            gCritical.circle(s.sx, s.sy - r / 2, r).fill(silho ? 0x000000 : 0x7d8fa8)
+              .stroke({ width: 2, color: 0x4da6ff })
+          }
+          // Mortal pets carry a slim health bar only while hurt.
+          if (registry.pet(pet.defId).mortal && pet.health < pet.maxHealth) {
+            const bw = 22
+            gCritical.rect(s.sx - bw / 2, s.sy - 30, bw, 3).fill(0x000000)
+            gCritical.rect(s.sx - bw / 2, s.sy - 30, (bw * pet.health) / pet.maxHealth, 3).fill(0x4da6ff)
+          }
+        }
+
         // Reserved identity rings: each player finds themselves by ring colour.
         const PLAYER_COLORS = [0x4da6ff, 0xf5f5f5, 0xff6de3, 0xffd34d]
         for (const p of sim.state.players) {

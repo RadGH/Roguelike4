@@ -1,0 +1,41 @@
+[
+  {
+    "id": "minigun-turret",
+    "name": "Minigun Turret",
+    "kind": "structure",
+    "mortal": false,
+    "damage": 2,
+    "cooldown": 0.45,
+    "range": 7,
+    "speed": 0,
+    "radius": 0.45,
+    "targeting": "nearest",
+    "projectileSpeed": 14
+  },
+  {
+    "id": "wolf",
+    "name": "Wolf",
+    "kind": "companion",
+    "mortal": true,
+    "health": 18,
+    "respawn": 8,
+    "damage": 4,
+    "cooldown": 0.9,
+    "range": 1.6,
+    "speed": 4.2,
+    "radius": 0.4,
+    "targeting": "nearest"
+  },
+  {
+    "id": "raven",
+    "name": "Raven",
+    "kind": "companion",
+    "mortal": false,
+    "damage": 1,
+    "cooldown": 0.7,
+    "range": 4,
+    "speed": 5,
+    "radius": 0.22,
+    "targeting": "lowestHealth"
+  }
+]

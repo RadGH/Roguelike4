@@ -43,6 +43,7 @@ export interface PlayerState {
   meleePct: number
   rangedPct: number
   magicPct: number
+  petPct: number
   allPct: number
   cooldownPct: number
   goldPct: number
@@ -163,6 +164,26 @@ export interface PickupState {
   magnetTo: number | null
 }
 
+/** An allied entity fighting on a player's behalf (companion or structure). */
+export interface PetState {
+  id: number
+  defId: string
+  ownerId: number
+  x: number
+  y: number
+  vx: number
+  vy: number
+  /** Mortal pets only; invulnerable pets keep full health forever. */
+  health: number
+  maxHealth: number
+  /** Seconds until a killed mortal companion returns (0 = active). */
+  respawnLeft: number
+  cooldownLeft: number
+  targetId: number | null
+  /** Sim tick of the last attack, for the renderer's lunge. */
+  firedTick: number
+}
+
 export type TelegraphSeverity = 'light' | 'heavy' | 'extreme'
 
 /**
@@ -225,6 +246,7 @@ export interface SimState {
   pickups: PickupState[]
   telegraphs: TelegraphState[]
   pools: PoolState[]
+  pets: PetState[]
   wave: WaveRuntime
   /** Arena half-extents in world units (arena is a bounded rectangle). */
   arenaW: number

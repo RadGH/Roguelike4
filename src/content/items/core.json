@@ -3,185 +3,440 @@
     "id": "iron-plating",
     "name": "Iron Plating",
     "description": "+10 Armor.",
-    "tags": ["Heavy", "Utility"],
+    "tags": [
+      "Heavy",
+      "Utility"
+    ],
     "price": 25,
-    "effects": [{ "kind": "stat", "attribute": "armor", "amount": 10 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "armor",
+        "amount": 10
+      }
+    ]
   },
   {
     "id": "fleet-boots",
     "name": "Fleet Boots",
     "description": "+8 Move Speed.",
-    "tags": ["Light", "Movement"],
+    "tags": [
+      "Light",
+      "Movement"
+    ],
     "price": 25,
-    "effects": [{ "kind": "stat", "attribute": "moveSpeed", "amount": 8 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "moveSpeed",
+        "amount": 8
+      }
+    ]
   },
   {
     "id": "heartstone",
     "name": "Heartstone",
     "description": "+6 Max Health.",
-    "tags": ["Utility"],
+    "tags": [
+      "Utility"
+    ],
     "price": 25,
-    "effects": [{ "kind": "stat", "attribute": "maxHealth", "amount": 6 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "maxHealth",
+        "amount": 6
+      }
+    ]
   },
   {
     "id": "whetstone-charm",
     "name": "Whetstone Charm",
     "description": "+8 Melee Damage.",
-    "tags": ["Melee"],
+    "tags": [
+      "Melee"
+    ],
     "price": 30,
-    "effects": [{ "kind": "stat", "attribute": "meleePct", "amount": 8 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "meleePct",
+        "amount": 8
+      }
+    ]
   },
   {
     "id": "eagle-feather",
     "name": "Eagle Feather",
     "description": "+8 Ranged Damage.",
-    "tags": ["Ranged", "Nature"],
+    "tags": [
+      "Ranged",
+      "Nature"
+    ],
     "price": 30,
-    "effects": [{ "kind": "stat", "attribute": "rangedPct", "amount": 8 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "rangedPct",
+        "amount": 8
+      }
+    ]
   },
   {
     "id": "focus-crystal",
     "name": "Focus Crystal",
     "description": "+8 Magic Damage.",
-    "tags": ["Magic"],
+    "tags": [
+      "Magic"
+    ],
     "price": 30,
-    "effects": [{ "kind": "stat", "attribute": "magicPct", "amount": 8 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "magicPct",
+        "amount": 8
+      }
+    ]
   },
   {
     "id": "quick-gloves",
     "name": "Quick Gloves",
     "description": "+5 Attack Speed.",
-    "tags": ["Light", "Utility"],
+    "tags": [
+      "Light",
+      "Utility"
+    ],
     "price": 35,
-    "effects": [{ "kind": "stat", "attribute": "cooldownPct", "amount": 5 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "cooldownPct",
+        "amount": 5
+      }
+    ]
   },
   {
     "id": "lucky-coin",
     "name": "Lucky Coin",
     "description": "+12 Gold Gain.",
-    "tags": ["Luck"],
+    "tags": [
+      "Luck"
+    ],
     "price": 30,
-    "effects": [{ "kind": "stat", "attribute": "goldPct", "amount": 12 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "goldPct",
+        "amount": 12
+      }
+    ]
   },
   {
     "id": "lodestone",
     "name": "Lodestone",
     "description": "+40 Pickup Radius.",
-    "tags": ["Luck", "Utility"],
+    "tags": [
+      "Luck",
+      "Utility"
+    ],
     "price": 25,
-    "effects": [{ "kind": "stat", "attribute": "pickupRadius", "amount": 40 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "pickupRadius",
+        "amount": 40
+      }
+    ]
   },
   {
     "id": "leech-fang",
     "name": "Leech Fang",
     "description": "+3 Lifesteal.",
-    "tags": ["Occult"],
+    "tags": [
+      "Occult"
+    ],
     "price": 35,
-    "effects": [{ "kind": "stat", "attribute": "lifesteal", "amount": 3 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "lifesteal",
+        "amount": 3
+      }
+    ]
   },
   {
     "id": "berserker-charm",
     "name": "Berserker Charm",
     "description": "+5 All Damage.",
-    "tags": ["Melee", "Occult"],
+    "tags": [
+      "Melee",
+      "Occult"
+    ],
     "price": 40,
-    "effects": [{ "kind": "stat", "attribute": "allPct", "amount": 5 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "allPct",
+        "amount": 5
+      }
+    ]
   },
   {
     "id": "war-drum",
     "name": "War Drum",
     "description": "+4 Attack Speed and +4 Melee Damage.",
-    "tags": ["Melee", "Utility"],
+    "tags": [
+      "Melee",
+      "Utility"
+    ],
     "price": 40,
     "effects": [
-      { "kind": "stat", "attribute": "cooldownPct", "amount": 4 },
-      { "kind": "stat", "attribute": "meleePct", "amount": 4 }
+      {
+        "kind": "stat",
+        "attribute": "cooldownPct",
+        "amount": 4
+      },
+      {
+        "kind": "stat",
+        "attribute": "meleePct",
+        "amount": 4
+      }
     ]
   },
   {
     "id": "scavengers-pack",
     "name": "Scavenger's Pack",
     "description": "+8 Gold Gain and +20 Pickup Radius.",
-    "tags": ["Luck", "Utility"],
+    "tags": [
+      "Luck",
+      "Utility"
+    ],
     "price": 35,
     "effects": [
-      { "kind": "stat", "attribute": "goldPct", "amount": 8 },
-      { "kind": "stat", "attribute": "pickupRadius", "amount": 20 }
+      {
+        "kind": "stat",
+        "attribute": "goldPct",
+        "amount": 8
+      },
+      {
+        "kind": "stat",
+        "attribute": "pickupRadius",
+        "amount": 20
+      }
     ]
   },
   {
     "id": "titan-belt",
     "name": "Titan Belt",
     "description": "+4 Max Health and +4 Armor.",
-    "tags": ["Heavy", "Utility"],
+    "tags": [
+      "Heavy",
+      "Utility"
+    ],
     "price": 35,
     "effects": [
-      { "kind": "stat", "attribute": "maxHealth", "amount": 4 },
-      { "kind": "stat", "attribute": "armor", "amount": 4 }
+      {
+        "kind": "stat",
+        "attribute": "maxHealth",
+        "amount": 4
+      },
+      {
+        "kind": "stat",
+        "attribute": "armor",
+        "amount": 4
+      }
     ]
   },
   {
     "id": "insight-ring",
     "name": "Insight Ring",
     "description": "+12 Experience Gain.",
-    "tags": ["Utility"],
+    "tags": [
+      "Utility"
+    ],
     "price": 30,
-    "effects": [{ "kind": "stat", "attribute": "xpPct", "amount": 12 }]
+    "effects": [
+      {
+        "kind": "stat",
+        "attribute": "xpPct",
+        "amount": 12
+      }
+    ]
   },
   {
     "id": "blast-powder",
     "name": "Blast Powder",
     "description": "15 chance: kills explode for 6 damage in a wide burst.",
-    "tags": ["Area", "Technology"],
+    "tags": [
+      "Area",
+      "Technology"
+    ],
     "price": 50,
-    "effects": [{ "kind": "onKillExplode", "chance": 0.15, "radius": 2.4, "damage": 6 }]
+    "effects": [
+      {
+        "kind": "onKillExplode",
+        "chance": 0.15,
+        "radius": 2.4,
+        "damage": 6
+      }
+    ]
   },
   {
     "id": "storm-bottle",
     "name": "Storm Bottle",
     "description": "20 chance: pickups unleash a 5-damage shock around you.",
-    "tags": ["Lightning", "Luck"],
+    "tags": [
+      "Lightning",
+      "Luck"
+    ],
     "price": 50,
-    "effects": [{ "kind": "onPickupDamage", "chance": 0.2, "radius": 2.6, "damage": 5 }]
+    "effects": [
+      {
+        "kind": "onPickupDamage",
+        "chance": 0.2,
+        "radius": 2.6,
+        "damage": 5
+      }
+    ]
   },
   {
     "id": "soothing-herbs",
     "name": "Soothing Herbs",
     "description": "30 chance: heal 1 on any pickup.",
-    "tags": ["Healing", "Nature"],
+    "tags": [
+      "Healing",
+      "Nature"
+    ],
     "price": 40,
-    "effects": [{ "kind": "onPickupHeal", "chance": 0.3, "amount": 1 }]
+    "effects": [
+      {
+        "kind": "onPickupHeal",
+        "chance": 0.3,
+        "amount": 1
+      }
+    ]
   },
   {
     "id": "killing-blow",
     "name": "Killing Blow",
     "description": "25 chance: kills explode for 4 damage nearby.",
-    "tags": ["Area"],
+    "tags": [
+      "Area"
+    ],
     "price": 45,
-    "effects": [{ "kind": "onKillExplode", "chance": 0.25, "radius": 1.8, "damage": 4 }]
+    "effects": [
+      {
+        "kind": "onKillExplode",
+        "chance": 0.25,
+        "radius": 1.8,
+        "damage": 4
+      }
+    ]
   },
   {
     "id": "bloodletting",
     "name": "Bloodletting",
     "description": "20 chance: heal 1 on kill.",
-    "tags": ["Healing", "Occult"],
+    "tags": [
+      "Healing",
+      "Occult"
+    ],
     "price": 40,
-    "effects": [{ "kind": "onKillHeal", "chance": 0.2, "amount": 1 }]
+    "effects": [
+      {
+        "kind": "onKillHeal",
+        "chance": 0.2,
+        "amount": 1
+      }
+    ]
   },
   {
     "id": "static-charm",
     "name": "Static Charm",
     "description": "30 chance: picking anything up zaps nearby enemies for 3.",
-    "tags": ["Luck", "Lightning"],
+    "tags": [
+      "Luck",
+      "Lightning"
+    ],
     "price": 45,
-    "effects": [{ "kind": "onPickupDamage", "chance": 0.3, "radius": 2.2, "damage": 3 }]
+    "effects": [
+      {
+        "kind": "onPickupDamage",
+        "chance": 0.3,
+        "radius": 2.2,
+        "damage": 3
+      }
+    ]
   },
   {
     "id": "restorative-greed",
     "name": "Restorative Greed",
     "description": "20 chance: heal 1 on any pickup.",
-    "tags": ["Luck", "Healing"],
+    "tags": [
+      "Luck",
+      "Healing"
+    ],
     "price": 40,
-    "effects": [{ "kind": "onPickupHeal", "chance": 0.2, "amount": 1 }]
+    "effects": [
+      {
+        "kind": "onPickupHeal",
+        "chance": 0.2,
+        "amount": 1
+      }
+    ]
+  },
+  {
+    "id": "summon-wolf",
+    "name": "Wolf",
+    "description": "A wolf fights beside you. It can die, and returns after 8 seconds.",
+    "tags": [
+      "Pets",
+      "Summon",
+      "Nature"
+    ],
+    "price": 55,
+    "effects": [
+      {
+        "kind": "summon",
+        "petId": "wolf",
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "raven-pair",
+    "name": "Ravens",
+    "description": "Two ravens harass your enemies. Too small and quick to be caught.",
+    "tags": [
+      "Pets",
+      "Summon",
+      "Nature"
+    ],
+    "price": 50,
+    "effects": [
+      {
+        "kind": "summon",
+        "petId": "raven",
+        "count": 2
+      }
+    ]
+  },
+  {
+    "id": "turret-kit",
+    "name": "Minigun Turret",
+    "description": "A turret deploys somewhere in the arena each wave. Indestructible.",
+    "tags": [
+      "Pets",
+      "Summon",
+      "Technology"
+    ],
+    "price": 60,
+    "effects": [
+      {
+        "kind": "summon",
+        "petId": "minigun-turret",
+        "count": 1
+      }
+    ]
   }
 ]

@@ -1,18 +1,155 @@
 [
-  { "id": "vitality", "name": "Vitality", "attribute": "maxHealth", "amount": 4, "tags": ["Utility"] },
-  { "id": "recovery", "name": "Recovery", "attribute": "regen", "amount": 1, "tags": ["Healing"] },
-  { "id": "plating", "name": "Plating", "attribute": "armor", "amount": 8, "tags": ["Heavy"] },
-  { "id": "reflexes", "name": "Reflexes", "attribute": "dodge", "amount": 3, "tags": ["Light"] },
-  { "id": "bulwark", "name": "Bulwark", "attribute": "flatReduction", "amount": 1, "tags": ["Shield"] },
-  { "id": "warding", "name": "Warding", "attribute": "resist", "amount": 5, "tags": ["Magic"] },
-  { "id": "leeching", "name": "Leeching", "attribute": "lifesteal", "amount": 2, "tags": ["Occult"] },
-  { "id": "swiftness", "name": "Swiftness", "attribute": "moveSpeed", "amount": 5, "tags": ["Movement"] },
-  { "id": "reach", "name": "Reach", "attribute": "pickupRadius", "amount": 15, "tags": ["Luck"] },
-  { "id": "brawn", "name": "Brawn", "attribute": "meleePct", "amount": 10, "tags": ["Melee"] },
-  { "id": "precision", "name": "Precision", "attribute": "rangedPct", "amount": 10, "tags": ["Ranged"] },
-  { "id": "attunement", "name": "Attunement", "attribute": "magicPct", "amount": 10, "tags": ["Magic"] },
-  { "id": "ferocity", "name": "Ferocity", "attribute": "allPct", "amount": 5, "tags": ["Utility"] },
-  { "id": "haste", "name": "Haste", "attribute": "cooldownPct", "amount": 6, "tags": ["Utility"] },
-  { "id": "prosperity", "name": "Prosperity", "attribute": "goldPct", "amount": 15, "tags": ["Luck"] },
-  { "id": "insight", "name": "Insight", "attribute": "xpPct", "amount": 15, "tags": ["Utility"] }
+  {
+    "id": "vitality",
+    "name": "Vitality",
+    "attribute": "maxHealth",
+    "amount": 4,
+    "tags": [
+      "Utility"
+    ]
+  },
+  {
+    "id": "recovery",
+    "name": "Recovery",
+    "attribute": "regen",
+    "amount": 1,
+    "tags": [
+      "Healing"
+    ]
+  },
+  {
+    "id": "plating",
+    "name": "Plating",
+    "attribute": "armor",
+    "amount": 8,
+    "tags": [
+      "Heavy"
+    ]
+  },
+  {
+    "id": "reflexes",
+    "name": "Reflexes",
+    "attribute": "dodge",
+    "amount": 3,
+    "tags": [
+      "Light"
+    ]
+  },
+  {
+    "id": "bulwark",
+    "name": "Bulwark",
+    "attribute": "flatReduction",
+    "amount": 1,
+    "tags": [
+      "Shield"
+    ]
+  },
+  {
+    "id": "warding",
+    "name": "Warding",
+    "attribute": "resist",
+    "amount": 5,
+    "tags": [
+      "Magic"
+    ]
+  },
+  {
+    "id": "leeching",
+    "name": "Leeching",
+    "attribute": "lifesteal",
+    "amount": 2,
+    "tags": [
+      "Occult"
+    ]
+  },
+  {
+    "id": "swiftness",
+    "name": "Swiftness",
+    "attribute": "moveSpeed",
+    "amount": 5,
+    "tags": [
+      "Movement"
+    ]
+  },
+  {
+    "id": "reach",
+    "name": "Reach",
+    "attribute": "pickupRadius",
+    "amount": 15,
+    "tags": [
+      "Luck"
+    ]
+  },
+  {
+    "id": "brawn",
+    "name": "Brawn",
+    "attribute": "meleePct",
+    "amount": 10,
+    "tags": [
+      "Melee"
+    ]
+  },
+  {
+    "id": "precision",
+    "name": "Precision",
+    "attribute": "rangedPct",
+    "amount": 10,
+    "tags": [
+      "Ranged"
+    ]
+  },
+  {
+    "id": "attunement",
+    "name": "Attunement",
+    "attribute": "magicPct",
+    "amount": 10,
+    "tags": [
+      "Magic"
+    ]
+  },
+  {
+    "id": "ferocity",
+    "name": "Ferocity",
+    "attribute": "allPct",
+    "amount": 5,
+    "tags": [
+      "Utility"
+    ]
+  },
+  {
+    "id": "haste",
+    "name": "Haste",
+    "attribute": "cooldownPct",
+    "amount": 6,
+    "tags": [
+      "Utility"
+    ]
+  },
+  {
+    "id": "prosperity",
+    "name": "Prosperity",
+    "attribute": "goldPct",
+    "amount": 15,
+    "tags": [
+      "Luck"
+    ]
+  },
+  {
+    "id": "insight",
+    "name": "Insight",
+    "attribute": "xpPct",
+    "amount": 15,
+    "tags": [
+      "Utility"
+    ]
+  },
+  {
+    "id": "kinship",
+    "name": "Kinship",
+    "attribute": "petPct",
+    "amount": 10,
+    "tags": [
+      "Pets"
+    ]
+  }
 ]
