@@ -15,14 +15,47 @@ export interface DamageEvent {
   kill: boolean
 }
 
+/** Damage the player received (or avoided) — mitigation is tracked, not lost. */
+export interface TakenEvent {
+  tick: number
+  playerId: number
+  /** What hit them (enemy def id, telegraph source, hazard id). */
+  sourceId: string
+  /** Raw amount before defenses. */
+  amount: number
+  /** What actually landed. */
+  taken: number
+  mitigated: number
+  dodged: boolean
+}
+
 export class Tracker {
   readonly events: DamageEvent[] = []
+  readonly takenEvents: TakenEvent[] = []
   /** playerId -> total damage dealt (fast HUD read). */
   private totals = new Map<number, number>()
 
   recordDamage(e: DamageEvent): void {
     this.events.push(e)
     this.totals.set(e.playerId, (this.totals.get(e.playerId) ?? 0) + e.amount)
+  }
+
+  recordTaken(e: TakenEvent): void {
+    this.takenEvents.push(e)
+  }
+
+  /** Totals of damage taken/mitigated/dodge count for one player. */
+  takenSummary(playerId: number): { taken: number; mitigated: number; dodges: number } {
+    let taken = 0
+    let mitigated = 0
+    let dodges = 0
+    for (const e of this.takenEvents) {
+      if (e.playerId !== playerId) continue
+      taken += e.taken
+      mitigated += e.mitigated
+      if (e.dodged) dodges++
+    }
+    return { taken, mitigated, dodges }
   }
 
   totalFor(playerId: number): number {

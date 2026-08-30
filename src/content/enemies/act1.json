@@ -32,7 +32,7 @@
     "radius": 0.35,
     "xp": 3,
     "gold": 2,
-    "props": { "standoff": 6 }
+    "props": { "standoff": 6, "attackCd": 3, "attackRange": 9, "attackRadius": 1.2 }
   },
   {
     "id": "slime",

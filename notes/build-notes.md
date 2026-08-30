@@ -84,5 +84,15 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   only), `new/roguelike5/` (vault, private), `references/` (private). Commit 47cbc05.
 - Rewrote agent memory, this notes file, and the milestone checklist
   (`~/claude/agent/roguelike-checklist.md`).
-- Next: scaffold the project, then M0 engine foundation (deterministic sim core + seeded
-  RNG + tag/content registries + Pixi isometric bootstrap).
+- Scaffolded Vite + React + TS + PixiJS + Vitest + Playwright.
+- Built the M0 foundation (commit 009dc4f, pushed): deterministic 30-tick sim core with
+  seeded fork-able RNG and state hashing (same seed = identical run, proven by tests);
+  tag vocabulary + content registry + first JSON content (5 act-1 enemies, 3 starter
+  weapons, waves 1–3); autofire with targeting rules/hold-fire/stagger; flocking swarms;
+  slime splitting; pickups with shared-and-multiplied gold; auto-collect at wave clear;
+  density cap with deferred spawns; damage attribution tracker (v1).
+- Isometric debug arena is playable in the browser: WASD/arrows or gamepad stick, waves
+  1–3 loop, primitive-shape art per the two-layer rule. 14 unit + 2 E2E tests green.
+- **Playable now at http://192.168.1.34:5173/** (dev server running on the VM).
+- Next session: damage pipeline w/ defenses, XP/leveling, telegraph system, HUD, then the
+  intermission screens (M2).

@@ -2,11 +2,21 @@ import { Rng } from './rng'
 import { hashState } from './hash'
 import { clamp, dist, distSq, moveToward, norm } from './math'
 import type {
-  EnemyState, PickupState, PlayerState, ProjectileState, SimState, WeaponInstance,
+  EnemyState, PickupState, PlayerState, ProjectileState, SimState,
+  TelegraphSeverity, WeaponInstance,
 } from './state'
 import type { Registry } from '../data/registry'
 import type { WaveDef } from '../data/types'
+import type { DamageType } from '../data/tags'
 import { Tracker } from '../systems/tracker'
+import { emptyDefenses, resolveDamage, xpForLevel } from '../systems/damage'
+
+/** Telegraph severities: the longer the window, the larger the payload. */
+export const TELEGRAPH_WINDOWS: Record<TelegraphSeverity, number> = {
+  light: 0.9,
+  heavy: 1.6,
+  extreme: 2.6,
+}
 
 /** Fixed timestep: 30 sim ticks per second. Rendering interpolates freely. */
 export const TICK_RATE = 30
@@ -45,6 +55,7 @@ export class Sim {
       enemies: [],
       projectiles: [],
       pickups: [],
+      telegraphs: [],
       wave: { number: 0, elapsed: 0, pendingSpawns: [], deferred: [], cleared: true },
       arenaW: 28,
       arenaH: 20,
@@ -62,9 +73,14 @@ export class Sim {
       health: 20,
       maxHealth: 20,
       moveSpeed: 5,
+      regen: 0,
+      lifesteal: 0,
+      defenses: emptyDefenses(),
       xp: 0,
       level: 1,
+      pendingDrafts: 0,
       gold: 0,
+      pickupRadius: 1.5,
       weapons: [],
       alive: true,
     }
@@ -80,6 +96,7 @@ export class Sim {
       // Stagger spreads target selection so multiple weapons fan out.
       staggerOffset: (p.weapons.length * 0.37) % 1,
       targetId: null,
+      firedTick: -1000,
     }
     p.weapons.push(inst)
   }
@@ -126,6 +143,7 @@ export class Sim {
     this.tickSpawns()
     this.tickPlayers()
     this.tickEnemies()
+    this.tickTelegraphs()
     this.tickWeapons()
     this.tickProjectiles()
     this.tickPickups()
@@ -188,6 +206,8 @@ export class Sim {
       vx: 0,
       vy: 0,
       lastDamagedTick: -1,
+      touchCdLeft: 0,
+      attackCdLeft: def.props?.attackCd ? def.props.attackCd * 0.5 : 0,
     }
     s.enemies.push(e)
     return e
@@ -199,6 +219,9 @@ export class Sim {
       if (!p.alive) continue
       p.x = clamp(p.x + p.moveX * p.moveSpeed * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
       p.y = clamp(p.y + p.moveY * p.moveSpeed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
+      if (p.regen > 0 && p.health < p.maxHealth) {
+        p.health = Math.min(p.maxHealth, p.health + p.regen * TICK_DT)
+      }
     }
   }
 
@@ -273,17 +296,88 @@ export class Sim {
       e.x = clamp(e.x + vx * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
       e.y = clamp(e.y + vy * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
 
-      // Contact damage: touching a player hurts them (cooldown via props.touchCd).
-      for (const p of alivePlayers) {
-        const touch = def.radius + 0.4
-        if (distSq(e, p) < touch * touch) {
-          p.health -= def.damage * TICK_DT * 2
-          if (p.health <= 0) {
-            p.health = 0
-            p.alive = false
+      // Contact damage: a discrete, dodgeable hit with a per-enemy cooldown.
+      e.touchCdLeft -= TICK_DT
+      if (e.touchCdLeft <= 0) {
+        for (const p of alivePlayers) {
+          const touch = def.radius + 0.4
+          if (distSq(e, p) < touch * touch) {
+            this.damagePlayer(p, def.damage, 'Melee', def.id, true)
+            e.touchCdLeft = def.props?.touchCd ?? 0.8
+            break
           }
         }
       }
+
+      // Ranged/special attacks: telegraphed floor zones at the predicted position.
+      if (def.props?.attackCd) {
+        e.attackCdLeft -= TICK_DT
+        const range = def.props.attackRange ?? 8
+        if (e.attackCdLeft <= 0 && distSq(e, target) <= range * range) {
+          e.attackCdLeft = def.props.attackCd
+          const severity = 'light' as const
+          const window = TELEGRAPH_WINDOWS[severity]
+          // Lead the target by their current velocity over the window.
+          const px = target.x + target.moveX * target.moveSpeed * window * 0.7
+          const py = target.y + target.moveY * target.moveSpeed * window * 0.7
+          s.telegraphs.push({
+            id: s.nextEntityId++,
+            x: clamp(px, -s.arenaW / 2, s.arenaW / 2),
+            y: clamp(py, -s.arenaH / 2, s.arenaH / 2),
+            radius: def.props.attackRadius ?? 1.2,
+            severity,
+            window,
+            timeLeft: window,
+            damage: def.damage,
+            damageType: 'Ranged',
+            sourceId: def.id,
+          })
+        }
+      }
+    }
+  }
+
+  private tickTelegraphs(): void {
+    const s = this.state
+    const done: number[] = []
+    for (const t of s.telegraphs) {
+      t.timeLeft -= TICK_DT
+      if (t.timeLeft > 0) continue
+      done.push(t.id)
+      const r2 = t.radius * t.radius
+      for (const p of s.players) {
+        if (!p.alive) continue
+        if (distSq(t, p) <= r2) {
+          // Zone damage is a hazard: avoidable by moving, not by dodge chance.
+          this.damagePlayer(p, t.damage, t.damageType, t.sourceId, false)
+        }
+      }
+    }
+    if (done.length > 0) s.telegraphs = s.telegraphs.filter((t) => !done.includes(t.id))
+  }
+
+  private damagePlayer(
+    p: PlayerState,
+    amount: number,
+    type: DamageType,
+    sourceId: string,
+    isAttack: boolean,
+  ): void {
+    const result = resolveDamage(amount, type, p.defenses, isAttack, this.rngCombat.next())
+    this.tracker.recordTaken({
+      tick: this.state.tick,
+      playerId: p.id,
+      sourceId,
+      amount,
+      taken: result.taken,
+      mitigated: result.mitigated,
+      dodged: result.dodged,
+    })
+    if (result.taken <= 0) return
+    p.health -= result.taken
+    if (p.health <= 0) {
+      p.health = 0
+      p.alive = false
     }
   }
 
@@ -299,6 +393,7 @@ export class Sim {
         w.targetId = target?.id ?? null
         if (!target) continue // hold fire — no sensible target
         w.cooldownLeft = def.cooldown
+        w.firedTick = s.tick
 
         if (def.projectileSpeed) {
           const n = norm(target.x - p.x, target.y - p.y)
@@ -375,6 +470,11 @@ export class Sim {
       amount,
       kill: killed,
     })
+    // Lifesteal is universal: any damage the player causes, any type.
+    const owner = this.state.players.find((p) => p.id === playerId)
+    if (owner && owner.alive && owner.lifesteal > 0) {
+      owner.health = Math.min(owner.maxHealth, owner.health + amount * owner.lifesteal)
+    }
     if (killed) this.killEnemy(e)
   }
 
@@ -472,11 +572,19 @@ export class Sim {
   }
 
   private collect(pk: PickupState, _byPlayer: PlayerState): void {
-    if (pk.kind === 'gold') {
-      // Gold is shared and multiplied: every player receives the full amount.
-      for (const p of this.state.players) p.gold += pk.amount
-    } else {
-      for (const p of this.state.players) p.xp += pk.amount
+    // Gold and XP are shared and multiplied: every player receives the full amount.
+    for (const p of this.state.players) {
+      if (pk.kind === 'gold') {
+        p.gold += pk.amount
+      } else {
+        p.xp += pk.amount
+        // Level-ups bank a draft; the draft screen opens at intermission.
+        while (p.xp >= xpForLevel(p.level)) {
+          p.xp -= xpForLevel(p.level)
+          p.level++
+          p.pendingDrafts++
+        }
+      }
     }
   }
 

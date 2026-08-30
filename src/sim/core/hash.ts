@@ -34,6 +34,9 @@ export function hashState(s: SimState): number {
   for (const pk of s.pickups) {
     mix(pk.id); mix(pk.x); mix(pk.y); mix(pk.amount)
   }
+  for (const t of s.telegraphs) {
+    mix(t.id); mix(t.x); mix(t.y); mix(t.timeLeft)
+  }
   mix(s.wave.number)
   mix(s.wave.elapsed)
   return h >>> 0
