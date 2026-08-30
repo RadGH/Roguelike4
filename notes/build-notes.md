@@ -155,5 +155,12 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
     does not yet monotonically improve outcomes (0.85 skill scored below 0.6 in one
     batch) — the policy is the dominant error term, exactly as the vault predicted. Treat
     absolute win rates as rough; the histograms and A/B deltas are the trustworthy part.
+- Ninth chunk (a590156): first SVG art pass. I authored 14 SVGs for the gameplay-critical
+  layer — the player, one body plan per enemy archetype with the reserved palette baked
+  into the file, the crowned King Slime, and the pickups. They render through a pooled
+  sprite layer with velocity-based facing, a black-tint silhouette debug view, and a
+  primitive-shape fallback if loading ever fails. Screenshot-reviewed per the art doc's
+  gate (scripts/screenshot-live.mjs) — fixed a real finding: the camera never zoomed in,
+  so solo play failed the squint test; it now zooms to 1.8x when players are close.
 - Next: pause menu w/ live attribution + character/details screens + draft timer, then
   content breadth (more classes/weapons/perks) with sim checks per addition.

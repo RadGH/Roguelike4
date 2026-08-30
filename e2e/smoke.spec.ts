@@ -19,3 +19,15 @@ test('page title comes from the branding constant', async ({ page }) => {
   const title = await page.title()
   expect(title.length).toBeGreaterThan(0)
 })
+
+test('escape opens the pause menu with stats and damage breakdown', async ({ page }) => {
+  await page.goto('/')
+  await page.getByTestId('start-run').click()
+  await page.getByTestId('begin-run').click()
+  await page.waitForTimeout(1500)
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('pause-menu')).toBeVisible()
+  await expect(page.getByText('Damage breakdown')).toBeVisible()
+  await page.getByTestId('resume').click()
+  await expect(page.getByTestId('pause-menu')).not.toBeVisible()
+})

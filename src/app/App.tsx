@@ -7,6 +7,7 @@ import {
 } from '../sim/meta/unlocks'
 import { Arena } from './Arena'
 import { Intermission, Recap, RunEnd } from './Intermission'
+import { PauseMenu } from './PauseMenu'
 import { ClassSelect, Codex } from './Codex'
 import { loadProfile, storeProfile } from './profile'
 import {
@@ -40,6 +41,19 @@ export function App(): React.JSX.Element {
     if (!run) return
     const id = setInterval(bump, 150)
     return () => clearInterval(id)
+  }, [run])
+
+  // Esc (or a pad's Start button, handled in Arena) toggles the pause menu.
+  useEffect(() => {
+    if (!run) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && run.phase === 'arena') {
+        run.paused = !run.paused
+        bump()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [run])
 
   // Save after every wave; on run end fold the result into the profile,
@@ -240,6 +254,9 @@ export function App(): React.JSX.Element {
   return (
     <>
       <Arena run={run} />
+      {run.paused && run.phase === 'arena' && (
+        <PauseMenu run={run} onResume={() => { run.paused = false; onChange() }} />
+      )}
       {run.phase === 'recap' && (
         <Recap run={run} onContinue={() => { run.proceedFromRecap(); onChange() }} />
       )}

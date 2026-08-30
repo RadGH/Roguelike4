@@ -91,6 +91,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
       window.addEventListener('keyup', onKeyUp)
 
       let acc = 0
+      let prevStart = false
+      let prevPadCount = 0
       let camScale = 1
       let camX = 0
       let camY = 0
@@ -104,6 +106,20 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         // Input assignment: player 1 owns the keyboard. With one player a
         // gamepad also drives them; with more, pads map to players in order.
         const pads = (navigator.getGamepads?.() ?? []).filter((p) => p && p.connected)
+
+        // Any pad's Start button toggles pause; losing a pad mid-fight pauses.
+        let startPressed = false
+        for (const pad of pads) {
+          if (pad?.buttons[9]?.pressed) startPressed = true
+        }
+        if (startPressed && !prevStart && currentRun.phase === 'arena') {
+          currentRun.paused = !currentRun.paused
+        }
+        prevStart = startPressed
+        if (pads.length < prevPadCount && playerCount > 1 && currentRun.phase === 'arena') {
+          currentRun.paused = true
+        }
+        prevPadCount = pads.length
         for (const p of sim.state.players) {
           let mx = 0
           let my = 0

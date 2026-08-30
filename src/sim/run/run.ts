@@ -52,6 +52,8 @@ const SELL_FRACTION = 0.5
 export class Run {
   readonly sim: Sim
   phase: RunPhase = 'arena'
+  /** Global pause: the arena freezes for everyone (menus, pad disconnect). */
+  paused = false
   /** Per-player personal intermission state, indexed by player id. */
   personal = new Map<number, PersonalScreen>()
   private readonly rngRun: Rng
@@ -151,7 +153,7 @@ export class Run {
 
   /** Advance the arena; call once per fixed tick while in the arena phase. */
   tick(): void {
-    if (this.phase !== 'arena') return
+    if (this.phase !== 'arena' || this.paused) return
     this.sim.tick()
 
     // The run ends only when nobody is left standing — a single survivor

@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
+
+/** Soft intermission timer (multiplayer): warn, then auto-resolve stragglers. */
+const WARN_AT_S = 35
+const AUTO_AT_S = 50
 
 /**
  * Intermission overlays. Personal screens are designed quarter-screen-first;
@@ -55,6 +59,34 @@ export function Recap({ run, onContinue }: { run: Run; onContinue: () => void })
 export function Intermission({ run, onChange }: { run: Run; onChange: () => void }): React.JSX.Element {
   // Per-player equip prompt: which shop entry is waiting for a slot choice.
   const [replacing, setReplacing] = useState<Record<number, number | null>>({})
+
+  // Soft timer: the intermission is bounded by the slowest player, so after a
+  // grace period stragglers see a countdown and are then auto-resolved
+  // (first draft option, ready without purchases). Solo is never rushed.
+  const startedAt = useRef(Date.now())
+  const [elapsed, setElapsed] = useState(0)
+  const multiplayer = run.sim.state.players.length > 1
+  useEffect(() => {
+    if (!multiplayer) return
+    const id = setInterval(() => {
+      const secs = (Date.now() - startedAt.current) / 1000
+      setElapsed(secs)
+      if (secs >= AUTO_AT_S) {
+        for (const p of run.sim.state.players) {
+          const screen = run.personal.get(p.id)
+          if (!screen || screen.done) continue
+          while (run.personal.get(p.id)?.draft) run.pickPerk(p.id, 0)
+          run.setReady(p.id)
+        }
+        onChange()
+      }
+    }, 500)
+    return () => clearInterval(id)
+  }, [run, multiplayer, onChange])
+  const countdown = multiplayer && elapsed >= WARN_AT_S
+    ? Math.max(0, Math.ceil(AUTO_AT_S - elapsed))
+    : null
+
   return (
     <div className="overlay">
       {run.sim.state.players.map((p) => {
@@ -75,7 +107,10 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
         }
         return (
           <div className="panel" key={p.id} data-testid={`personal-${p.id}`}>
-            <h2>Player {p.id + 1} <span className="gold-display">{p.gold} gold</span></h2>
+            <h2>
+              Player {p.id + 1} <span className="gold-display">{p.gold} gold</span>
+              {countdown !== null && <span className="hint"> · auto in {countdown}s</span>}
+            </h2>
 
             {screen.draft ? (
               <>
