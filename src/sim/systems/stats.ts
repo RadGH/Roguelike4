@@ -60,13 +60,16 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
   if (cls?.mods) {
     const m = cls.mods
     if (m.maxHealth) p.maxHealth += m.maxHealth
-    if (m.regen) p.regen += m.regen
+    if (m.regen) p.regen += m.regen * 0.1
     if (m.armor) p.defenses.armor += m.armor
     if (m.moveSpeedPct) p.moveSpeed += (BASE.moveSpeed * m.moveSpeedPct) / 100
     if (m.xpPct) p.xpPct += m.xpPct
     if (m.goldPct) p.goldPct += m.goldPct
     if (m.allPct) p.allPct += m.allPct
+    if (m.lifesteal) p.lifesteal += m.lifesteal / 100
   }
+  // The Looter's trade: max health per item carried.
+  if (cls?.healthPerItem) p.maxHealth += cls.healthPerItem * p.items.length
 
   // Passive items: stat effects stack per copy carried.
   for (const itemId of p.items) {
@@ -80,6 +83,12 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
   for (const owned of p.perks) {
     const def = registry.perk(owned.perkId)
     applyAttribute(p, def.attribute, def.amount * TIER_MULTIPLIER[owned.tier])
+  }
+
+  // Shields count as weapons and carry their block with them.
+  for (const w of p.weapons) {
+    const def = registry.weapons.get(w.defId)
+    if (def?.grantsBlock) p.defenses.block += def.grantsBlock
   }
 
   // Caps that keep stacking honest.

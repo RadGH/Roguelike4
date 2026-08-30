@@ -32,6 +32,48 @@
     "rewards": [{ "kind": "weapon", "id": "hammer" }]
   },
   {
+    "id": "steady-hands",
+    "name": "Steady Hands",
+    "description": "Defeat 150 enemies across all runs.",
+    "condition": { "type": "total-kills", "count": 150 },
+    "rewards": [{ "kind": "class", "id": "priest" }]
+  },
+  {
+    "id": "eagle-eye",
+    "name": "Eagle Eye",
+    "description": "Defeat 45 enemies in a single wave.",
+    "condition": { "type": "kills-in-one-wave", "count": 45 },
+    "rewards": [{ "kind": "class", "id": "marksman" }]
+  },
+  {
+    "id": "packrat",
+    "name": "Packrat",
+    "description": "Defeat 600 enemies across all runs.",
+    "condition": { "type": "total-kills", "count": 600 },
+    "rewards": [{ "kind": "class", "id": "looter" }]
+  },
+  {
+    "id": "night-shift",
+    "name": "Night Shift",
+    "description": "Complete Act 1.",
+    "condition": { "type": "win-act", "actId": "act1" },
+    "rewards": [{ "kind": "class", "id": "vampire" }]
+  },
+  {
+    "id": "arcanist",
+    "name": "Arcanist",
+    "description": "Reach wave 5 in any run.",
+    "condition": { "type": "reach-wave", "wave": 5 },
+    "rewards": [{ "kind": "weapon", "id": "runed-sword" }]
+  },
+  {
+    "id": "scattershot",
+    "name": "Scattershot",
+    "description": "Defeat 100 enemies across all runs.",
+    "condition": { "type": "total-kills", "count": 100 },
+    "rewards": [{ "kind": "weapon", "id": "shotgun" }]
+  },
+  {
     "id": "reaper",
     "name": "Reaper",
     "description": "Defeat 60 enemies in a single wave.",

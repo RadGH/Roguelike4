@@ -39,6 +39,46 @@
     ]
   },
   {
+    "id": "priest",
+    "name": "Priest",
+    "description": "Recovers steadily and carries a healing prayer. Keeps everyone standing.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-wand"],
+    "startingEquipment": "lesser-heal",
+    "mods": { "regen": 4 }
+  },
+  {
+    "id": "marksman",
+    "name": "Marksman",
+    "description": "Deadly with projectiles, slower on foot. Starts with a bow.",
+    "weaponSlots": 2,
+    "startingWeapons": ["shortbow"],
+    "mods": { "moveSpeedPct": -8 },
+    "affinities": [
+      { "tag": "Projectile", "pct": 20 },
+      { "tag": "Ranged", "pct": 10 }
+    ]
+  },
+  {
+    "id": "looter",
+    "name": "Looter",
+    "description": "Gains 1 max health per item carried; the shop charges them a quarter more.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-sword"],
+    "healthPerItem": 1,
+    "shopPricePct": 25,
+    "mods": { "goldPct": 10 }
+  },
+  {
+    "id": "vampire",
+    "name": "Vampire",
+    "description": "Loses 1 health every second, forever. Starts with 15 lifesteal.",
+    "weaponSlots": 2,
+    "startingWeapons": ["practice-sword"],
+    "selfDamagePerSec": 1,
+    "mods": { "lifesteal": 15 }
+  },
+  {
     "id": "sentinel",
     "name": "Sentinel",
     "description": "Slow and armored. Starts with more health and takes less from everything.",

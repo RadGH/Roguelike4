@@ -170,5 +170,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   sell as a mandatory decision, 14 passives including triggered effects (kill-explosions,
   pickup-zaps) with damage attributed to the item — so "41% of your damage came from
   Killing Blow" already works in the pause menu.
-- Next: the A/B slots (equipment + movement items — Control Budget's core), then more
-  content breadth.
+- Twelfth chunk (e011e51): the Control Budget is real. A = equipment (Repulse, Maelstrom,
+  Ground Slam, Lesser Heal), B = movement (Dash, Blink — no i-frames), slots are exclusive
+  content that classes start with, chests drop, and saves keep. Rogue/Mage/Sentinel now
+  have their identity items. Mid-skill solo win rate is ~47% with the policy spending
+  both buttons — right in the band I was aiming for.
+- Next: content breadth in tranches (more classes/weapons/perks/items per the catalogs)
+  and the class-grant screen; then M7 polish and the M8 website/deploy.

@@ -167,7 +167,14 @@ export function playIntermission(run: Run, playerId: number): void {
 
   const screen = run.personal.get(playerId)
   if (screen) {
-    // Fill empty slots first, most expensive affordable weapon each time.
+    // Fill empty slots first, best damage-per-second for the money.
+    const dps = (weaponId: string, tier: number): number => {
+      const def = run.registry.weapon(weaponId)
+      // Extra pellets rarely all connect — count them at half value.
+      const pellets = 1 + 0.5 * ((def.projectileCount ?? 1) - 1)
+      return ((def.damage * pellets) / def.cooldown) * [1, 1.5, 2, 2.6][tier] +
+        (def.grantsBlock ?? 0) * 0.5
+    }
     let bought = true
     while (bought) {
       bought = false
@@ -175,7 +182,7 @@ export function playIntermission(run: Run, playerId: number): void {
       const candidates = screen.shop
         .map((entry, i) => ({ entry, i }))
         .filter(({ entry }) => !entry.sold && entry.price <= p.gold)
-        .sort((a, b) => b.entry.price - a.entry.price)
+        .sort((a, b) => dps(b.entry.weaponId, b.entry.tier) - dps(a.entry.weaponId, a.entry.tier))
       if (candidates.length > 0) {
         bought = run.buyWeapon(playerId, candidates[0].i) === 'ok'
       }

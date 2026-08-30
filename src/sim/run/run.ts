@@ -55,7 +55,7 @@ export interface PersonalScreen {
 }
 
 const DRAFT_OPTIONS = 3
-const SHOP_STOCK = 3
+const SHOP_STOCK = 4
 const SELL_FRACTION = 0.5
 
 export class Run {
@@ -198,7 +198,7 @@ export class Run {
       this.personal.set(p.id, {
         rewards: [],
         draft: p.pendingDrafts > 0 ? this.rollDraft(p.perks) : null,
-        shop: this.rollShop(),
+        shop: this.rollShop(p.id),
         rerollPrice: 10,
         done: false,
       })
@@ -274,14 +274,25 @@ export class Run {
     return 3
   }
 
-  private rollShop(): ShopEntry[] {
+  private rollShop(playerId: number): ShopEntry[] {
     const weapons = [...this.registry.weapons.values()]
       .filter((w) => !this.pool || this.pool.weapons.has(w.id))
+    const p = this.sim.player(playerId)
+    // Build-weighted stock: lean toward tags the player already uses, so a
+    // build develops rather than happens. A nudge, never a filter — every
+    // weapon keeps a base weight, and the shop stays the pivot mechanism.
+    const ownedTags = new Set<string>()
+    for (const w of p.weapons) {
+      for (const t of this.registry.weapon(w.defId).tags) ownedTags.add(t)
+    }
     const stock: ShopEntry[] = []
     for (let i = 0; i < SHOP_STOCK; i++) {
-      const w = this.rngRun.pick(weapons)
+      const w = this.rngRun.weighted(weapons, (weapon) => {
+        const overlap = weapon.tags.filter((t) => ownedTags.has(t)).length
+        return 1 + overlap * 0.4
+      })
       const tier = this.rollWeaponTier()
-      stock.push({ weaponId: w.id, tier, price: this.priceFor(w, tier), sold: false })
+      stock.push({ weaponId: w.id, tier, price: this.priceFor(w, tier, playerId), sold: false })
     }
     return stock
   }
@@ -296,11 +307,19 @@ export class Run {
     return r < 0.1 ? 0 : r < 0.45 ? 1 : r < 0.8 ? 2 : 3
   }
 
-  private priceFor(w: WeaponDef, tier: number): number {
+  /** Public quote (what would this weapon cost this player right now?). */
+  priceQuote(playerId: number, weaponId: string, tier: number): number {
+    return this.priceFor(this.registry.weapon(weaponId), tier, playerId)
+  }
+
+  private priceFor(w: WeaponDef, tier: number, playerId: number): number {
     // Prices drift up slightly across the act so income keeps mattering.
     const waveScale = 1 + (this.sim.state.wave.number - 1) * 0.1
     const tierScale = 1 + tier * 0.7
-    return Math.round(w.price * waveScale * tierScale)
+    // Personal price modifier (the Looter pays more).
+    const cls = this.registry.class(this.sim.player(playerId).classId)
+    const classScale = 1 + (cls.shopPricePct ?? 0) / 100
+    return Math.round(w.price * waveScale * tierScale * classScale)
   }
 
   /** Perk pick for the player's current draft. */
@@ -363,6 +382,7 @@ export class Run {
     if (!inst) return
     p.weapons.splice(slotIndex, 1)
     p.gold += this.sellValue(inst.defId, inst.tier)
+    recomputePlayer(p, this.registry)
   }
 
   reroll(playerId: number): void {
@@ -371,7 +391,7 @@ export class Run {
     if (!screen || this.phase !== 'intermission') return
     if (p.gold < screen.rerollPrice) return
     p.gold -= screen.rerollPrice
-    screen.shop = this.rollShop()
+    screen.shop = this.rollShop(playerId)
     screen.rerollPrice = Math.round(screen.rerollPrice * 1.5)
   }
 

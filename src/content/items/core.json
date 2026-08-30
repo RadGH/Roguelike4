@@ -80,6 +80,79 @@
     "effects": [{ "kind": "stat", "attribute": "lifesteal", "amount": 3 }]
   },
   {
+    "id": "berserker-charm",
+    "name": "Berserker Charm",
+    "description": "+5 All Damage.",
+    "tags": ["Melee", "Occult"],
+    "price": 40,
+    "effects": [{ "kind": "stat", "attribute": "allPct", "amount": 5 }]
+  },
+  {
+    "id": "war-drum",
+    "name": "War Drum",
+    "description": "+4 Attack Speed and +4 Melee Damage.",
+    "tags": ["Melee", "Utility"],
+    "price": 40,
+    "effects": [
+      { "kind": "stat", "attribute": "cooldownPct", "amount": 4 },
+      { "kind": "stat", "attribute": "meleePct", "amount": 4 }
+    ]
+  },
+  {
+    "id": "scavengers-pack",
+    "name": "Scavenger's Pack",
+    "description": "+8 Gold Gain and +20 Pickup Radius.",
+    "tags": ["Luck", "Utility"],
+    "price": 35,
+    "effects": [
+      { "kind": "stat", "attribute": "goldPct", "amount": 8 },
+      { "kind": "stat", "attribute": "pickupRadius", "amount": 20 }
+    ]
+  },
+  {
+    "id": "titan-belt",
+    "name": "Titan Belt",
+    "description": "+4 Max Health and +4 Armor.",
+    "tags": ["Heavy", "Utility"],
+    "price": 35,
+    "effects": [
+      { "kind": "stat", "attribute": "maxHealth", "amount": 4 },
+      { "kind": "stat", "attribute": "armor", "amount": 4 }
+    ]
+  },
+  {
+    "id": "insight-ring",
+    "name": "Insight Ring",
+    "description": "+12 Experience Gain.",
+    "tags": ["Utility"],
+    "price": 30,
+    "effects": [{ "kind": "stat", "attribute": "xpPct", "amount": 12 }]
+  },
+  {
+    "id": "blast-powder",
+    "name": "Blast Powder",
+    "description": "15 chance: kills explode for 6 damage in a wide burst.",
+    "tags": ["Area", "Technology"],
+    "price": 50,
+    "effects": [{ "kind": "onKillExplode", "chance": 0.15, "radius": 2.4, "damage": 6 }]
+  },
+  {
+    "id": "storm-bottle",
+    "name": "Storm Bottle",
+    "description": "20 chance: pickups unleash a 5-damage shock around you.",
+    "tags": ["Lightning", "Luck"],
+    "price": 50,
+    "effects": [{ "kind": "onPickupDamage", "chance": 0.2, "radius": 2.6, "damage": 5 }]
+  },
+  {
+    "id": "soothing-herbs",
+    "name": "Soothing Herbs",
+    "description": "30 chance: heal 1 on any pickup.",
+    "tags": ["Healing", "Nature"],
+    "price": 40,
+    "effects": [{ "kind": "onPickupHeal", "chance": 0.3, "amount": 1 }]
+  },
+  {
     "id": "killing-blow",
     "name": "Killing Blow",
     "description": "25 chance: kills explode for 4 damage nearby.",

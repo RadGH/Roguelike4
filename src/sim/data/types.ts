@@ -30,6 +30,10 @@ export interface WeaponDef {
   targeting: TargetingRule
   /** Melee weapons lunge; ranged emit a projectile with this speed. */
   projectileSpeed?: number
+  /** Fires this many projectiles in a fan (default 1). */
+  projectileCount?: number
+  /** Flat block granted while equipped (shields count as weapons). */
+  grantsBlock?: number
   /** Shop price at tier 1 (weapons are shop-only). */
   price: number
 }
@@ -101,9 +105,15 @@ export interface ClassDef {
   startingMovement?: string
   /** Innate stat modifiers, applied before perks in the recompute. */
   mods?: Partial<Record<
-    'maxHealth' | 'moveSpeedPct' | 'xpPct' | 'goldPct' | 'allPct' | 'armor' | 'regen',
+    'maxHealth' | 'moveSpeedPct' | 'xpPct' | 'goldPct' | 'allPct' | 'armor' | 'regen' | 'lifesteal',
     number
   >>
+  /** Permanent self-damage per second (the Vampire's clock). */
+  selfDamagePerSec?: number
+  /** Max health granted per item carried (the Looter's trade). */
+  healthPerItem?: number
+  /** Personal shop price adjustment in percent (+25 = pays a quarter more). */
+  shopPricePct?: number
   /** Tag affinities: percent damage bonus/penalty when a weapon carries the tag. */
   affinities?: { tag: Tag; pct: number }[]
 }

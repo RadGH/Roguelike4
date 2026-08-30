@@ -138,6 +138,7 @@ export class Sim {
       firedTick: -1000,
     }
     p.weapons.push(inst)
+    recomputePlayer(p, this.registry) // weapons can grant defenses (shields)
   }
 
   player(id: number): PlayerState {
@@ -314,6 +315,22 @@ export class Sim {
       p.y = clamp(p.y + p.moveY * speed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
       if (p.regen > 0 && p.health < p.maxHealth) {
         p.health = Math.min(p.maxHealth, p.health + p.regen * TICK_DT)
+      }
+      // The Vampire's clock: unavoidable, unmitigated, always ticking.
+      const selfDamage = this.registry.classes.get(p.classId)?.selfDamagePerSec
+      if (selfDamage) {
+        p.health -= selfDamage * TICK_DT
+        if (p.health <= 0) {
+          p.health = 0
+          const others = this.activePlayers().filter((o) => o.id !== p.id)
+          if (others.length > 0) {
+            p.downed = true
+            p.bleedOut = BLEED_OUT_SECONDS
+            p.reviveProgress = 0
+          } else {
+            p.alive = false
+          }
+        }
       }
       if (p.equipment && p.equipment.cdLeft > 0) p.equipment.cdLeft -= TICK_DT
       if (p.movement && p.movement.cdLeft > 0) p.movement.cdLeft -= TICK_DT
@@ -781,19 +798,36 @@ export class Sim {
 
         if (def.projectileSpeed) {
           const n = norm(target.x - p.x, target.y - p.y)
-          const pr: ProjectileState = {
-            id: s.nextEntityId++,
-            x: p.x,
-            y: p.y,
-            vx: n.x * def.projectileSpeed,
-            vy: n.y * def.projectileSpeed,
-            damage,
-            damageType: def.damageType,
-            ownerId: p.id,
-            sourceId: def.id,
-            ttl: def.range / def.projectileSpeed + 0.2,
+          // Multi-projectile weapons fan out at fixed 14° steps. The rotation
+          // constants are literals, so this stays deterministic (no trig).
+          const COS = 0.970
+          const SIN = 0.242
+          const count = def.projectileCount ?? 1
+          for (let i = 0; i < count; i++) {
+            const spread = i - (count - 1) / 2
+            let dx = n.x
+            let dy = n.y
+            for (let k = 0; k < Math.abs(spread); k++) {
+              const sign = spread > 0 ? 1 : -1
+              const rx = dx * COS - dy * SIN * sign
+              const ry = dx * SIN * sign + dy * COS
+              dx = rx
+              dy = ry
+            }
+            const pr: ProjectileState = {
+              id: s.nextEntityId++,
+              x: p.x,
+              y: p.y,
+              vx: dx * def.projectileSpeed,
+              vy: dy * def.projectileSpeed,
+              damage,
+              damageType: def.damageType,
+              ownerId: p.id,
+              sourceId: def.id,
+              ttl: def.range / def.projectileSpeed + 0.2,
+            }
+            s.projectiles.push(pr)
           }
-          s.projectiles.push(pr)
         } else {
           // Instant melee resolution; the renderer shows the lunge.
           this.damageEnemy(target, damage, p.id, def.id, def.damageType)

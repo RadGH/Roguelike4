@@ -2,7 +2,10 @@
   {
     "id": "practice-sword",
     "name": "Practice Sword",
-    "tags": ["Melee", "Light"],
+    "tags": [
+      "Melee",
+      "Light"
+    ],
     "damageType": "Melee",
     "damage": 3,
     "cooldown": 0.8,
@@ -13,7 +16,10 @@
   {
     "id": "practice-wand",
     "name": "Practice Wand",
-    "tags": ["Magic", "Light"],
+    "tags": [
+      "Magic",
+      "Light"
+    ],
     "damageType": "Magic",
     "damage": 2,
     "cooldown": 0.7,
@@ -23,9 +29,76 @@
     "price": 20
   },
   {
+    "id": "runed-sword",
+    "name": "Runed Sword",
+    "tags": [
+      "Magic",
+      "Melee",
+      "Light"
+    ],
+    "damageType": "Magic",
+    "damage": 4,
+    "cooldown": 0.9,
+    "range": 1.9,
+    "targeting": "nearest",
+    "price": 35
+  },
+  {
+    "id": "throwing-stars",
+    "name": "Throwing Stars",
+    "tags": [
+      "Melee",
+      "Projectile",
+      "Light"
+    ],
+    "damageType": "Melee",
+    "damage": 3,
+    "cooldown": 0.5,
+    "range": 6,
+    "targeting": "nearest",
+    "projectileSpeed": 15,
+    "price": 30
+  },
+  {
+    "id": "shotgun",
+    "name": "Shotgun",
+    "tags": [
+      "Ranged",
+      "Projectile",
+      "Heavy"
+    ],
+    "damageType": "Ranged",
+    "damage": 3,
+    "cooldown": 1.2,
+    "range": 6,
+    "targeting": "densest",
+    "projectileSpeed": 13,
+    "projectileCount": 3,
+    "price": 40
+  },
+  {
+    "id": "shield",
+    "name": "Shield",
+    "tags": [
+      "Melee",
+      "Shield",
+      "Heavy"
+    ],
+    "damageType": "Melee",
+    "damage": 3,
+    "cooldown": 1.2,
+    "range": 1.6,
+    "targeting": "nearest",
+    "grantsBlock": 3,
+    "price": 35
+  },
+  {
     "id": "javelin",
     "name": "Javelin",
-    "tags": ["Melee", "Projectile"],
+    "tags": [
+      "Melee",
+      "Projectile"
+    ],
     "damageType": "Melee",
     "damage": 5,
     "cooldown": 1.4,
@@ -37,7 +110,10 @@
   {
     "id": "hammer",
     "name": "Hammer",
-    "tags": ["Melee", "Heavy"],
+    "tags": [
+      "Melee",
+      "Heavy"
+    ],
     "damageType": "Melee",
     "damage": 9,
     "cooldown": 1.8,
@@ -48,7 +124,11 @@
   {
     "id": "shortbow",
     "name": "Shortbow",
-    "tags": ["Ranged", "Projectile", "Light"],
+    "tags": [
+      "Ranged",
+      "Projectile",
+      "Light"
+    ],
     "damageType": "Ranged",
     "damage": 3,
     "cooldown": 1.0,

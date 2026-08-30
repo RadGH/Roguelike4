@@ -7,13 +7,14 @@ import type { WaveDef } from '../data/types'
 function arena(seed: number, waves: WaveDef[], wave = 1, armed = true): Sim {
   const registry = loadContent()
   const sim = new Sim(registry, { seed, playerCount: 1 })
-  const p = sim.state.players[0]
-  p.maxHealth = 100000
-  p.health = 100000
   if (armed) {
     sim.equipWeapon(0, 'practice-sword')
     sim.equipWeapon(0, 'practice-wand')
   }
+  // Buff after equipping: equip recomputes stats from scratch.
+  const p = sim.state.players[0]
+  p.maxHealth = 100000
+  p.health = 100000
   sim.startWave(waves, wave)
   return sim
 }
@@ -110,11 +111,11 @@ describe('King Slime', () => {
   it('splits down the tier chain: 1 → 3 → 9 → 27 problem shapes', () => {
     const registry = loadContent()
     const sim = new Sim(registry, { seed: 99, playerCount: 1 })
+    // Overwhelming firepower so the fight resolves quickly in the test.
+    for (let i = 0; i < 2; i++) sim.equipWeapon(0, 'practice-sword')
     const p = sim.state.players[0]
     p.maxHealth = 100000
     p.health = 100000
-    // Overwhelming firepower so the fight resolves quickly in the test.
-    for (let i = 0; i < 2; i++) sim.equipWeapon(0, 'practice-sword')
     p.allPct = 5000
     sim.startWave(wave([{ at: 0.5, enemy: 'kingslime-t1', count: 1 }]), 1)
 
@@ -136,7 +137,7 @@ describe('King Slime', () => {
     const sim = new Sim(registry, { seed: 55, playerCount: 1 })
     const p = sim.state.players[0]
     p.maxHealth = 100000
-    p.health = 100000
+    p.health = 100000 // no weapons equipped after this, so the buff sticks
     sim.startWave(wave([{ at: 0.5, enemy: 'kingslime-t1', count: 1 }]), 1)
     let sawSlam = false
     for (let i = 0; i < 30 * 30; i++) {
