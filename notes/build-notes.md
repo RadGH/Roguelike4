@@ -224,4 +224,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   Ember Wand / Ice Shotgun / Storm Javelin / Ignition Charm, plus Pyromancer and
   Stormcaller. The vault's "ignite several enemies at once" build target is now a real
   tracked unlock condition (Firestarter: 4 alight at once opens the Pyromancer).
-- Next: remaining target-build acceptance tests, gamepad menu nav, hot-join, act 2.
+- Twentieth chunk (1db4d00): **every build target the vault names as a goal now exists
+  and is proven by an acceptance test** — no-weapon summoner (a wave cleared 100% by
+  pets), gold-pickup damage (Scavenger + Gold Strike with chance-not-magnitude stacking),
+  unresistable Void (Warlock + Void Scepter), ignition, close-range spread, and lightning
+  chains. 13 classes, 12 weapons, 24 items, 101 tests.
+- Next: gamepad menu navigation (2-button strip), hot-join, act 2 authoring.

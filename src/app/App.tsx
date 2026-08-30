@@ -27,6 +27,7 @@ export function App(): React.JSX.Element {
   const [showHistory, setShowHistory] = useState(false)
   const [playerCount, setPlayerCount] = useState(1)
   const [chosenClasses, setChosenClasses] = useState<string[]>(['student'])
+  const [chosenAct, setChosenAct] = useState('act1')
   const [unlockedNow, setUnlockedNow] = useState<string[]>([])
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const onChange = useCallback(() => bump(), [])
@@ -75,7 +76,7 @@ export function App(): React.JSX.Element {
 
         const won = run.phase === 'victory'
         let nextProfile = applyRunResult(profile, {
-          actId: 'act1',
+          actId: run.actId,
           won,
           waveReached: wave,
           players: run.sim.state.players.map((p) => ({
@@ -93,9 +94,12 @@ export function App(): React.JSX.Element {
         storeProfile(nextProfile)
         setProfile(nextProfile)
         setUnlockedNow(earned.map((u) =>
-          `${u.name}: ${u.rewards.map((r) => registry[
-            r.kind === 'class' ? 'classes' : r.kind === 'weapon' ? 'weapons' : 'perks'
-          ].get(r.id)?.name ?? r.id).join(', ')}`,
+          `${u.name}: ${u.rewards.map((r) => {
+            const reg = r.kind === 'class' ? registry.classes :
+              r.kind === 'weapon' ? registry.weapons :
+              r.kind === 'act' ? registry.acts : registry.perks
+            return reg.get(r.id)?.name ?? r.id
+          }).join(', ')}`,
         ))
 
         appendHistory({
@@ -139,7 +143,7 @@ export function App(): React.JSX.Element {
     beginRun(new Run(registry, {
       seed: Date.now() >>> 0,
       playerCount,
-      actId: 'act1',
+      actId: available.acts.includes(chosenAct) ? chosenAct : 'act1',
       classIds: chosenClasses,
       unlocked: { weapons: available.weapons, perks: available.perks },
     }))
@@ -211,6 +215,19 @@ export function App(): React.JSX.Element {
         </div>
         {playerCount > 1 && (
           <div className="hint">Player 1: keyboard · players 2–{playerCount}: gamepads in order</div>
+        )}
+        {available.acts.length > 1 && (
+          <div className="toolbar" data-testid="act-select">
+            {available.acts.map((id) => (
+              <button
+                key={id}
+                onClick={() => setChosenAct(id)}
+                style={chosenAct === id ? { borderColor: 'var(--accent)' } : undefined}
+              >
+                {registry.acts.get(id)?.name ?? id}
+              </button>
+            ))}
+          </div>
         )}
         <div className="toolbar">
           {save && (

@@ -607,11 +607,22 @@ export class Sim {
       // Suppressed while airborne (mode 1) or burrowed.
       const canTouch = e.mode !== 1 && e.mode !== 2 && this.isTargetable(e) && def.damage > 0
       if (canTouch && e.touchCdLeft <= 0) {
+        // A nearby Bannerman emboldens the hit.
+        let banner = 1
+        for (const b of this.bannermen) {
+          if (b === e) continue
+          const bp = this.registry.enemy(b.defId).props
+          const r = bp?.auraRadius ?? 4
+          if (distSq(b, e) <= r * r) {
+            banner = 1 + (bp?.auraDamagePct ?? 30) / 100
+            break
+          }
+        }
         let hit = false
         for (const p of alivePlayers) {
           const touch = this.radiusOf(e) + 0.4
           if (distSq(e, p) < touch * touch) {
-            this.damagePlayer(p, def.damage, 'Melee', def.id, true)
+            this.damagePlayer(p, def.damage * banner, 'Melee', def.id, true)
             e.touchCdLeft = def.props?.touchCd ?? 0.8
             hit = true
             break
@@ -659,11 +670,40 @@ export class Sim {
         e.attackCdLeft = props.slamCd
         return
       }
+      // A slamming spawner (the Broodmother) keeps producing between leaps.
+      if (def.spawnId) this.doSpawn(e, def)
       this.chaseMove(e, def, target, speed)
       return
     }
 
     switch (def.archetype) {
+      case 'chaser': {
+        // Leapers close in bursts: crouch, then a committed hop.
+        if (props.hopCd) {
+          if (e.mode === 7) { // crouch
+            e.vx = 0; e.vy = 0
+            if (e.modeTime <= 0) { e.mode = 8; e.modeTime = props.hopTime ?? 0.45 }
+            return
+          }
+          if (e.mode === 8) { // airborne hop
+            this.moveBy(e, e.dirX * (props.hopSpeed ?? 9), e.dirY * (props.hopSpeed ?? 9))
+            if (e.modeTime <= 0) { e.mode = 0; e.attackCdLeft = props.hopCd }
+            return
+          }
+          if (e.attackCdLeft <= 0 && d > 1.2) {
+            const n = norm(target.x - e.x, target.y - e.y)
+            e.mode = 7
+            e.modeTime = props.hopCrouch ?? 0.4
+            e.dirX = n.x
+            e.dirY = n.y
+            e.vx = 0; e.vy = 0
+            return
+          }
+        }
+        this.chaseMove(e, def, target, speed)
+        return
+      }
+
       case 'charger': {
         if (!props.chargeCd) { this.chaseMove(e, def, target, speed); return }
         if (e.mode === 2) { // windup: rooted, committed direction shown by the body
@@ -741,16 +781,10 @@ export class Sim {
       }
 
       case 'spawner': {
-        e.vx = 0; e.vy = 0
-        if (def.spawnId && e.attackCdLeft <= 0) {
-          e.attackCdLeft = props.spawnCd ?? 2.5
-          for (let i = 0; i < (props.spawnCount ?? 2); i++) {
-            if (s.enemies.length >= DENSITY_CAP) break
-            const child = this.spawnEnemy(def.spawnId)
-            child.x = clamp(e.x + (this.rngCombat.next() - 0.5) * 2, -s.arenaW / 2, s.arenaW / 2)
-            child.y = clamp(e.y + (this.rngCombat.next() - 0.5) * 2, -s.arenaH / 2, s.arenaH / 2)
-          }
-        }
+        // Mobile spawners (the Caller) drift toward the fight; sacs sit still.
+        if (def.speed > 0) this.chaseMove(e, def, target, speed * 0.6)
+        else { e.vx = 0; e.vy = 0 }
+        this.doSpawn(e, def)
         return
       }
 
@@ -776,7 +810,7 @@ export class Sim {
       }
 
       default: {
-        // Chase, flock if flocking, and lay webbing if a weaver.
+        // Chase, flock if flocking, and lay ground effects if so equipped.
         this.chaseMove(e, def, target, speed)
         if (props.webCd && e.attackCdLeft <= 0) {
           e.attackCdLeft = props.webCd
@@ -791,7 +825,57 @@ export class Sim {
             sourceId: def.id,
           })
         }
+        // Sprayers paint a damaging trail as they walk.
+        if (props.trailCd && e.attackCdLeft <= 0) {
+          e.attackCdLeft = props.trailCd
+          s.pools.push({
+            id: s.nextEntityId++,
+            x: e.x,
+            y: e.y,
+            radius: props.trailRadius ?? 0.9,
+            dps: props.trailDps ?? 2,
+            slowFactor: 1,
+            ttl: props.trailTtl ?? 5,
+            sourceId: def.id,
+          })
+        }
+        // Fumers emit a cloud that grows the longer they live.
+        if (props.fumeCd) {
+          e.modeTime += TICK_DT * 2 // reuse as an age accumulator (default mode only)
+          if (e.attackCdLeft <= 0) {
+            e.attackCdLeft = props.fumeCd
+            const radius = Math.min(
+              props.fumeMax ?? 3.2,
+              (props.fumeBase ?? 1) + e.modeTime * (props.fumeGrowth ?? 0.18),
+            )
+            s.pools.push({
+              id: s.nextEntityId++,
+              x: e.x,
+              y: e.y,
+              radius,
+              dps: props.fumeDps ?? 2,
+              slowFactor: 1,
+              ttl: props.fumeTtl ?? 2.2,
+              sourceId: def.id,
+            })
+          }
+        }
       }
+    }
+  }
+
+  private doSpawn(e: EnemyState, def: EnemyDef): void {
+    const s = this.state
+    const props = def.props ?? {}
+    if (!def.spawnId || e.attackCdLeft > 0) return
+    // Wounded broods spawn faster — pressure rises as the fight goes on.
+    const frenzy = e.health < e.maxHealth / 2 ? 0.5 : 1
+    e.attackCdLeft = (props.spawnCd ?? 2.5) * frenzy
+    for (let i = 0; i < (props.spawnCount ?? 2); i++) {
+      if (s.enemies.length >= DENSITY_CAP) break
+      const child = this.spawnEnemy(def.spawnId)
+      child.x = clamp(e.x + (this.rngCombat.next() - 0.5) * 2, -s.arenaW / 2, s.arenaW / 2)
+      child.y = clamp(e.y + (this.rngCombat.next() - 0.5) * 2, -s.arenaH / 2, s.arenaH / 2)
     }
   }
 
@@ -1056,6 +1140,16 @@ export class Sim {
   ): void {
     // Resistant elites absorb part of everything except Void.
     if (e.elite === 'resistant' && damageType !== 'Void') amount *= 0.7
+    // A nearby Shielder soaks half of what its allies would take (kill it first).
+    for (const sh of this.shielders) {
+      if (sh === e) continue
+      const props = this.registry.enemy(sh.defId).props
+      const r = props?.shieldRadius ?? 4
+      if (distSq(sh, e) <= r * r) {
+        amount *= 1 - (props?.shieldReductionPct ?? 50) / 100
+        break
+      }
+    }
     // Shocked targets take more from everything — amplification, not control.
     if (e.shockTtl > 0) amount *= 1.25
 
@@ -1147,7 +1241,18 @@ export class Sim {
     }
   }
 
+  /** Per-tick caches of aura enemies (usually empty — keeps hot paths cheap). */
+  private shielders: EnemyState[] = []
+  private bannermen: EnemyState[] = []
+
   private tickEffects(): void {
+    this.shielders.length = 0
+    this.bannermen.length = 0
+    for (const e of this.state.enemies) {
+      const props = this.registry.enemy(e.defId).props
+      if (props?.shieldRadius) this.shielders.push(e)
+      if (props?.auraRadius) this.bannermen.push(e)
+    }
     let burning = 0
     for (const e of [...this.state.enemies]) {
       if (e.shockTtl > 0) e.shockTtl -= TICK_DT

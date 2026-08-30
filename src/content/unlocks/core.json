@@ -280,5 +280,20 @@
         "id": "scavenger"
       }
     ]
+  },
+  {
+    "id": "delve-deeper",
+    "name": "Delve Deeper",
+    "description": "Complete Act 1.",
+    "condition": {
+      "type": "win-act",
+      "actId": "act1"
+    },
+    "rewards": [
+      {
+        "kind": "act",
+        "id": "act2"
+      }
+    ]
   }
 ]

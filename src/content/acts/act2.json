@@ -1,0 +1,112 @@
+{
+  "id": "act2",
+  "name": "Act 2",
+  "boss": "broodmother",
+  "waves": [
+    {
+      "wave": 1,
+      "groups": [
+        { "at": 1, "enemy": "nibbler", "count": 14, "spacing": 0.3 },
+        { "at": 8, "enemy": "leaper", "count": 3, "spacing": 1.5 },
+        { "at": 20, "enemy": "scurrier", "count": 5, "spacing": 0.8 },
+        { "at": 32, "enemy": "leaper", "count": 4, "spacing": 1.2 }
+      ]
+    },
+    {
+      "wave": 2,
+      "groups": [
+        { "at": 1, "enemy": "sprayer", "count": 2, "spacing": 3 },
+        { "at": 10, "enemy": "nibbler", "count": 16, "spacing": 0.25 },
+        { "at": 22, "enemy": "spitter", "count": 4, "spacing": 1.2 },
+        { "at": 34, "enemy": "sprayer", "count": 2, "spacing": 2 },
+        { "at": 44, "enemy": "leaper", "count": 4, "spacing": 1 }
+      ]
+    },
+    {
+      "wave": 3,
+      "groups": [
+        { "at": 1, "enemy": "fumer", "count": 2, "spacing": 4 },
+        { "at": 10, "enemy": "scurrier", "count": 6, "spacing": 0.7 },
+        { "at": 20, "enemy": "leaper", "count": 4, "spacing": 1 },
+        { "at": 32, "enemy": "fumer", "count": 2, "spacing": 3 },
+        { "at": 42, "enemy": "slime", "count": 3, "spacing": 2 }
+      ]
+    },
+    {
+      "wave": 4,
+      "groups": [
+        { "at": 1, "enemy": "caller", "count": 1 },
+        { "at": 8, "enemy": "spitter", "count": 4, "spacing": 1.2 },
+        { "at": 18, "enemy": "caller", "count": 1 },
+        { "at": 26, "enemy": "flitter", "count": 5, "spacing": 0.8 },
+        { "at": 38, "enemy": "sprayer", "count": 2, "spacing": 2 },
+        { "at": 48, "enemy": "nibbler", "count": 16, "spacing": 0.25 }
+      ]
+    },
+    {
+      "wave": 5,
+      "groups": [
+        { "at": 1, "enemy": "bannerman", "count": 1 },
+        { "at": 4, "enemy": "nibbler", "count": 18, "spacing": 0.25 },
+        { "at": 16, "enemy": "leaper", "count": 5, "spacing": 0.9 },
+        { "at": 28, "enemy": "bannerman", "count": 1 },
+        { "at": 32, "enemy": "scurrier", "count": 8, "spacing": 0.6 },
+        { "at": 45, "enemy": "gorer", "count": 2, "spacing": 3 }
+      ]
+    },
+    {
+      "wave": 6,
+      "groups": [
+        { "at": 1, "enemy": "shielder", "count": 1 },
+        { "at": 5, "enemy": "gorer", "count": 3, "spacing": 2.5 },
+        { "at": 18, "enemy": "shielder", "count": 1 },
+        { "at": 22, "enemy": "spitter", "count": 5, "spacing": 1 },
+        { "at": 34, "enemy": "bloater", "count": 3, "spacing": 2 },
+        { "at": 45, "enemy": "leaper", "count": 5, "spacing": 0.8 }
+      ]
+    },
+    {
+      "wave": 7,
+      "groups": [
+        { "at": 1, "enemy": "caller", "count": 2, "spacing": 6 },
+        { "at": 10, "enemy": "delver", "count": 2, "spacing": 4 },
+        { "at": 20, "enemy": "sprayer", "count": 3, "spacing": 2 },
+        { "at": 32, "enemy": "fumer", "count": 2, "spacing": 3 },
+        { "at": 42, "enemy": "bannerman", "count": 1 },
+        { "at": 46, "enemy": "nibbler", "count": 20, "spacing": 0.2 }
+      ]
+    },
+    {
+      "wave": 8,
+      "groups": [
+        { "at": 1, "enemy": "leaper", "count": 6, "spacing": 0.8, "elite": "enlarged" },
+        { "at": 14, "enemy": "shielder", "count": 1, "elite": "resistant" },
+        { "at": 18, "enemy": "scurrier", "count": 8, "spacing": 0.5 },
+        { "at": 30, "enemy": "sprayer", "count": 3, "spacing": 1.5, "elite": "resistant" },
+        { "at": 42, "enemy": "gorer", "count": 3, "spacing": 2.5, "elite": "enlarged" },
+        { "at": 54, "enemy": "nibbler", "count": 22, "spacing": 0.2 }
+      ]
+    },
+    {
+      "wave": 9,
+      "groups": [
+        { "at": 1, "enemy": "bannerman", "count": 2, "spacing": 8, "elite": "resistant" },
+        { "at": 6, "enemy": "caller", "count": 2, "spacing": 5 },
+        { "at": 16, "enemy": "fumer", "count": 3, "spacing": 2.5, "elite": "enlarged" },
+        { "at": 28, "enemy": "delver", "count": 3, "spacing": 3 },
+        { "at": 40, "enemy": "shielder", "count": 1, "elite": "resistant" },
+        { "at": 44, "enemy": "leaper", "count": 6, "spacing": 0.7 },
+        { "at": 56, "enemy": "nibbler", "count": 24, "spacing": 0.15 }
+      ]
+    },
+    {
+      "wave": 10,
+      "groups": [
+        { "at": 2, "enemy": "broodmother", "count": 1 },
+        { "at": 25, "enemy": "leaper", "count": 3, "spacing": 1.5 },
+        { "at": 55, "enemy": "sprayer", "count": 2, "spacing": 2 },
+        { "at": 85, "enemy": "leaper", "count": 3, "spacing": 1.5 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+[
+  {
+    "id": "leaper",
+    "name": "Leaper",
+    "archetype": "chaser",
+    "health": 10,
+    "damage": 3,
+    "speed": 1.6,
+    "radius": 0.4,
+    "xp": 4,
+    "gold": 3,
+    "props": { "hopCd": 2.2, "hopSpeed": 9, "hopTime": 0.45, "hopCrouch": 0.4 }
+  },
+  {
+    "id": "sprayer",
+    "name": "Sprayer",
+    "archetype": "blocker",
+    "health": 14,
+    "damage": 2,
+    "speed": 2.2,
+    "radius": 0.45,
+    "xp": 5,
+    "gold": 4,
+    "props": { "trailCd": 1.1, "trailRadius": 0.9, "trailTtl": 5, "trailDps": 2 }
+  },
+  {
+    "id": "fumer",
+    "name": "Fumer",
+    "archetype": "exploder",
+    "health": 20,
+    "damage": 2,
+    "speed": 0.8,
+    "radius": 0.55,
+    "xp": 6,
+    "gold": 5,
+    "props": { "fumeCd": 2, "fumeBase": 1, "fumeGrowth": 0.18, "fumeMax": 3.2, "fumeTtl": 2.2, "fumeDps": 2 }
+  },
+  {
+    "id": "bannerman",
+    "name": "Bannerman",
+    "archetype": "retaliator",
+    "health": 26,
+    "damage": 2,
+    "speed": 1.6,
+    "radius": 0.5,
+    "xp": 8,
+    "gold": 6,
+    "props": { "auraRadius": 4, "auraDamagePct": 30 }
+  },
+  {
+    "id": "shielder",
+    "name": "Shielder",
+    "archetype": "blocker",
+    "health": 24,
+    "damage": 1,
+    "speed": 1.7,
+    "radius": 0.5,
+    "xp": 8,
+    "gold": 6,
+    "props": { "shieldRadius": 4, "shieldReductionPct": 50 }
+  },
+  {
+    "id": "caller",
+    "name": "Caller",
+    "archetype": "spawner",
+    "health": 18,
+    "damage": 0,
+    "speed": 1.2,
+    "radius": 0.5,
+    "xp": 7,
+    "gold": 6,
+    "spawnId": "scurrier",
+    "props": { "spawnCd": 6, "spawnCount": 2 }
+  },
+  {
+    "id": "broodmother",
+    "name": "Broodmother",
+    "archetype": "spawner",
+    "health": 380,
+    "damage": 9,
+    "speed": 1.0,
+    "radius": 1.6,
+    "xp": 30,
+    "gold": 40,
+    "spawnId": "nibbler",
+    "props": {
+      "spawnCd": 4, "spawnCount": 3,
+      "slamCd": 6, "slamSeverity": 1, "slamRadius": 2.2, "slamDamage": 7, "slamRange": 7
+    }
+  }
+]

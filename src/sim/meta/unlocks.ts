@@ -106,9 +106,13 @@ export function availableContent(profile: Profile, registry: Registry): {
   classes: string[]
   weapons: string[]
   perks: string[]
+  acts: string[]
 } {
   // Anything that is a reward of some unlock is gated; everything else is base.
-  const gated = { class: new Set<string>(), weapon: new Set<string>(), perk: new Set<string>() }
+  const gated = {
+    class: new Set<string>(), weapon: new Set<string>(),
+    perk: new Set<string>(), act: new Set<string>(),
+  }
   const granted = new Set<string>()
   for (const def of registry.unlocks.values()) {
     for (const r of def.rewards) {
@@ -116,12 +120,13 @@ export function availableContent(profile: Profile, registry: Registry): {
       if (profile.unlockedIds.includes(def.id)) granted.add(`${r.kind}:${r.id}`)
     }
   }
-  const open = (kind: 'class' | 'weapon' | 'perk', id: string): boolean =>
+  const open = (kind: 'class' | 'weapon' | 'perk' | 'act', id: string): boolean =>
     !gated[kind].has(id) || granted.has(`${kind}:${id}`)
 
   return {
     classes: [...registry.classes.keys()].filter((id) => open('class', id)),
     weapons: [...registry.weapons.keys()].filter((id) => open('weapon', id)),
     perks: [...registry.perks.keys()].filter((id) => open('perk', id)),
+    acts: [...registry.acts.keys()].filter((id) => open('act', id)),
   }
 }

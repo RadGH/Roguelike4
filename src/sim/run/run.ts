@@ -469,4 +469,8 @@ export class Run {
   perkDef(id: string): PerkDef {
     return this.registry.perk(id)
   }
+
+  get actId(): string {
+    return this.act.id
+  }
 }

@@ -229,7 +229,7 @@ export interface UnlockDef {
   /** Player-facing condition text (visible before it is met — codex rule). */
   description: string
   condition: UnlockCondition
-  rewards: { kind: 'class' | 'weapon' | 'perk'; id: string }[]
+  rewards: { kind: 'class' | 'weapon' | 'perk' | 'act'; id: string }[]
 }
 
 export interface SpawnGroup {
