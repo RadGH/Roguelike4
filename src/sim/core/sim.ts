@@ -328,6 +328,7 @@ export class Sim {
     this.tickPlayers()
     this.tickEnemies()
     this.tickPets()
+    this.tickEffects()
     this.tickTelegraphs()
     this.tickPools()
     this.tickWeapons()
@@ -401,6 +402,14 @@ export class Sim {
       dirX: 0,
       dirY: 0,
       elite,
+      burnDps: 0,
+      burnTtl: 0,
+      burnOwnerId: -1,
+      burnSourceId: '',
+      shockTtl: 0,
+      chillTtl: 0,
+      chillSlow: 0,
+      chillsApplied: 0,
     }
     s.enemies.push(e)
     return e
@@ -415,7 +424,8 @@ export class Sim {
 
   private speedOf(e: EnemyState, base: number): number {
     const scale = e.elite === 'enlarged' ? 0.75 : e.elite === 'shrunk' ? 1.5 : 1
-    return base * scale
+    const chill = e.chillTtl > 0 ? 1 - e.chillSlow : 1
+    return base * scale * chill
   }
 
   /** Burrowed enemies cannot be targeted or hit until they surface. */
@@ -986,6 +996,7 @@ export class Sim {
         } else {
           // Instant melee resolution; the renderer shows the lunge.
           this.damageEnemy(target, damage, p.id, def.id, def.damageType)
+          if (target.health > 0) this.applyOnHit(target, def.id, p)
         }
       }
     }
@@ -1032,15 +1043,32 @@ export class Sim {
     return sorted[Math.min(skip, sorted.length - 1)]
   }
 
+  /** Enemies alight at once, highest seen this run (drives an unlock). */
+  maxSimultaneousBurns = 0
+
   private damageEnemy(
     e: EnemyState,
     amount: number,
     playerId: number,
     sourceId: string,
     damageType: DamageType = 'Melee',
+    isArc = false,
   ): void {
     // Resistant elites absorb part of everything except Void.
     if (e.elite === 'resistant' && damageType !== 'Void') amount *= 0.7
+    // Shocked targets take more from everything — amplification, not control.
+    if (e.shockTtl > 0) amount *= 1.25
+
+    // Lightning striking a shocked target arcs to nearby enemies.
+    if (!isArc && e.shockTtl > 0 && this.sourceTags(sourceId).includes('Lightning')) {
+      const nearby = this.state.enemies
+        .filter((o) => o !== e && this.isTargetable(o) && distSq(o, e) <= 9)
+        .slice(0, 2)
+      for (const o of nearby) {
+        this.damageEnemy(o, amount * 0.5, playerId, sourceId, damageType, true)
+      }
+    }
+
     e.health -= amount
     e.lastDamagedTick = this.state.tick
 
@@ -1075,6 +1103,67 @@ export class Sim {
       this.killEnemy(e)
       if (owner) this.triggerOnKill(owner, e)
     }
+  }
+
+  /** Tags of any damage source id, whatever registry it lives in. */
+  private sourceTags(sourceId: string): readonly string[] {
+    return this.registry.weapons.get(sourceId)?.tags ??
+      this.registry.items.get(sourceId)?.tags ??
+      this.registry.actives.get(sourceId)?.tags ?? []
+  }
+
+  /**
+   * Roll effect appliers after a weapon hit: the weapon's own appliers plus
+   * any carried apply-on-hit items. Effects are authored, never automatic.
+   */
+  private applyOnHit(e: EnemyState, sourceId: string, owner: PlayerState | undefined): void {
+    const rollAll = (appliers: readonly import('../data/types').Applier[] | undefined, applierSource: string): void => {
+      if (!appliers) return
+      for (const a of appliers) {
+        if (!this.rngCombat.chance(a.chance)) continue
+        if (a.effect === 'burn') {
+          e.burnDps = Math.max(e.burnDps, a.dps)
+          e.burnTtl = Math.max(e.burnTtl, a.duration)
+          e.burnOwnerId = owner?.id ?? -1
+          e.burnSourceId = applierSource
+        } else if (a.effect === 'shocked') {
+          e.shockTtl = Math.max(e.shockTtl, a.duration)
+        } else if (a.effect === 'chilled') {
+          // Diminishing: each reapplication slows less. Never a full stop.
+          const factor = Math.pow(0.7, e.chillsApplied)
+          e.chillSlow = Math.min(0.6, a.slow * factor)
+          e.chillTtl = a.duration
+          e.chillsApplied++
+        }
+      }
+    }
+    rollAll(this.registry.weapons.get(sourceId)?.applies, sourceId)
+    if (owner) {
+      for (const itemId of owner.items) {
+        for (const eff of this.registry.item(itemId).effects) {
+          if (eff.kind === 'applyOnHit') rollAll([eff.applier], itemId)
+        }
+      }
+    }
+  }
+
+  private tickEffects(): void {
+    let burning = 0
+    for (const e of [...this.state.enemies]) {
+      if (e.shockTtl > 0) e.shockTtl -= TICK_DT
+      if (e.chillTtl > 0) e.chillTtl -= TICK_DT
+      if (e.burnTtl > 0) {
+        burning++
+        // Burn ticks twice a second, attributed to whoever lit it.
+        const beat = Math.floor(e.burnTtl * 2) !== Math.floor((e.burnTtl + TICK_DT) * 2)
+        e.burnTtl -= TICK_DT
+        if (beat) {
+          this.damageEnemy(e, e.burnDps * 0.5, e.burnOwnerId, e.burnSourceId || 'burn', 'Magic', true)
+        }
+        if (e.burnTtl <= 0) e.burnDps = 0
+      }
+    }
+    this.maxSimultaneousBurns = Math.max(this.maxSimultaneousBurns, burning)
   }
 
   /** Item on-kill effects — attributed to the item, so builds become visible. */
@@ -1206,6 +1295,10 @@ export class Sim {
         const r = this.radiusOf(e) + 0.15
         if (distSq(pr, e) < r * r) {
           this.damageEnemy(e, pr.damage, pr.ownerId, pr.sourceId, pr.damageType)
+          if (e.health > 0) {
+            const owner = s.players.find((p) => p.id === pr.ownerId)
+            this.applyOnHit(e, pr.sourceId, owner)
+          }
           dead.push(pr)
           break
         }

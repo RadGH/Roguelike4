@@ -186,5 +186,65 @@
         "id": "engineer"
       }
     ]
+  },
+  {
+    "id": "cold-snap",
+    "name": "Cold Snap",
+    "description": "Reach wave 6 in any run.",
+    "condition": {
+      "type": "reach-wave",
+      "wave": 6
+    },
+    "rewards": [
+      {
+        "kind": "weapon",
+        "id": "ice-shotgun"
+      }
+    ]
+  },
+  {
+    "id": "storm-lash",
+    "name": "Storm Lash",
+    "description": "Defeat 50 enemies in a single wave.",
+    "condition": {
+      "type": "kills-in-one-wave",
+      "count": 50
+    },
+    "rewards": [
+      {
+        "kind": "weapon",
+        "id": "storm-javelin"
+      }
+    ]
+  },
+  {
+    "id": "firestarter",
+    "name": "Firestarter",
+    "description": "Have 4 enemies burning at the same time.",
+    "condition": {
+      "type": "simultaneous-burns",
+      "count": 4
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "pyromancer"
+      }
+    ]
+  },
+  {
+    "id": "storm-heart",
+    "name": "Storm Heart",
+    "description": "Reach wave 8 in any run.",
+    "condition": {
+      "type": "reach-wave",
+      "wave": 8
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "stormcaller"
+      }
+    ]
   }
 ]

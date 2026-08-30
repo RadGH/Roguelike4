@@ -16,6 +16,16 @@ export type TargetingRule =
   | 'densest'
   | 'lastDamaged'
 
+/**
+ * Effect appliers. Elements are flavor and effects, not damage types: fire
+ * does not burn unless the source explicitly says so. No hard crowd control —
+ * Shocked amplifies, Chilled slows (diminishing), nothing ever disables.
+ */
+export type Applier =
+  | { effect: 'burn'; chance: number; dps: number; duration: number }
+  | { effect: 'shocked'; chance: number; duration: number }
+  | { effect: 'chilled'; chance: number; slow: number; duration: number }
+
 export interface WeaponDef {
   id: string
   name: string
@@ -34,6 +44,8 @@ export interface WeaponDef {
   projectileCount?: number
   /** Flat block granted while equipped (shields count as weapons). */
   grantsBlock?: number
+  /** Effects this weapon's hits may apply. */
+  applies?: Applier[]
   /** Shop price at tier 1 (weapons are shop-only). */
   price: number
 }
@@ -134,6 +146,7 @@ export interface ClassDef {
 export type ItemEffect =
   | { kind: 'stat'; attribute: PerkAttribute; amount: number }
   | { kind: 'summon'; petId: string; count: number }
+  | { kind: 'applyOnHit'; applier: Applier }
   | { kind: 'onKillExplode'; chance: number; radius: number; damage: number }
   | { kind: 'onKillHeal'; chance: number; amount: number }
   | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number }
@@ -208,6 +221,7 @@ export type UnlockCondition =
   | { type: 'reach-wave'; wave: number }
   | { type: 'total-kills'; count: number }      // lifetime, any run
   | { type: 'kills-in-one-wave'; count: number }
+  | { type: 'simultaneous-burns'; count: number } // enemies alight at once
 
 export interface UnlockDef {
   id: string

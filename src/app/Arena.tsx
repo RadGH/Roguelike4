@@ -302,7 +302,10 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
             sp.width = size
             // Facing follows horizontal velocity (art faces right).
             sp.scale.x = (e.vx < -0.1 ? -1 : 1) * Math.abs(sp.scale.x)
-            sp.tint = silho ? 0x000000 : 0xffffff
+            // Effect tint: burning glows warm, chilled reads cold.
+            sp.tint = silho ? 0x000000 :
+              e.burnTtl > 0 ? 0xffb08a :
+              e.chillTtl > 0 ? 0xa8d8ff : 0xffffff
           } else {
             // Primitive fallback keeps the reserved palette meaning intact.
             const ARCHETYPE_COLOR: Record<string, number> = {
@@ -325,6 +328,10 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           // Elite ring: resistant elites read as armored.
           if (e.elite === 'resistant') {
             gCritical.ellipse(s.sx, s.sy, r + 6, (r + 6) / 2).stroke({ width: 2, color: 0xf2f2f2 })
+          }
+          // Shocked: a crackling yellow ring — this target takes extra damage.
+          if (e.shockTtl > 0) {
+            gCritical.ellipse(s.sx, s.sy, r + 9, (r + 9) / 2).stroke({ width: 2, color: 0xffe95a })
           }
         }
 

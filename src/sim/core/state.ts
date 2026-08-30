@@ -119,6 +119,17 @@ export interface EnemyState {
   dirY: number
   /** Elite modifier, if any. */
   elite: EliteKind | null
+  /** Burn: damage over time, attributed to whoever lit the fire. */
+  burnDps: number
+  burnTtl: number
+  burnOwnerId: number
+  burnSourceId: string
+  /** Shocked: takes extra damage from everything; Lightning arcs off it. */
+  shockTtl: number
+  /** Chilled: slowed, with diminishing returns per reapplication. */
+  chillTtl: number
+  chillSlow: number
+  chillsApplied: number
 }
 
 export type EliteKind = 'resistant' | 'enlarged' | 'shrunk'

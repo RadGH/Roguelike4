@@ -83,6 +83,7 @@ export function App(): React.JSX.Element {
             kills: run.sim.tracker.killsFor(p.id),
           })),
           bestKillsInOneWave: run.sim.tracker.bestTeamWaveKills(),
+          maxSimultaneousBurns: run.sim.maxSimultaneousBurns,
         })
         const earned = evaluateUnlocks(nextProfile, registry)
         nextProfile = {

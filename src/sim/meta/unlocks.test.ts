@@ -27,6 +27,7 @@ describe('unlock engine', () => {
       waveReached: 2,
       players: [{ classId: 'student', kills: 12 }],
       bestKillsInOneWave: 12,
+      maxSimultaneousBurns: 0,
     })
     const earned = evaluateUnlocks(profile, registry)
     expect(earned.map((u) => u.id)).toContain('graduation')
@@ -44,6 +45,7 @@ describe('unlock engine', () => {
         waveReached: 3,
         players: [{ classId: 'student', kills: 120 }],
         bestKillsInOneWave: 40,
+        maxSimultaneousBurns: 0,
       })
     }
     expect(profile.totalKills).toBe(360)
@@ -59,6 +61,7 @@ describe('unlock engine', () => {
       waveReached: 10,
       players: [{ classId: 'student', kills: 300 }],
       bestKillsInOneWave: 55,
+      maxSimultaneousBurns: 0,
     })
     const ids = evaluateUnlocks(profile, registry).map((u) => u.id)
     expect(ids).toContain('hold-the-line')

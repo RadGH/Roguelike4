@@ -212,5 +212,11 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   Class gifts seeded on five classes. Internal architecture doc + release checklist
   written, including my proposed achievements-vs-unlocks split (achievements = reward-
   free records on the same condition engine).
-- Next: a release pass (version bump + tag), then continue breadth: strip-screen gamepad
-  menu nav, hot-join, more classes, elements/effects system, act 2 planning.
+- Eighteenth chunk (1234756): **v0.1.0 tagged.** The full release checklist ran clean:
+  90 unit + 4 E2E tests, lint, build, stress (0.22ms/tick), sim band (45% solo mid-skill
+  win, deaths spread 7–10, first weapon purchase by wave 2), screenshot review, no title
+  or reference leaks, private dirs untracked. This is the first complete, releasable
+  build of the rebuild — playable at http://192.168.1.34:5173/ with the manual at
+  /manual.html, and it goes live on Pages the moment the two flagged steps happen.
+- Next: elective breadth per the vault's post-v1 ambitions — gamepad menu nav strip,
+  hot-join, elements/effects (Burn/Shocked/Chilled), more classes, act 2.

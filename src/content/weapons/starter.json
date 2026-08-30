@@ -136,5 +136,78 @@
     "targeting": "farthest",
     "projectileSpeed": 14,
     "price": 25
+  },
+  {
+    "id": "ember-wand",
+    "name": "Ember Wand",
+    "tags": [
+      "Magic",
+      "Fire",
+      "Light"
+    ],
+    "damageType": "Magic",
+    "damage": 2,
+    "cooldown": 0.8,
+    "range": 7,
+    "targeting": "nearest",
+    "projectileSpeed": 12,
+    "price": 35,
+    "applies": [
+      {
+        "effect": "burn",
+        "chance": 0.3,
+        "dps": 2,
+        "duration": 3
+      }
+    ]
+  },
+  {
+    "id": "ice-shotgun",
+    "name": "Ice Shotgun",
+    "tags": [
+      "Magic",
+      "Ice",
+      "Projectile",
+      "Heavy"
+    ],
+    "damageType": "Magic",
+    "damage": 3,
+    "cooldown": 1.4,
+    "range": 6,
+    "targeting": "densest",
+    "projectileSpeed": 13,
+    "projectileCount": 3,
+    "price": 50,
+    "applies": [
+      {
+        "effect": "chilled",
+        "chance": 0.45,
+        "slow": 0.4,
+        "duration": 2.5
+      }
+    ]
+  },
+  {
+    "id": "storm-javelin",
+    "name": "Storm Javelin",
+    "tags": [
+      "Magic",
+      "Lightning",
+      "Projectile"
+    ],
+    "damageType": "Magic",
+    "damage": 4,
+    "cooldown": 1.3,
+    "range": 7,
+    "targeting": "densest",
+    "projectileSpeed": 13,
+    "price": 50,
+    "applies": [
+      {
+        "effect": "shocked",
+        "chance": 0.4,
+        "duration": 4
+      }
+    ]
   }
 ]

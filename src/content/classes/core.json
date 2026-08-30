@@ -203,5 +203,41 @@
         ]
       }
     ]
+  },
+  {
+    "id": "pyromancer",
+    "name": "Pyromancer",
+    "description": "Everything they touch tends to catch fire. Carries an Ignition Charm from the start.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "ember-wand"
+    ],
+    "startingItems": [
+      "ignition-charm"
+    ],
+    "affinities": [
+      {
+        "tag": "Fire",
+        "pct": 20
+      }
+    ]
+  },
+  {
+    "id": "stormcaller",
+    "name": "Stormcaller",
+    "description": "Low direct damage, but their lightning leaps between shocked enemies.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "storm-javelin"
+    ],
+    "mods": {
+      "allPct": -10
+    },
+    "affinities": [
+      {
+        "tag": "Lightning",
+        "pct": 25
+      }
+    ]
   }
 ]

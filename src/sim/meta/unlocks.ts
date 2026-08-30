@@ -18,6 +18,7 @@ export interface Profile {
   actsWon: string[]
   bestWaveReached: number
   bestKillsInOneWave: number
+  bestSimultaneousBurns: number
 }
 
 export function emptyProfile(): Profile {
@@ -29,6 +30,7 @@ export function emptyProfile(): Profile {
     actsWon: [],
     bestWaveReached: 0,
     bestKillsInOneWave: 0,
+    bestSimultaneousBurns: 0,
   }
 }
 
@@ -40,6 +42,8 @@ export interface RunResult {
   players: { classId: string; kills: number }[]
   /** Highest team kill total in any single wave of this run. */
   bestKillsInOneWave: number
+  /** Most enemies burning at once during this run. */
+  maxSimultaneousBurns: number
 }
 
 /** Fold a finished run into the profile (pure — returns a new profile). */
@@ -54,6 +58,7 @@ export function applyRunResult(profile: Profile, result: RunResult): Profile {
   next.totalKills += result.players.reduce((a, p) => a + p.kills, 0)
   next.bestWaveReached = Math.max(next.bestWaveReached, result.waveReached)
   next.bestKillsInOneWave = Math.max(next.bestKillsInOneWave, result.bestKillsInOneWave)
+  next.bestSimultaneousBurns = Math.max(next.bestSimultaneousBurns, result.maxSimultaneousBurns)
   for (const p of result.players) {
     if (!next.classesRun.includes(p.classId)) next.classesRun.push(p.classId)
   }
@@ -69,6 +74,7 @@ export function conditionMet(profile: Profile, def: UnlockDef): boolean {
     case 'reach-wave': return profile.bestWaveReached >= c.wave
     case 'total-kills': return profile.totalKills >= c.count
     case 'kills-in-one-wave': return profile.bestKillsInOneWave >= c.count
+    case 'simultaneous-burns': return profile.bestSimultaneousBurns >= c.count
   }
 }
 
@@ -81,6 +87,7 @@ export function conditionProgress(profile: Profile, def: UnlockDef): string {
     case 'reach-wave': return `${Math.min(profile.bestWaveReached, c.wave)}/${c.wave}`
     case 'total-kills': return `${Math.min(profile.totalKills, c.count)}/${c.count}`
     case 'kills-in-one-wave': return `${Math.min(profile.bestKillsInOneWave, c.count)}/${c.count}`
+    case 'simultaneous-burns': return `${Math.min(profile.bestSimultaneousBurns, c.count)}/${c.count}`
   }
 }
 

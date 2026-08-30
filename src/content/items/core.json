@@ -438,5 +438,26 @@
         "count": 1
       }
     ]
+  },
+  {
+    "id": "ignition-charm",
+    "name": "Ignition Charm",
+    "description": "15 chance: your hits set enemies burning (2 a second for 3s).",
+    "tags": [
+      "Fire",
+      "Occult"
+    ],
+    "price": 45,
+    "effects": [
+      {
+        "kind": "applyOnHit",
+        "applier": {
+          "effect": "burn",
+          "chance": 0.15,
+          "dps": 2,
+          "duration": 3
+        }
+      }
+    ]
   }
 ]
