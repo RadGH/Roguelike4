@@ -207,4 +207,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   2. Move `docs/dev/github-pages-deploy.yml` to `.github/workflows/deploy.yml` and push
      (my token lacks the `workflow` scope to push workflow files; a token with that scope
      would also work).
-- Next: internal dev docs, class-grant screen, achievements note, release checklist.
+- Seventeenth chunk (901e5d8): the intermission sequence is now the vault's complete
+  five-step order (recap → rewards → draft → class grant → shop, empty steps skipped).
+  Class gifts seeded on five classes. Internal architecture doc + release checklist
+  written, including my proposed achievements-vs-unlocks split (achievements = reward-
+  free records on the same condition engine).
+- Next: a release pass (version bump + tag), then continue breadth: strip-screen gamepad
+  menu nav, hot-join, more classes, elements/effects system, act 2 planning.
