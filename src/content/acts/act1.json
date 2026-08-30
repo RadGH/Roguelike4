@@ -69,13 +69,12 @@
     {
       "wave": 7,
       "groups": [
-        { "at": 1, "enemy": "delver", "count": 2, "spacing": 4 },
+        { "at": 1, "enemy": "delver", "count": 1 },
         { "at": 10, "enemy": "brood-sac", "count": 1 },
-        { "at": 14, "enemy": "nibbler", "count": 10, "spacing": 0.3 },
-        { "at": 24, "enemy": "delver", "count": 2, "spacing": 3 },
-        { "at": 34, "enemy": "brood-sac", "count": 1 },
-        { "at": 40, "enemy": "flitter", "count": 4, "spacing": 1 },
-        { "at": 50, "enemy": "bloater", "count": 2, "spacing": 2 }
+        { "at": 16, "enemy": "nibbler", "count": 8, "spacing": 0.35 },
+        { "at": 26, "enemy": "delver", "count": 2, "spacing": 5 },
+        { "at": 38, "enemy": "flitter", "count": 3, "spacing": 1.2 },
+        { "at": 48, "enemy": "bloater", "count": 2, "spacing": 2.5 }
       ]
     },
     {
@@ -93,13 +92,13 @@
     {
       "wave": 9,
       "groups": [
-        { "at": 1, "enemy": "brood-sac", "count": 2, "spacing": 5 },
-        { "at": 8, "enemy": "delver", "count": 3, "spacing": 2.5, "elite": "resistant" },
-        { "at": 18, "enemy": "bloater", "count": 4, "spacing": 1.5, "elite": "enlarged" },
-        { "at": 28, "enemy": "weaver", "count": 3, "spacing": 2 },
-        { "at": 36, "enemy": "thornback", "count": 3, "spacing": 2, "elite": "resistant" },
-        { "at": 46, "enemy": "gorer", "count": 3, "spacing": 2.5, "elite": "enlarged" },
-        { "at": 56, "enemy": "nibbler", "count": 24, "spacing": 0.15 }
+        { "at": 1, "enemy": "brood-sac", "count": 2, "spacing": 6 },
+        { "at": 10, "enemy": "delver", "count": 2, "spacing": 4, "elite": "resistant" },
+        { "at": 20, "enemy": "bloater", "count": 3, "spacing": 2, "elite": "enlarged" },
+        { "at": 30, "enemy": "weaver", "count": 2, "spacing": 3 },
+        { "at": 38, "enemy": "thornback", "count": 2, "spacing": 3, "elite": "resistant" },
+        { "at": 47, "enemy": "gorer", "count": 3, "spacing": 3, "elite": "enlarged" },
+        { "at": 57, "enemy": "nibbler", "count": 20, "spacing": 0.2 }
       ]
     },
     {

@@ -26,7 +26,7 @@ export interface PlayerSave {
   pendingDrafts: number
   health: number
   perks: OwnedPerk[]
-  weapons: string[]
+  weapons: { defId: string; tier: number }[]
 }
 
 export function isRunSave(v: unknown): v is RunSave {

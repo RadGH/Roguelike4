@@ -124,9 +124,10 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                         }}
                       >
                         <span>
-                          <span className="name">{def.name}</span>
+                          <span className={`name tier-${entry.tier}`}>{def.name}</span>
+                          <span className="hint"> · {TIER_NAMES[entry.tier]}</span>
                           <div className="desc">
-                            {def.damageType} · {def.damage} dmg · {def.tags.join(', ')}
+                            {def.damageType} · {Math.round(def.damage * [1, 1.5, 2, 2.6][entry.tier])} dmg · {def.tags.join(', ')}
                           </div>
                         </span>
                         <span className="price">{entry.sold ? 'Sold' : `${entry.price}g`}</span>
@@ -152,8 +153,8 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                               onChange()
                             }}
                           >
-                            <span className="name">{def.name}</span>
-                            <span className="price">sold for {Math.round(def.price / 2)}g</span>
+                            <span className={`name tier-${w.tier}`}>{def.name}</span>
+                            <span className="price">sold for {run.sellValue(w.defId, w.tier)}g</span>
                           </button>
                         )
                       })}
@@ -178,8 +179,8 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                         data-testid={`sell-${i}`}
                         onClick={() => { run.sellWeapon(p.id, i); onChange() }}
                       >
-                        <span className="name">{def.name}</span>
-                        <span className="price">sell {Math.round(def.price / 2)}g</span>
+                        <span className={`name tier-${w.tier}`}>{def.name}</span>
+                        <span className="price">sell {run.sellValue(w.defId, w.tier)}g</span>
                       </button>
                     )
                   })}

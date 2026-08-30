@@ -128,4 +128,15 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   all claiming hues, the palette is exactly as crowded as Art Direction predicted. Player
   identity went to ring outlines rather than body hues to dodge collisions — worth
   recording as the chosen mechanism.
-- Next: M5 meta — unlock engine + codex + class ladder (Student → Fighter/Rogue/Mage).
+- Seventh chunk (8d3c04d): the meta layer is live. Five classes (Student/Fighter/Rogue/
+  Mage/Sentinel — sidegrades only), the behavioral unlock engine (finish a Student run,
+  win or lose, opens the trio — exactly the vault's ladder), content gating (locked
+  weapons never stock shops, locked perks never draft), a codex with live progress on
+  every condition, and a per-player class select screen. 59 unit + 2 E2E green.
+- I authored a plain Mage to resolve the vault's missing-Mage inconsistency (feedback
+  item 1) — Magic-affinity baseline caster, mirror of Fighter.
+- Loadout screen note: per the vault a slot with no choice is skipped entirely; since no
+  current class offers alternatives, the loadout screen correctly does not exist yet. It
+  arrives when a class first offers two starting options.
+- Next: pause menu w/ live attribution, character/details screens, soft draft timer; then
+  more content breadth (items system, more classes) and the simulation batch runner (M6).

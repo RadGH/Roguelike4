@@ -26,6 +26,9 @@ export const TICK_DT = 1 / TICK_RATE
 /** Enemies on the field above this count are deferred, not stacked (readability rule). */
 export const DENSITY_CAP = 220
 
+/** Weapon quality tiers multiply damage; higher tiers appear in later shops. */
+export const WEAPON_TIER_MULT = [1, 1.5, 2, 2.6]
+
 /** Downed-and-revive tuning (fun over punishment — nobody sits out long). */
 export const BLEED_OUT_SECONDS = 15
 export const REVIVE_RADIUS = 1.6
@@ -119,11 +122,12 @@ export class Sim {
     return this.state.players.filter((p) => p.alive && !p.downed)
   }
 
-  equipWeapon(playerId: number, weaponDefId: string): void {
+  equipWeapon(playerId: number, weaponDefId: string, tier = 0): void {
     const def = this.registry.weapon(weaponDefId)
     const p = this.player(playerId)
     const inst: WeaponInstance = {
       defId: def.id,
+      tier,
       cooldownLeft: 0,
       // Stagger spreads target selection so multiple weapons fan out.
       staggerOffset: (p.weapons.length * 0.37) % 1,
@@ -158,7 +162,8 @@ export class Sim {
       pendingSpawns: def.groups.map((g) => ({
         at: g.at,
         enemy: g.enemy,
-        remaining: g.count,
+        // Spawn counts scale with the head-count: +50% per extra player.
+        remaining: Math.round(g.count * (1 + 0.5 * (this.state.players.length - 1))),
         spacing: g.spacing ?? 0,
         nextAt: g.at,
         elite: g.elite ?? null,
@@ -231,7 +236,7 @@ export class Sim {
     if (side === 1) { x = s.arenaW / 2; y = (rx - 0.5) * s.arenaH }
     if (side === 2) { y = -s.arenaH / 2; x = (rx - 0.5) * s.arenaW }
     if (side === 3) { y = s.arenaH / 2; x = (rx - 0.5) * s.arenaW }
-    const hpScale = elite === 'enlarged' ? 2.2 : elite === 'shrunk' ? 0.8 : 1
+    const hpScale = elite === 'enlarged' ? 1.8 : elite === 'shrunk' ? 0.8 : 1
     const e: EnemyState = {
       id: s.nextEntityId++,
       defId,
@@ -675,7 +680,7 @@ export class Sim {
         if (!target) continue // hold fire — no sensible target
         w.cooldownLeft = def.cooldown * (1 - p.cooldownPct / 100)
         w.firedTick = s.tick
-        const damage = def.damage * damageMultiplier(p, def, this.registry)
+        const damage = def.damage * WEAPON_TIER_MULT[w.tier] * damageMultiplier(p, def, this.registry)
 
         if (def.projectileSpeed) {
           const n = norm(target.x - p.x, target.y - p.y)
@@ -749,7 +754,7 @@ export class Sim {
     damageType: DamageType = 'Melee',
   ): void {
     // Resistant elites absorb part of everything except Void.
-    if (e.elite === 'resistant' && damageType !== 'Void') amount *= 0.6
+    if (e.elite === 'resistant' && damageType !== 'Void') amount *= 0.7
     e.health -= amount
     e.lastDamagedTick = this.state.tick
 

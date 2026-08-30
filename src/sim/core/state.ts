@@ -64,6 +64,8 @@ export interface OwnedPerk {
 
 export interface WeaponInstance {
   defId: string
+  /** Quality tier index (White/Blue/Yellow/Green). Multiplies damage. */
+  tier: number
   /** Seconds until this weapon may fire again. */
   cooldownLeft: number
   /** Per-weapon stagger offset so weapons spread across targets. */

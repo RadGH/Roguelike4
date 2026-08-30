@@ -29,6 +29,8 @@ export interface PerkOffer {
 
 export interface ShopEntry {
   weaponId: string
+  /** Quality tier index — later shops stock better rolls. */
+  tier: number
   price: number
   sold: boolean
 }
@@ -86,7 +88,7 @@ export class Run {
         p.level = ps.level
         p.pendingDrafts = ps.pendingDrafts
         p.perks = ps.perks.map((o) => ({ ...o }))
-        for (const weaponId of ps.weapons) this.sim.equipWeapon(ps.id, weaponId)
+        for (const w of ps.weapons) this.sim.equipWeapon(ps.id, w.defId, w.tier ?? 0)
         recomputePlayer(p, registry)
         p.health = Math.min(ps.health, p.maxHealth)
       }
@@ -126,7 +128,7 @@ export class Run {
         pendingDrafts: p.pendingDrafts,
         health: Math.max(1, Math.round(p.health)),
         perks: p.perks.map((o) => ({ ...o })),
-        weapons: p.weapons.map((w) => w.defId),
+        weapons: p.weapons.map((w) => ({ defId: w.defId, tier: w.tier })),
       })),
       tracker: this.sim.tracker.snapshot(),
     }
@@ -206,15 +208,27 @@ export class Run {
     const stock: ShopEntry[] = []
     for (let i = 0; i < SHOP_STOCK; i++) {
       const w = this.rngRun.pick(weapons)
-      stock.push({ weaponId: w.id, price: this.priceFor(w), sold: false })
+      const tier = this.rollWeaponTier()
+      stock.push({ weaponId: w.id, tier, price: this.priceFor(w, tier), sold: false })
     }
     return stock
   }
 
-  private priceFor(w: WeaponDef): number {
+  /** Tier odds improve with the wave: late shops sell real upgrades. */
+  private rollWeaponTier(): number {
+    const wave = this.sim.state.wave.number
+    const r = this.rngRun.next()
+    if (wave <= 2) return r < 0.9 ? 0 : 1
+    if (wave <= 5) return r < 0.55 ? 0 : r < 0.9 ? 1 : 2
+    if (wave <= 8) return r < 0.25 ? 0 : r < 0.65 ? 1 : r < 0.92 ? 2 : 3
+    return r < 0.1 ? 0 : r < 0.45 ? 1 : r < 0.8 ? 2 : 3
+  }
+
+  private priceFor(w: WeaponDef, tier: number): number {
     // Prices drift up slightly across the act so income keeps mattering.
     const waveScale = 1 + (this.sim.state.wave.number - 1) * 0.1
-    return Math.round(w.price * waveScale)
+    const tierScale = 1 + tier * 0.7
+    return Math.round(w.price * waveScale * tierScale)
   }
 
   /** Perk pick for the player's current draft. */
@@ -240,7 +254,7 @@ export class Run {
     if (p.weapons.length >= this.weaponSlots(playerId)) return 'full'
     p.gold -= entry.price
     entry.sold = true
-    this.sim.equipWeapon(playerId, entry.weaponId)
+    this.sim.equipWeapon(playerId, entry.weaponId, entry.tier)
     return 'ok'
   }
 
@@ -255,13 +269,18 @@ export class Run {
     const entry = screen.shop[shopIndex]
     const old = p.weapons[slotIndex]
     if (!entry || entry.sold || !old) return 'invalid'
-    const refund = Math.round(this.registry.weapon(old.defId).price * SELL_FRACTION)
+    const refund = this.sellValue(old.defId, old.tier)
     if (p.gold + refund < entry.price) return 'poor'
     p.weapons.splice(slotIndex, 1)
     p.gold += refund - entry.price
     entry.sold = true
-    this.sim.equipWeapon(playerId, entry.weaponId)
+    this.sim.equipWeapon(playerId, entry.weaponId, entry.tier)
     return 'ok'
+  }
+
+  sellValue(weaponDefId: string, tier: number): number {
+    const def = this.registry.weapon(weaponDefId)
+    return Math.round(def.price * (1 + tier * 0.7) * SELL_FRACTION)
   }
 
   /** Sell an equipped weapon for half its base price. */
@@ -270,9 +289,8 @@ export class Run {
     if (this.phase !== 'intermission') return
     const inst = p.weapons[slotIndex]
     if (!inst) return
-    const def = this.registry.weapon(inst.defId)
     p.weapons.splice(slotIndex, 1)
-    p.gold += Math.round(def.price * SELL_FRACTION)
+    p.gold += this.sellValue(inst.defId, inst.tier)
   }
 
   reroll(playerId: number): void {
@@ -303,7 +321,9 @@ export class Run {
       this.phase = 'victory'
       return
     }
-    // Everyone returns at the wave boundary (the wave-clear backstop).
+    // Everyone returns at the wave boundary (the wave-clear backstop),
+    // and survivors recover a third of their health so a scraped-through
+    // wave is a setback rather than a death spiral.
     for (const p of this.sim.state.players) {
       if (!p.alive || p.downed) {
         p.alive = true
@@ -311,6 +331,8 @@ export class Run {
         p.bleedOut = 0
         p.reviveProgress = 0
         p.health = Math.round(p.maxHealth / 2)
+      } else {
+        p.health = Math.min(p.maxHealth, Math.round(p.health + p.maxHealth * 0.34))
       }
     }
     this.phase = 'arena'
