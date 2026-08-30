@@ -1189,12 +1189,14 @@ export class Sim {
    * Item on-pickup effects. Universal trigger: every player's items react to
    * ANY pickup, not only their own kills — each build stays maximally active.
    */
-  private triggerOnPickup(at: { x: number; y: number }): void {
+  private triggerOnPickup(at: { x: number; y: number }, kind: 'gold' | 'xp'): void {
     for (const p of this.state.players) {
       if (!p.alive || p.downed) continue
       for (const itemId of p.items) {
         const item = this.registry.item(itemId)
         for (const eff of item.effects) {
+          if ((eff.kind === 'onPickupDamage' || eff.kind === 'onPickupHeal') &&
+              eff.pickup && eff.pickup !== 'any' && eff.pickup !== kind) continue
           if (eff.kind === 'onPickupDamage' && this.rngCombat.chance(eff.chance)) {
             const r2 = eff.radius * eff.radius
             for (const e of [...this.state.enemies]) {
@@ -1335,7 +1337,7 @@ export class Sim {
   }
 
   private collect(pk: PickupState, _byPlayer: PlayerState): void {
-    this.triggerOnPickup(pk)
+    this.triggerOnPickup(pk, pk.kind)
     // Gold and XP are shared and multiplied: every player receives the full amount.
     for (const p of this.state.players) {
       if (pk.kind === 'gold') {

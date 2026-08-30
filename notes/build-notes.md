@@ -218,5 +218,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   or reference leaks, private dirs untracked. This is the first complete, releasable
   build of the rebuild — playable at http://192.168.1.34:5173/ with the manual at
   /manual.html, and it goes live on Pages the moment the two flagged steps happen.
-- Next: elective breadth per the vault's post-v1 ambitions — gamepad menu nav strip,
-  hot-join, elements/effects (Burn/Shocked/Chilled), more classes, act 2.
+- Nineteenth chunk (b7e5bf3): elements landed exactly as the vault specifies — effects on
+  authored sources only, no hard control. Burn is attributed damage-over-time, Shocked
+  amplifies everything and makes Lightning arc, Chilled slows with diminishing returns.
+  Ember Wand / Ice Shotgun / Storm Javelin / Ignition Charm, plus Pyromancer and
+  Stormcaller. The vault's "ignite several enemies at once" build target is now a real
+  tracked unlock condition (Firestarter: 4 alight at once opens the Pyromancer).
+- Next: remaining target-build acceptance tests, gamepad menu nav, hot-join, act 2.

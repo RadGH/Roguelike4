@@ -239,5 +239,38 @@
         "pct": 25
       }
     ]
+  },
+  {
+    "id": "warlock",
+    "name": "Warlock",
+    "description": "Wields the one damage nothing can resist, and feeds on every point of it.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "void-scepter"
+    ],
+    "mods": {
+      "lifesteal": 10
+    },
+    "affinities": [
+      {
+        "tag": "Void",
+        "pct": 20
+      }
+    ]
+  },
+  {
+    "id": "scavenger",
+    "name": "Scavenger",
+    "description": "Turns greed into a weapon: collecting gold hits everything nearby.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "startingItems": [
+      "gold-strike"
+    ],
+    "mods": {
+      "goldPct": 10
+    }
   }
 ]

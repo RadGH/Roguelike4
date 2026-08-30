@@ -246,5 +246,39 @@
         "id": "stormcaller"
       }
     ]
+  },
+  {
+    "id": "void-touched",
+    "name": "Void-Touched",
+    "description": "Defeat 750 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 750
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "warlock"
+      },
+      {
+        "kind": "weapon",
+        "id": "void-scepter"
+      }
+    ]
+  },
+  {
+    "id": "gold-fever",
+    "name": "Gold Fever",
+    "description": "Defeat 200 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 200
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "scavenger"
+      }
+    ]
   }
 ]

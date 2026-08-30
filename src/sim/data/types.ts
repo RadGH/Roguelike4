@@ -149,8 +149,8 @@ export type ItemEffect =
   | { kind: 'applyOnHit'; applier: Applier }
   | { kind: 'onKillExplode'; chance: number; radius: number; damage: number }
   | { kind: 'onKillHeal'; chance: number; amount: number }
-  | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number }
-  | { kind: 'onPickupHeal'; chance: number; amount: number }
+  | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number; pickup?: 'gold' | 'xp' | 'any' }
+  | { kind: 'onPickupHeal'; chance: number; amount: number; pickup?: 'gold' | 'xp' | 'any' }
 
 export interface ItemDef {
   id: string

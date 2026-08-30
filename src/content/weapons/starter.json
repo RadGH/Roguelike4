@@ -209,5 +209,21 @@
         "duration": 4
       }
     ]
+  },
+  {
+    "id": "void-scepter",
+    "name": "Void Scepter",
+    "tags": [
+      "Magic",
+      "Void",
+      "Light"
+    ],
+    "damageType": "Void",
+    "damage": 3,
+    "cooldown": 0.9,
+    "range": 7,
+    "targeting": "highestHealth",
+    "projectileSpeed": 12,
+    "price": 60
   }
 ]

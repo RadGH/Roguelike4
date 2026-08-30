@@ -459,5 +459,23 @@
         }
       }
     ]
+  },
+  {
+    "id": "gold-strike",
+    "name": "Gold Strike",
+    "description": "25 chance: collecting gold blasts nearby enemies for 6. More copies raise the chance, not the damage.",
+    "tags": [
+      "Luck"
+    ],
+    "price": 50,
+    "effects": [
+      {
+        "kind": "onPickupDamage",
+        "chance": 0.25,
+        "radius": 2.2,
+        "damage": 6,
+        "pickup": "gold"
+      }
+    ]
   }
 ]
