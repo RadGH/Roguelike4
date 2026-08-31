@@ -482,6 +482,36 @@ export class Run {
     return this.act.id
   }
 
+  /**
+   * Hot-join mid-run: the newcomer gets their class's starting kit and half
+   * health, and shares the run from the next moment on. Capped at four.
+   */
+  joinPlayer(classId = 'student'): boolean {
+    if (this.sim.state.players.length >= 4) return false
+    if (this.phase === 'victory' || this.phase === 'defeat') return false
+    const p = this.sim.addPlayerMidRun(classId)
+    const cls = this.registry.class(classId)
+    for (const weaponId of cls.startingWeapons) this.sim.equipWeapon(p.id, weaponId)
+    if (cls.startingEquipment) this.sim.equipActive(p.id, cls.startingEquipment)
+    if (cls.startingMovement) this.sim.equipActive(p.id, cls.startingMovement)
+    if (cls.startingItems) {
+      p.items.push(...cls.startingItems)
+      recomputePlayer(p, this.registry)
+    }
+    // If they join during an intermission, give them their screens too.
+    if (this.phase === 'intermission') {
+      this.personal.set(p.id, {
+        rewards: [],
+        draft: null,
+        grant: null,
+        shop: [],
+        rerollPrice: 10,
+        done: true,
+      })
+    }
+    return true
+  }
+
   /** Effective item definition, variant-aware. UIs should use this. */
   itemDef(id: string): ReturnType<typeof resolveItem> {
     return resolveItem(this.registry, id)

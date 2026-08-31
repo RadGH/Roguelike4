@@ -154,13 +154,28 @@ export function App(): React.JSX.Element {
     clearSave()
     setSave(null)
     setScreen('title')
-    beginRun(new Run(registry, {
-      seed: Date.now() >>> 0,
+    // Dev tool for readability review: ?wave=8&seed=123 jumps a buffed run
+    // straight into a late wave so the horde stress test is cheap to run.
+    const params = new URLSearchParams(window.location.search)
+    const debugWave = Number(params.get('wave') ?? '0')
+    const run = new Run(registry, {
+      seed: Number(params.get('seed') ?? '0') || (Date.now() >>> 0),
       playerCount,
       actId: available.acts.includes(chosenAct) ? chosenAct : 'act1',
       classIds: chosenClasses,
       unlocked: { weapons: available.weapons, perks: available.perks },
-    }))
+    })
+    if (debugWave > 1) {
+      for (const p of run.sim.state.players) {
+        p.level = 6
+        p.maxHealth = 60
+        p.health = 60
+        run.sim.equipWeapon(p.id, 'shortbow', 2)
+        run.sim.equipWeapon(p.id, 'practice-sword', 2)
+      }
+      run.sim.startWave(registry.act(run.actId).waves, Math.min(debugWave, 10))
+    }
+    beginRun(run)
   }
 
   const continueRun = (): void => {

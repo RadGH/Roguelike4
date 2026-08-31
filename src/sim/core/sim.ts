@@ -129,6 +129,18 @@ export class Sim {
     return this.state.players.filter((p) => p.alive && !p.downed)
   }
 
+  /** Hot-join: a new player enters mid-run beside player 1, at half health. */
+  addPlayerMidRun(classId: string): PlayerState {
+    const id = this.state.players.length
+    this.addPlayer(id, classId)
+    const p = this.state.players[id]
+    const anchor = this.activePlayers()[0] ?? this.state.players[0]
+    p.x = clamp(anchor.x + 1.5, -this.state.arenaW / 2, this.state.arenaW / 2)
+    p.y = anchor.y
+    p.health = Math.round(p.maxHealth / 2)
+    return p
+  }
+
   equipWeapon(playerId: number, weaponDefId: string, tier = 0): void {
     const def = this.registry.weapon(weaponDefId)
     const p = this.player(playerId)

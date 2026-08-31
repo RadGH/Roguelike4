@@ -123,7 +123,21 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
 
         <div className="toolbar">
           <button autoFocus onClick={onResume} data-testid="resume">Resume</button>
+          {run.sim.state.players.length < 4 && (
+            <button
+              data-testid="hot-join"
+              onClick={() => { run.joinPlayer('student'); onResume() }}
+            >
+              Add player ({run.sim.state.players.length + 1}P)
+            </button>
+          )}
         </div>
+        {run.sim.state.players.length < 4 && (
+          <div className="hint">
+            A new player joins beside player 1 as a Student, at half health.
+            Player 1 uses the keyboard; other players use gamepads in order.
+          </div>
+        )}
       </PadPanel>
     </div>
   )

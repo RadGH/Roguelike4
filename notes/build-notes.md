@@ -257,5 +257,12 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   of the horde the safe place (the vault's favorite revision, working); the Oracle proves
   the information-class axis is nearly free to build; the Demon Hunter is the first
   act-2-gated unlock. 17 of 36 roster classes playable.
-- Next: full 17-class balance sweep, fresh screenshot for Radley, then remaining polish
-  (hot-join, readability gate pass, whole-numbers audit).
+- Twenty-sixth chunk (4e08d77): full-roster balance sweep. Win rates at mid skill, act 1,
+  after tuning: Priest/Stormcaller ~50, Marksman 44, Oracle 40 (down from a too-hot 69),
+  Engineer/Pyromancer 38, Student/Mage/Warlock/Magnetist ~31, Scavenger 30 (up from a
+  broken 0 — its gold-zap needed a ranged start and a Lodestone), Demon Hunter 25,
+  Fighter/Rogue/Sentinel/Bulwark ~20, Vampire/Looter ~13. **Systemic finding for the
+  vault:** melee-start classes consistently trail ranged starts by ~15 points — the melee
+  proximity tax needs either bigger melee numbers or a defensive rider baked into the
+  Melee tag. Worth a vault decision rather than more per-class patches.
+- Next: hot-join, readability-gate pass w/ fresh screenshots, whole-numbers audit.

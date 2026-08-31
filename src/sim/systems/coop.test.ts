@@ -128,3 +128,26 @@ describe('run end rules', () => {
     expect(p1.health).toBe(Math.round(p1.maxHealth / 2))
   })
 })
+
+describe('hot-join', () => {
+  it('a player can join mid-run with their class kit at half health', () => {
+    const run = new Run(loadContent(), { seed: 50, playerCount: 1, actId: 'act1' })
+    expect(run.joinPlayer('rogue')).toBe(true)
+    expect(run.sim.state.players.length).toBe(2)
+    const joined = run.sim.state.players[1]
+    expect(joined.classId).toBe('rogue')
+    expect(joined.movement?.defId).toBe('dash')
+    expect(joined.health).toBe(Math.round(joined.maxHealth / 2))
+    // The run continues cleanly with the newcomer in it.
+    for (let i = 0; i < 30 * 5; i++) run.tick()
+    expect(run.phase).toBe('arena')
+  })
+
+  it('join caps at four players and refuses after the run ends', () => {
+    const run = new Run(loadContent(), { seed: 51, playerCount: 4, actId: 'act1' })
+    expect(run.joinPlayer()).toBe(false)
+    const solo = new Run(loadContent(), { seed: 52, playerCount: 1, actId: 'act1' })
+    solo.phase = 'defeat'
+    expect(solo.joinPlayer()).toBe(false)
+  })
+})

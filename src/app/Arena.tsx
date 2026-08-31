@@ -239,9 +239,23 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           }
         }
 
-        // Camera: one shared view that zooms out to keep everyone framed.
+        // Camera: one shared view that zooms out to keep everyone framed —
+        // and every nearby threat. Zooming in so far that the horde sits
+        // off-screen would fail the "what is about to hurt me" question.
         const framed = sim.state.players.filter((p) => p.alive)
-        const pts = (framed.length > 0 ? framed : sim.state.players).map((p) => toScreen(p.x, p.y))
+        const anchors = framed.length > 0 ? framed : sim.state.players
+        const worldPts: { x: number; y: number }[] = [...anchors]
+        for (const e of sim.state.enemies) {
+          for (const p of anchors) {
+            const dx = e.x - p.x
+            const dy = e.y - p.y
+            if (dx * dx + dy * dy < 81) { // threats within 9 units stay framed
+              worldPts.push(e)
+              break
+            }
+          }
+        }
+        const pts = worldPts.map((p) => toScreen(p.x, p.y))
         let minX = pts[0].sx, maxX = pts[0].sx, minY = pts[0].sy, maxY = pts[0].sy
         for (const pt of pts) {
           minX = Math.min(minX, pt.sx); maxX = Math.max(maxX, pt.sx)
