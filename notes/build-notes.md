@@ -279,5 +279,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   now show deviation from the class baseline (green up, red down, computed live per
   class), and tags render as menu-only chips with element hues. Every M7 polish item the
   vault specifies concretely is now done.
-- The remaining open checklist is purely elective breadth: classes 18–36, act 3, the
+- Thirtieth chunk (8d3e59d): the King is playable — no weapons at all, three squires that
+  inherit half of every melee bonus he finds, which is the vault's flagship no-weapon
+  summoner delivered as a class. Paladin completes the mitigation trio the vault sketched
+  (Priest shares regen, Bulwark self-tanks in crowds, Paladin shares armor), and the
+  Dragon Knight is the conversion pattern pointed at fire. 20 of 36 classes.
+- The remaining open checklist is purely elective breadth: classes 21–36, act 3, the
   vault's post-v1 items (endless mode, the hub). Good pause point for Radley's review.

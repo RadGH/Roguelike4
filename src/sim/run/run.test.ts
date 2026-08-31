@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Run } from './run'
 import { loadContent } from '../data/loadContent'
+import { recomputePlayer } from '../systems/stats'
 
 /** Headless helper: play the arena until the phase leaves 'arena'. */
 function playWave(run: Run, maxSeconds = 240): void {
@@ -118,5 +119,64 @@ describe('Run flow', () => {
     const b = play()
     expect(a).toEqual(b)
     expect(['victory', 'defeat']).toContain(a.phase)
+  })
+})
+
+describe('endless mode', () => {
+  it('continues past the final wave with escalating generated waves', () => {
+    const run = new Run(loadContent(), { seed: 606, playerCount: 1, actId: 'act1', endless: true })
+    run.sim.equipWeapon(0, 'practice-sword')
+    const p = run.sim.state.players[0]
+    // Buffs as real perks so they survive every stat recompute.
+    for (let i = 0; i < 30; i++) p.perks.push({ perkId: 'ferocity', tier: 3 })
+    for (let i = 0; i < 40; i++) p.perks.push({ perkId: 'vitality', tier: 3 })
+    recomputePlayer(p, loadContent())
+    p.health = p.maxHealth
+    for (let guard = 0; guard < 13 && run.phase !== 'defeat'; guard++) {
+      for (let i = 0; i < 30 * 240 && run.phase === 'arena'; i++) {
+        run.tick()
+        // Stationary test player: hop to stragglers so waves always clear.
+        if (i % 600 === 599 && run.sim.state.enemies.length > 0) {
+          const e = run.sim.state.enemies[0]
+          p.x = e.x
+          p.y = e.y
+        }
+      }
+      if (run.phase !== 'recap') break
+      run.proceedFromRecap()
+      run.personal.get(0)?.rewards.forEach((_, i) => run.resolveReward(0, i, 'sold'))
+      while (run.personal.get(0)?.draft) run.pickPerk(0, 0)
+      run.setReady(0)
+    }
+    // Never a victory screen: the run is beyond wave 10 and still going.
+    expect(run.phase).not.toBe('victory')
+    expect(run.sim.state.wave.number).toBeGreaterThan(10)
+  })
+
+  it('a normal run still ends in victory at the final wave', () => {
+    const run = new Run(loadContent(), { seed: 606, playerCount: 1, actId: 'act1' })
+    run.sim.equipWeapon(0, 'practice-sword')
+    const p = run.sim.state.players[0]
+    // Buffs as real perks so they survive every stat recompute.
+    for (let i = 0; i < 30; i++) p.perks.push({ perkId: 'ferocity', tier: 3 })
+    for (let i = 0; i < 40; i++) p.perks.push({ perkId: 'vitality', tier: 3 })
+    recomputePlayer(p, loadContent())
+    p.health = p.maxHealth
+    for (let guard = 0; guard < 12 && run.phase !== 'victory' && run.phase !== 'defeat'; guard++) {
+      for (let i = 0; i < 30 * 240 && run.phase === 'arena'; i++) {
+        run.tick()
+        if (i % 600 === 599 && run.sim.state.enemies.length > 0) {
+          const e = run.sim.state.enemies[0]
+          p.x = e.x
+          p.y = e.y
+        }
+      }
+      if (run.phase !== 'recap') break
+      run.proceedFromRecap()
+      run.personal.get(0)?.rewards.forEach((_, i) => run.resolveReward(0, i, 'sold'))
+      while (run.personal.get(0)?.draft) run.pickPerk(0, 0)
+      run.setReady(0)
+    }
+    expect(run.phase).toBe('victory')
   })
 })

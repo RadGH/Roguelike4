@@ -29,6 +29,7 @@ export function App(): React.JSX.Element {
   const [playerCount, setPlayerCount] = useState(1)
   const [chosenClasses, setChosenClasses] = useState<string[]>(['student'])
   const [chosenAct, setChosenAct] = useState('act1')
+  const [endless, setEndless] = useState(false)
   const [unlockedNow, setUnlockedNow] = useState<string[]>([])
   const [muted, setMutedState] = useState(() => isMuted())
   const [, bump] = useReducer((n: number) => n + 1, 0)
@@ -88,6 +89,25 @@ export function App(): React.JSX.Element {
         setSave(null)
 
         const won = run.phase === 'victory'
+        // Endless is a sandbox: it never advances unlock progression.
+        if (run.endless) {
+          appendHistory({
+            date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+            result: 'defeat',
+            waveReached: wave,
+            players: run.sim.state.players.map((p) => ({
+              id: p.id,
+              level: p.level,
+              kills: run.sim.tracker.killsFor(p.id),
+              dealt: Math.round(run.sim.tracker.totalFor(p.id)),
+              topSources: [...run.sim.tracker.bySource(p.id).entries()]
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([k, v]) => [k, Math.round(v)] as [string, number]),
+            })),
+          })
+          return
+        }
         let nextProfile = applyRunResult(profile, {
           actId: run.actId,
           won,
@@ -164,6 +184,7 @@ export function App(): React.JSX.Element {
       actId: available.acts.includes(chosenAct) ? chosenAct : 'act1',
       classIds: chosenClasses,
       unlocked: { weapons: available.weapons, perks: available.perks },
+      endless: endless && profile.actsWon.includes('act2'),
     })
     if (debugWave > 1) {
       for (const p of run.sim.state.players) {
@@ -244,6 +265,18 @@ export function App(): React.JSX.Element {
         </div>
         {playerCount > 1 && (
           <div className="hint">Player 1: keyboard · players 2–{playerCount}: gamepads in order</div>
+        )}
+        {profile.actsWon.includes('act2') && (
+          <div className="toolbar">
+            <button
+              data-testid="endless-toggle"
+              onClick={() => setEndless((v) => !v)}
+              style={endless ? { borderColor: 'var(--accent)' } : undefined}
+            >
+              Endless: {endless ? 'on' : 'off'}
+            </button>
+            <span className="hint">Past the boss, waves keep coming, harder each time. No unlock progress.</span>
+          </div>
         )}
         {available.acts.length > 1 && (
           <div className="toolbar" data-testid="act-select">

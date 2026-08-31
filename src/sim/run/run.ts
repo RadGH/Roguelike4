@@ -2,7 +2,7 @@ import { Sim } from '../core/sim'
 import { Rng } from '../core/rng'
 import type { Registry } from '../data/registry'
 import type { OwnedPerk } from '../core/state'
-import type { ActDef, PerkDef, WeaponDef } from '../data/types'
+import type { ActDef, PerkDef, WaveDef, WeaponDef } from '../data/types'
 import { recomputePlayer } from '../systems/stats'
 import type { RunSave } from './save'
 import { resolveItem, rollVariant, variantEligible } from '../data/variants'
@@ -75,6 +75,14 @@ export class Run {
   private readonly pool: { weapons: Set<string>; perks: Set<string> } | null
   /** Round-robin loot pointer: items go to players in strict rotation. */
   private lootIndex = 0
+  /**
+   * Endless: after the act's final wave the run keeps going with generated,
+   * escalating waves until everyone falls. A sandbox for extreme builds —
+   * it deliberately yields no unlock progression.
+   */
+  readonly endless: boolean
+  /** Waves beyond the authored act (generated on demand, deterministic). */
+  private readonly extraWaves: WaveDef[] = []
 
   constructor(
     readonly registry: Registry,
@@ -85,12 +93,14 @@ export class Run {
       classIds?: string[]
       /** Unlocked content ids; anything absent never appears in this run. */
       unlocked?: { weapons: string[]; perks: string[] }
+      endless?: boolean
       save?: RunSave
     },
   ) {
     this.pool = opts.unlocked
       ? { weapons: new Set(opts.unlocked.weapons), perks: new Set(opts.unlocked.perks) }
       : null
+    this.endless = opts.endless ?? false
     this.sim = new Sim(registry, opts)
     this.rngRun = new Rng(opts.seed ^ 0x5eed).fork('run')
     this.act = registry.act(opts.actId)
@@ -448,8 +458,11 @@ export class Run {
   private advanceWave(): void {
     const next = this.sim.state.wave.number + 1
     if (next > this.sim.lastWaveNumber) {
-      this.phase = 'victory'
-      return
+      if (!this.endless) {
+        this.phase = 'victory'
+        return
+      }
+      this.extraWaves.push(this.buildEndlessWave(next))
     }
     // Everyone returns at the wave boundary (the wave-clear backstop),
     // and survivors recover a third of their health so a scraped-through
@@ -466,7 +479,44 @@ export class Run {
       }
     }
     this.phase = 'arena'
-    this.sim.startWave(this.act.waves, next)
+    this.sim.startWave([...this.act.waves, ...this.extraWaves], next)
+  }
+
+  /**
+   * Generated endless waves: random pressure drawn from everything the game
+   * has, escalating in volume and elite share, with a boss every fifth wave.
+   * Deterministic from the run seed.
+   */
+  private buildEndlessWave(n: number): WaveDef {
+    const depth = n - this.act.waves.length // grows from 1 past the authored act
+    const scale = 1 + depth * 0.15
+    const pool = [...this.registry.enemies.values()]
+      .filter((e) => !e.boss && e.speed > 0)
+    const groups: WaveDef['groups'] = []
+    const groupCount = 4 + Math.min(3, Math.floor(depth / 3))
+    let at = 1
+    for (let g = 0; g < groupCount; g++) {
+      const enemy = this.rngRun.pick(pool)
+      const baseCount = enemy.radius < 0.3 ? 12 : enemy.radius > 0.7 ? 2 : 4
+      groups.push({
+        at,
+        enemy: enemy.id,
+        count: Math.max(1, Math.round(baseCount * scale)),
+        spacing: enemy.radius < 0.3 ? 0.25 : 1.5,
+        elite: this.rngRun.chance(Math.min(0.5, 0.1 + depth * 0.04))
+          ? (this.rngRun.chance(0.5) ? 'enlarged' : 'resistant')
+          : undefined,
+      })
+      at += 8 + this.rngRun.int(0, 6)
+    }
+    if (n % 5 === 0) {
+      const bosses = [...this.registry.enemies.values()]
+        .filter((e) => e.boss && (e.splitTo || e.spawnId))
+      if (bosses.length > 0) {
+        groups.push({ at: at + 4, enemy: this.rngRun.pick(bosses).id, count: 1 })
+      }
+    }
+    return { wave: n, groups }
   }
 
   weaponSlots(playerId: number): number {

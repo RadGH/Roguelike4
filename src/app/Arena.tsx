@@ -528,8 +528,11 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           return `P${p.id + 1}  ${status}  Lv ${p.level}  Gold ${p.gold}` +
             slot('A', p.equipment) + slot('B', p.movement)
         })
+        const waveLabel = currentRun.endless && sim.state.wave.number > 10
+          ? `Endless ${sim.state.wave.number}`
+          : `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}`
         hud.text =
-          `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}   Enemies ${enemiesLeft}\n` +
+          `${waveLabel}   Enemies ${enemiesLeft}\n` +
           playerLines.join('\n') +
           (bossPieces.length > 0 ? `\nKing Slime — ${bossPieces.length} piece${bossPieces.length > 1 ? 's' : ''}` : '') +
           (view !== 'normal' ? `\n[debug view: ${view} — F1 normal]` : '')
