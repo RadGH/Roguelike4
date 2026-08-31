@@ -122,6 +122,7 @@ export function classBaseline(classId: string, registry: Registry): PlayerState 
     pickupRadius: 0,
     perks: [], items: [],
     equipment: [], movement: [], trailCd: 0,
+    auraAllPct: 0, auraRegen: 0,
     meleePct: 0, rangedPct: 0, magicPct: 0, petPct: 0, allPct: 0,
     cooldownPct: 0, goldPct: 0, xpPct: 0,
     weapons: [],
@@ -151,5 +152,5 @@ export function damageMultiplier(
       if (weapon.tags.includes(a.tag)) affinityPct += a.pct
     }
   }
-  return Math.max(0.1, 1 + (p.allPct + typePct + affinityPct) / 100)
+  return Math.max(0.1, 1 + (p.allPct + p.auraAllPct + typePct + affinityPct) / 100)
 }

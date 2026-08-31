@@ -64,5 +64,18 @@
     "speed": 3.4,
     "radius": 0.32,
     "targeting": "nearest"
+  },
+  {
+    "id": "totem",
+    "name": "Totem",
+    "kind": "structure",
+    "mortal": false,
+    "damage": 3,
+    "cooldown": 1.1,
+    "range": 5.5,
+    "speed": 0,
+    "radius": 0.35,
+    "targeting": "nearest",
+    "damageType": "Magic"
   }
 ]

@@ -350,3 +350,22 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   the class working as intended ("half of every curse is theater"), but if fixed
   curses ever get re-rolled, "curse may not hit the item's own primary stat" would
   keep Cursed meaningfully cursed for everyone.
+- Thirty-seventh chunk: four classes, each riding one new mechanic. Shaman delivers
+  the vault's Control Budget proof: Summon Totem is EQUIPMENT (the A button), not a
+  third input — any class can find it, the Shaman starts with it, and totems deal
+  Magic damage as structures-by-form, exactly as the Pets note separates delivery
+  shape from damage type. Bard finally uses the Aura tag: aura items reach only
+  their carrier by default; the Bard shares them with allies at 1.5x radius, drawn
+  as a ring on the ground so co-op partners can see whether they're in the song.
+  Bombardier brought splash damage into existence (weapons can now carry aoeRadius;
+  the mortar is the first) plus owner-attributed blast pools. Artificer structures
+  gain +50% damage every third wave. 35 of 36 classes.
+- Balance found a useful asymmetry: the Shaman at 2 weapons + free totem simmed 83%,
+  at 1 weapon crashed to 25%, and settled at 65% with 2 weapons and -12% damage.
+  So: BODY-BLOCKING companions must be priced in slots (stat knobs did nothing for
+  the wolf trio), but pure-DPS summons like the stationary totem price fine in
+  stats. The vault-note candidate refines to: "price a pet by what it does — slots
+  for pets that absorb attention, stats for pets that only add damage."
+- Remaining: Tinker (needs item tiers + a post-wave personal screen) and Runesmith
+  (player-facing tag adding, needs UI + persistent per-item tags). Both are design
+  work first, build second — flagged for Radley review rather than improvised.

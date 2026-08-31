@@ -45,6 +45,8 @@ export interface WeaponDef {
   projectileCount?: number
   /** Flat block granted while equipped (shields count as weapons). */
   grantsBlock?: number
+  /** Splash: on projectile impact, everything within this radius is hit. */
+  aoeRadius?: number
   /** Effects this weapon's hits may apply. */
   applies?: Applier[]
   /** Shop price at tier 1 (weapons are shop-only). */
@@ -177,6 +179,13 @@ export interface ClassDef {
   cursedPenaltyPct?: number
   /** The shop always stocks at least one weapon at this tier (the Merchant). */
   shopGuaranteedTier?: number
+  /** Carried aura items reach allies too, with enlarged radius (the Bard). */
+  aurasAffectAllies?: boolean
+  auraRadiusPct?: number
+  /** Area weapon blasts leave a lingering hazard pool (the Bombardier). */
+  areaHazard?: { dps: number; ttl: number }
+  /** Structures gain +50% damage per this many waves survived (the Artificer). */
+  structureTierWaves?: number
   /** Tag affinities: percent damage bonus/penalty when a weapon carries the tag. */
   affinities?: { tag: Tag; pct: number }[]
 }
@@ -194,6 +203,7 @@ export type ItemEffect =
   | { kind: 'onKillHeal'; chance: number; amount: number }
   | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number; pickup?: 'gold' | 'xp' | 'any' }
   | { kind: 'onPickupHeal'; chance: number; amount: number; pickup?: 'gold' | 'xp' | 'any' }
+  | { kind: 'aura'; attribute: 'allPct' | 'regen'; amount: number; radius: number }
 
 export interface ItemDef {
   id: string
@@ -218,6 +228,7 @@ export type ActiveEffect =
   | { kind: 'heal'; radius: number; amount: number }
   | { kind: 'dash'; distance: number }
   | { kind: 'blink'; distance: number }
+  | { kind: 'summonPet'; petId: string; duration: number }
 
 export interface ActiveDef {
   id: string
@@ -260,6 +271,8 @@ export interface PetDef {
    * the pet's hits — melee items become live stats for a summoner.
    */
   inheritMeleePct?: number
+  /** Structures may deal a non-Pet type (totems deal Magic, per the vault). */
+  damageType?: DamageType
 }
 
 /** Behavioral unlock conditions — they ask you to DO something, not to grind. */

@@ -44,6 +44,9 @@ export interface PlayerState {
   /** Seconds until the next movement-trail drop (trail classes only). */
   trailCd: number
   /** Whole-number percent modifiers derived from perks (see stats.ts). */
+  /** Transient aura bonuses, rebuilt every tick from carried aura items. */
+  auraAllPct: number
+  auraRegen: number
   meleePct: number
   rangedPct: number
   magicPct: number
@@ -180,6 +183,8 @@ export interface ProjectileState {
   sourceId: string
   /** Remaining lifetime in seconds. */
   ttl: number
+  /** Splash radius on impact (area weapons). */
+  aoe?: number
 }
 
 export interface PickupState {

@@ -105,6 +105,8 @@ export class Sim {
       equipment: [],
       movement: [],
       trailCd: 0,
+      auraAllPct: 0,
+      auraRegen: 0,
       meleePct: 0,
       rangedPct: 0,
       magicPct: 0,
@@ -307,7 +309,13 @@ export class Sim {
           const inherited =
             ((def.inheritMeleePct ?? 0) + (ownerCls.petsInheritMeleePct ?? 0)) / 100 * owner.meleePct +
             (ownerCls.petsInheritMagicPct ?? 0) / 100 * owner.magicPct
-          const damage = def.damage * (1 + (owner.allPct + owner.petPct + inherited) / 100)
+          let damage = def.damage * (1 + (owner.allPct + owner.petPct + inherited) / 100)
+          // The Artificer's structures improve as the run goes on.
+          const tierWaves = ownerCls.structureTierWaves
+          if (tierWaves && def.kind === 'structure') {
+            damage *= 1 + 0.5 * Math.floor((s.wave.number - 1) / tierWaves)
+          }
+          const petType = def.damageType ?? 'Pet'
           if (def.projectileSpeed) {
             const n = norm(target.x - pet.x, target.y - pet.y)
             s.projectiles.push({
@@ -317,13 +325,13 @@ export class Sim {
               vx: n.x * def.projectileSpeed,
               vy: n.y * def.projectileSpeed,
               damage,
-              damageType: 'Pet',
+              damageType: petType,
               ownerId: owner.id,
               sourceId: def.id,
               ttl: def.range / def.projectileSpeed + 0.2,
             })
           } else {
-            this.damageEnemy(target, damage, owner.id, def.id, 'Pet')
+            this.damageEnemy(target, damage, owner.id, def.id, petType)
           }
         }
       }
@@ -355,6 +363,7 @@ export class Sim {
     this.tickEffects()
     this.tickTelegraphs()
     this.tickPools()
+    this.tickAuras()
     this.tickWeapons()
     this.tickProjectiles()
     this.tickPickups()
@@ -495,8 +504,8 @@ export class Sim {
       const speed = p.moveSpeed * this.slowFactorFor(p)
       p.x = clamp(p.x + p.moveX * speed * TICK_DT, -s.arenaW / 2, s.arenaW / 2)
       p.y = clamp(p.y + p.moveY * speed * TICK_DT, -s.arenaH / 2, s.arenaH / 2)
-      if (p.regen > 0 && p.health < p.maxHealth) {
-        p.health = Math.min(p.maxHealth, p.health + p.regen * TICK_DT)
+      if (p.regen + p.auraRegen > 0 && p.health < p.maxHealth) {
+        p.health = Math.min(p.maxHealth, p.health + (p.regen + p.auraRegen) * TICK_DT)
       }
       // The Vampire's clock: unavoidable, unmitigated, always ticking.
       const selfDamage = this.registry.classes.get(p.classId)?.selfDamagePerSec
@@ -638,6 +647,24 @@ export class Sim {
             ally.health = Math.min(ally.maxHealth, ally.health + eff.amount)
           }
         }
+        break
+      }
+      case 'summonPet': {
+        s.pets.push({
+          id: s.nextEntityId++,
+          defId: eff.petId,
+          ownerId: p.id,
+          x: p.x,
+          y: p.y,
+          vx: 0, vy: 0,
+          health: this.registry.pet(eff.petId).health ?? 1,
+          maxHealth: this.registry.pet(eff.petId).health ?? 1,
+          cooldownLeft: 0,
+          respawnLeft: 0,
+          targetId: null,
+          firedTick: -999,
+          expireLeft: eff.duration,
+        })
         break
       }
       case 'dash':
@@ -1205,6 +1232,35 @@ export class Sim {
     }
   }
 
+  /**
+   * Auras: carried aura items grant their bonus dynamically each tick. By
+   * default an aura only reaches its carrier; the Bard's reach allies too,
+   * with an enlarged radius — the aura is a place, not a stat line.
+   */
+  private tickAuras(): void {
+    const s = this.state
+    for (const p of s.players) { p.auraAllPct = 0; p.auraRegen = 0 }
+    for (const carrier of s.players) {
+      if (!carrier.alive || carrier.downed) continue
+      const cls = this.registry.class(carrier.classId)
+      for (const itemId of carrier.items) {
+        const item = resolveItem(this.registry, itemId)
+        for (const eff of item.effects) {
+          if (eff.kind !== 'aura') continue
+          const radius = eff.radius * (1 + (cls.auraRadiusPct ?? 0) / 100)
+          for (const target of s.players) {
+            if (!target.alive || target.downed) continue
+            const inReach = target.id === carrier.id ||
+              (cls.aurasAffectAllies === true && distSq(target, carrier) <= radius * radius)
+            if (!inReach) continue
+            if (eff.attribute === 'allPct') target.auraAllPct += eff.amount
+            else target.auraRegen += eff.amount * 0.1 // same scale as the regen stat
+          }
+        }
+      }
+    }
+  }
+
   private tickWeapons(): void {
     const s = this.state
     for (const p of s.players) {
@@ -1249,6 +1305,7 @@ export class Sim {
               ownerId: p.id,
               sourceId: def.id,
               ttl: def.range / def.projectileSpeed + 0.2,
+              aoe: def.aoeRadius,
             }
             s.projectiles.push(pr)
           }
@@ -1634,10 +1691,33 @@ export class Sim {
         if (!this.isTargetable(e)) continue
         const r = this.radiusOf(e) + 0.15
         if (distSq(pr, e) < r * r) {
-          this.damageEnemy(e, pr.damage, pr.ownerId, pr.sourceId, pr.damageType)
-          if (e.health > 0) {
-            const owner = s.players.find((p) => p.id === pr.ownerId)
-            this.applyOnHit(e, pr.sourceId, owner)
+          const owner = s.players.find((p) => p.id === pr.ownerId)
+          if (pr.aoe) {
+            // Splash: the blast hits everything near the impact point.
+            const r2 = pr.aoe * pr.aoe
+            for (const other of [...s.enemies]) {
+              if (!this.isTargetable(other)) continue
+              if (distSq(pr, other) > r2) continue
+              this.damageEnemy(other, pr.damage, pr.ownerId, pr.sourceId, pr.damageType)
+              if (other.health > 0) this.applyOnHit(other, pr.sourceId, owner)
+            }
+            // The Bombardier's blasts scorch the ground they touch.
+            const hazard = owner ? this.registry.class(owner.classId).areaHazard : undefined
+            if (hazard && owner) {
+              s.pools.push({
+                id: s.nextEntityId++,
+                x: pr.x, y: pr.y,
+                radius: pr.aoe,
+                dps: hazard.dps,
+                slowFactor: 1,
+                ttl: hazard.ttl,
+                sourceId: pr.sourceId,
+                ownerId: owner.id,
+              })
+            }
+          } else {
+            this.damageEnemy(e, pr.damage, pr.ownerId, pr.sourceId, pr.damageType)
+            if (e.health > 0) this.applyOnHit(e, pr.sourceId, owner)
           }
           dead.push(pr)
           break

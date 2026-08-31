@@ -225,5 +225,22 @@
     "targeting": "highestHealth",
     "projectileSpeed": 12,
     "price": 60
+  },
+  {
+    "id": "mortar",
+    "name": "Mortar",
+    "tags": [
+      "Ranged",
+      "Area",
+      "Heavy"
+    ],
+    "damageType": "Ranged",
+    "damage": 5,
+    "cooldown": 1.6,
+    "range": 8,
+    "targeting": "densest",
+    "projectileSpeed": 9,
+    "aoeRadius": 1.8,
+    "price": 45
   }
 ]

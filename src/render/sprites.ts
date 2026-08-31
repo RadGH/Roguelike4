@@ -21,6 +21,7 @@ import grasperUrl from '../../art/critical/grasper.svg'
 import beaconUrl from '../../art/critical/beacon.svg'
 import reflectorUrl from '../../art/critical/reflector.svg'
 import wardenUrl from '../../art/critical/warden.svg'
+import totemUrl from '../../art/critical/totem.svg'
 
 /**
  * Gameplay-critical sprite textures, rasterized from the SVG files in
@@ -57,6 +58,7 @@ const PET_URL: Record<string, string> = {
   raven: ravenUrl,
   squire: squireUrl,
   'minigun-turret': turretUrl,
+  totem: totemUrl,
 }
 
 export interface CriticalTextures {

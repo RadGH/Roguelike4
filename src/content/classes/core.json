@@ -559,5 +559,77 @@
     ],
     "cursedPenaltyPct": 50,
     "relicBias": 3
+  },
+  {
+    "id": "shaman",
+    "name": "Shaman",
+    "description": "Speaks through totems. Their own strikes land softer \u2014 the power went into the carvings.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "startingEquipment": "summon-totem",
+    "grants": [
+      {
+        "level": 4,
+        "options": [
+          "summon-totem",
+          "war-banner",
+          "healing-hymn"
+        ]
+      }
+    ],
+    "mods": {
+      "allPct": -12
+    }
+  },
+  {
+    "id": "bard",
+    "name": "Bard",
+    "description": "Every aura they carry reaches the whole band, and further than it should. Solo, the song still plays for one.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "startingItems": [
+      "war-banner"
+    ],
+    "aurasAffectAllies": true,
+    "auraRadiusPct": 50
+  },
+  {
+    "id": "bombardier",
+    "name": "Bombardier",
+    "description": "Believes in the blast. Area weapons hit harder and scorch the ground; anything requiring precision suffers.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "mortar"
+    ],
+    "affinities": [
+      {
+        "tag": "Area",
+        "pct": 30
+      }
+    ],
+    "mods": {
+      "allPct": -15
+    },
+    "areaHazard": {
+      "dps": 2,
+      "ttl": 3
+    }
+  },
+  {
+    "id": "artificer",
+    "name": "Artificer",
+    "description": "Their structures improve every third wave. Weak hands early; an arsenal by the end.",
+    "weaponSlots": 1,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "startingItems": [
+      "turret-kit"
+    ],
+    "structureTierWaves": 3
   }
 ]

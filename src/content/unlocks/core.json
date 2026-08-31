@@ -567,5 +567,67 @@
         "id": "curator"
       }
     ]
+  },
+  {
+    "id": "voice-of-the-earth",
+    "name": "Voice of the Earth",
+    "description": "Win a run as the Druid.",
+    "condition": {
+      "type": "run-as-class",
+      "classId": "druid",
+      "win": true
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "shaman"
+      }
+    ]
+  },
+  {
+    "id": "songs-for-the-road",
+    "name": "Songs for the Road",
+    "description": "Defeat 700 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 700
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "bard"
+      }
+    ]
+  },
+  {
+    "id": "bigger-booms",
+    "name": "Bigger Booms",
+    "description": "Defeat 60 enemies in a single wave.",
+    "condition": {
+      "type": "kills-in-one-wave",
+      "count": 60
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "bombardier"
+      }
+    ]
+  },
+  {
+    "id": "master-builder",
+    "name": "Master Builder",
+    "description": "Win a run as the Engineer.",
+    "condition": {
+      "type": "run-as-class",
+      "classId": "engineer",
+      "win": true
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "artificer"
+      }
+    ]
   }
 ]

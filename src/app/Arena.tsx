@@ -4,6 +4,7 @@ import { TICK_DT, TICK_RATE } from '../sim/core/sim'
 import type { Run } from '../sim/run/run'
 import { toScreen } from '../render/iso'
 import { loadCriticalTextures, type CriticalTextures } from '../render/sprites'
+import { resolveItem } from '../sim/data/variants'
 import { sound } from '../render/audio'
 
 /**
@@ -329,6 +330,25 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const color = pool.dps > 0 ? 0x9acd32 : 0xcfcfe8
           gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color, alpha: 0.22 })
           gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 1.5, color })
+        }
+
+        // Shared auras (the Bard): the reach is a place on the ground, so
+        // allies can see whether they're standing in the song.
+        for (const p of sim.state.players) {
+          if (!p.alive || p.downed) continue
+          const cls = sim.registry.class(p.classId)
+          if (!cls.aurasAffectAllies) continue
+          let radius = 0
+          for (const itemId of p.items) {
+            for (const eff of resolveItem(sim.registry, itemId).effects) {
+              if (eff.kind === 'aura') radius = Math.max(radius, eff.radius * (1 + (cls.auraRadiusPct ?? 0) / 100))
+            }
+          }
+          if (radius > 0) {
+            const s = toScreen(p.x, p.y)
+            const r = radius * 32
+            gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 1.5, color: 0x7fc9ff, alpha: 0.5 })
+          }
         }
 
         // A living Beacon paints its mark under the hunted player.

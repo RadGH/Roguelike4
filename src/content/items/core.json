@@ -511,5 +511,41 @@
         "count": 3
       }
     ]
+  },
+  {
+    "id": "war-banner",
+    "name": "War Banner",
+    "description": "An aura of ferocity: +8% damage while you carry it.",
+    "tags": [
+      "Aura",
+      "Utility"
+    ],
+    "price": 45,
+    "effects": [
+      {
+        "kind": "aura",
+        "attribute": "allPct",
+        "amount": 8,
+        "radius": 5
+      }
+    ]
+  },
+  {
+    "id": "healing-hymn",
+    "name": "Healing Hymn",
+    "description": "An aura of recovery: +2 Recovery while you carry it.",
+    "tags": [
+      "Aura",
+      "Healing"
+    ],
+    "price": 45,
+    "effects": [
+      {
+        "kind": "aura",
+        "attribute": "regen",
+        "amount": 2,
+        "radius": 5
+      }
+    ]
   }
 ]
