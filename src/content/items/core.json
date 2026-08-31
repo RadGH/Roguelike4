@@ -477,5 +477,22 @@
         "pickup": "gold"
       }
     ]
+  },
+  {
+    "id": "squire-band",
+    "name": "Squires",
+    "description": "Three loyal squires fight for you, sharing half your melee bonuses.",
+    "tags": [
+      "Pets",
+      "Summon"
+    ],
+    "price": 70,
+    "effects": [
+      {
+        "kind": "summon",
+        "petId": "squire",
+        "count": 3
+      }
+    ]
   }
 ]

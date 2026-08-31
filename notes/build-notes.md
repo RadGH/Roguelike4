@@ -275,5 +275,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   passes (rings carry identity at distance), the last decimal displays became whole
   attacks-per-10s rates, and the art doc's runtime tuning requirement is real — enemy and
   player scale, marker alpha, and telegraph alpha are adjustable live from the console.
-- Next: continued breadth as time allows (stat deviation colors, more classes, act 3
-  planning) — or wind down for Radley's review pass.
+- Twenty-ninth chunk (765032b): the last two UI rules from Screens and UI — stat colours
+  now show deviation from the class baseline (green up, red down, computed live per
+  class), and tags render as menu-only chips with element hues. Every M7 polish item the
+  vault specifies concretely is now done.
+- The remaining open checklist is purely elective breadth: classes 18–36, act 3, the
+  vault's post-v1 items (endless mode, the hub). Good pause point for Radley's review.

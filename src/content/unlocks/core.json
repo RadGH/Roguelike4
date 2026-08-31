@@ -355,5 +355,50 @@
         "id": "oracle"
       }
     ]
+  },
+  {
+    "id": "oathkeeper",
+    "name": "Oathkeeper",
+    "description": "Defeat 500 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 500
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "paladin"
+      }
+    ]
+  },
+  {
+    "id": "emberblood",
+    "name": "Emberblood",
+    "description": "Have 6 enemies burning at the same time.",
+    "condition": {
+      "type": "simultaneous-burns",
+      "count": 6
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "dragon-knight"
+      }
+    ]
+  },
+  {
+    "id": "crowned",
+    "name": "Crowned",
+    "description": "Complete Act 2.",
+    "condition": {
+      "type": "win-act",
+      "actId": "act2"
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "king"
+      }
+    ]
   }
 ]

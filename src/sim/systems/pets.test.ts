@@ -95,3 +95,66 @@ describe('pets and structures', () => {
     expect(run.sim.state.pets.some((pt) => pt.defId === 'minigun-turret')).toBe(true)
   })
 })
+
+describe('conversion classes', () => {
+  it('squires inherit half the owner melee bonus', () => {
+    const dmg = (meleePct: number): number => {
+      const sim = new Sim(registry, { seed: 44, playerCount: 1, classIds: ['king'] })
+      const p = sim.state.players[0]
+      p.items.push('squire-band')
+      p.maxHealth = 100000
+      p.health = 100000
+      p.meleePct = meleePct
+      sim.startWave(quiet, 1)
+      sim.state.wave.pendingSpawns.push({ at: 0, enemy: 'kingslime-t1', remaining: 1, spacing: 0, nextAt: 0, elite: null })
+      for (let i = 0; i < TICK_RATE * 25; i++) sim.tick()
+      return sim.tracker.bySource(0).get('squire') ?? 0
+    }
+    const base = dmg(0)
+    const invested = dmg(100) // squires should swing ~50% harder
+    expect(base).toBeGreaterThan(0)
+    expect(invested).toBeGreaterThan(base * 1.25)
+  })
+
+  it('the king starts weaponless with three squires', () => {
+    const run = new Run(registry, { seed: 45, playerCount: 1, actId: 'act1', classIds: ['king'] })
+    const p = run.sim.state.players[0]
+    expect(p.weapons.length).toBe(0)
+    expect(run.weaponSlots(0)).toBe(0)
+    expect(run.sim.state.pets.filter((pt) => pt.defId === 'squire').length).toBe(3)
+  })
+
+  it('the paladin armors allies standing close', () => {
+    const sim = new Sim(registry, { seed: 46, playerCount: 2, classIds: ['paladin', 'student'] })
+    sim.startWave(quiet, 1)
+    const [pal, friend] = sim.state.players
+    friend.maxHealth = 1000
+    friend.health = 1000
+    const hitAt = (dist: number): number => {
+      friend.health = 1000
+      friend.x = pal.x + dist
+      friend.y = pal.y
+      sim['damagePlayer'](friend, 20, 'Melee', 'test', false)
+      return 1000 - friend.health
+    }
+    const near = hitAt(1)
+    const far = hitAt(12)
+    expect(near).toBeLessThan(far)
+  })
+
+  it('the dragon knight ignites with melee weapons only', () => {
+    const sim = new Sim(registry, { seed: 47, playerCount: 1, classIds: ['dragon-knight'] })
+    sim.equipWeapon(0, 'practice-sword')
+    const p = sim.state.players[0]
+    p.maxHealth = 100000
+    p.health = 100000
+    sim.startWave(quiet, 1)
+    sim.state.wave.pendingSpawns.push({ at: 0, enemy: 'slime', remaining: 4, spacing: 0.5, nextAt: 0, elite: null })
+    let sawBurn = false
+    for (let i = 0; i < TICK_RATE * 90; i++) {
+      sim.tick()
+      if (sim.state.enemies.some((e) => e.burnTtl > 0)) { sawBurn = true; break }
+    }
+    expect(sawBurn).toBe(true)
+  })
+})

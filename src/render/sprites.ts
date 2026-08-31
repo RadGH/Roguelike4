@@ -16,6 +16,7 @@ import xpUrl from '../../art/critical/xp.svg'
 import wolfUrl from '../../art/critical/wolf.svg'
 import ravenUrl from '../../art/critical/raven.svg'
 import turretUrl from '../../art/critical/turret.svg'
+import squireUrl from '../../art/critical/squire.svg'
 
 /**
  * Gameplay-critical sprite textures, rasterized from the SVG files in
@@ -46,6 +47,7 @@ const ENEMY_URL_OVERRIDE: Record<string, string> = {
 const PET_URL: Record<string, string> = {
   wolf: wolfUrl,
   raven: ravenUrl,
+  squire: squireUrl,
   'minigun-turret': turretUrl,
 }
 

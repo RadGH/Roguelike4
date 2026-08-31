@@ -141,6 +141,10 @@ export interface ClassDef {
   eliteDamagePct?: number
   /** Information class (the Oracle): the arena reveals enemy health bars. */
   revealsInfo?: boolean
+  /** Shares armor with nearby allies (the Paladin). */
+  shareArmor?: { radius: number; armor: number }
+  /** Innate appliers rolled on hits from Melee-tagged weapons (Dragon Knight). */
+  meleeAppliers?: Applier[]
   /** Max health granted per item carried (the Looter's trade). */
   healthPerItem?: number
   /** Personal shop price adjustment in percent (+25 = pays a quarter more). */
@@ -223,6 +227,11 @@ export interface PetDef {
   targeting: TargetingRule
   /** Ranged pets emit projectiles at this speed; melee pets lunge. */
   projectileSpeed?: number
+  /**
+   * Damage conversion: this share of the owner's melee-damage bonus feeds
+   * the pet's hits — melee items become live stats for a summoner.
+   */
+  inheritMeleePct?: number
 }
 
 /** Behavioral unlock conditions — they ask you to DO something, not to grind. */

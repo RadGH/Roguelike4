@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Ally companion: squire. Small knight silhouette, ally-blue plume. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M20 58 L20 36 Q20 28 32 28 Q44 28 44 36 L44 58 Q38 61 32 61 Q26 61 20 58 Z" fill="#9aa8bc"/>
+    <circle cx="32" cy="19" r="10" fill="#c7d0dc"/>
+    <path d="M24 16 Q24 8 32 8 Q40 8 40 16 L40 19 L24 19 Z" fill="#7d8ba0"/>
+    <rect x="26" y="40" width="12" height="5" rx="2.5" fill="#5a6a80"/>
+  </g>
+  <path d="M32 8 Q34 3 38 2 Q37 7 34 9 Z" fill="#4da6ff" stroke="#000" stroke-width="2"/>
+  <circle cx="28" cy="19" r="2" fill="#000"/>
+  <circle cx="36" cy="19" r="2" fill="#000"/>
+</svg>

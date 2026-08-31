@@ -37,5 +37,20 @@
     "speed": 5,
     "radius": 0.22,
     "targeting": "lowestHealth"
+  },
+  {
+    "id": "squire",
+    "name": "Squire",
+    "kind": "companion",
+    "mortal": true,
+    "health": 14,
+    "respawn": 8,
+    "damage": 3,
+    "cooldown": 1.0,
+    "range": 1.6,
+    "speed": 4.0,
+    "radius": 0.38,
+    "targeting": "nearest",
+    "inheritMeleePct": 50
   }
 ]

@@ -296,7 +296,9 @@ export class Sim {
         if (target) {
           pet.cooldownLeft = def.cooldown
           pet.firedTick = s.tick
-          const damage = def.damage * (1 + (owner.allPct + owner.petPct) / 100)
+          // Conversion: some pets inherit a share of their owner's melee bonus.
+          const inherited = (def.inheritMeleePct ?? 0) / 100 * owner.meleePct
+          const damage = def.damage * (1 + (owner.allPct + owner.petPct + inherited) / 100)
           if (def.projectileSpeed) {
             const n = norm(target.x - pet.x, target.y - pet.y)
             s.projectiles.push({
@@ -1027,6 +1029,15 @@ export class Sim {
       const bonus = Math.min(pack.armorCap, nearby * pack.armorPerEnemy)
       if (bonus > 0) defenses = { ...defenses, armor: defenses.armor + bonus }
     }
+    // Shared mitigation (the Paladin): allies standing close are armored too.
+    for (const ally of this.activePlayers()) {
+      if (ally.id === p.id) continue
+      const share = this.registry.classes.get(ally.classId)?.shareArmor
+      if (share && distSq(ally, p) <= share.radius * share.radius) {
+        defenses = { ...defenses, armor: defenses.armor + share.armor }
+        break
+      }
+    }
     const result = resolveDamage(amount, type, defenses, isAttack, this.rngCombat.next())
     this.tracker.recordTaken({
       tick: this.state.tick,
@@ -1265,12 +1276,18 @@ export class Sim {
         }
       }
     }
-    rollAll(this.registry.weapons.get(sourceId)?.applies, sourceId)
+    const weaponDef = this.registry.weapons.get(sourceId)
+    rollAll(weaponDef?.applies, sourceId)
     if (owner) {
       for (const itemId of owner.items) {
         for (const eff of resolveItem(this.registry, itemId).effects) {
           if (eff.kind === 'applyOnHit') rollAll([eff.applier], itemId)
         }
+      }
+      // Class-innate appliers on Melee-tagged weapons (the Dragon Knight).
+      const cls = this.registry.classes.get(owner.classId)
+      if (cls?.meleeAppliers && weaponDef?.tags.includes('Melee')) {
+        rollAll(cls.meleeAppliers, sourceId)
       }
     }
   }

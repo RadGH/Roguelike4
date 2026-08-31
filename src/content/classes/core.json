@@ -335,5 +335,64 @@
         "pct": 5
       }
     ]
+  },
+  {
+    "id": "paladin",
+    "name": "Paladin",
+    "description": "Armored, and armor for everyone nearby. Stand close to the Paladin.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "mods": {
+      "armor": 10
+    },
+    "shareArmor": {
+      "radius": 3.5,
+      "armor": 12
+    }
+  },
+  {
+    "id": "dragon-knight",
+    "name": "Dragon Knight",
+    "description": "Every swing carries embers: melee weapons set enemies burning.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "affinities": [
+      {
+        "tag": "Fire",
+        "pct": 15
+      }
+    ],
+    "meleeAppliers": [
+      {
+        "effect": "burn",
+        "chance": 0.25,
+        "dps": 2,
+        "duration": 3
+      }
+    ]
+  },
+  {
+    "id": "king",
+    "name": "King",
+    "description": "Carries no weapon at all. Three squires do the fighting \u2014 and every melee bonus the King finds feeds all three.",
+    "weaponSlots": 0,
+    "startingWeapons": [],
+    "startingItems": [
+      "squire-band"
+    ],
+    "mods": {
+      "maxHealth": 6,
+      "goldPct": 15
+    },
+    "affinities": [
+      {
+        "tag": "Pets",
+        "pct": 10
+      }
+    ]
   }
 ]
