@@ -239,4 +239,11 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   57% mid-skill with a spread curve. And the vault's uniform menu scheme is real: every
   panel is pad-navigable (up/down + A) through one generic hook, with each co-op player's
   pad driving their own quarter-screen panel. Arena A/B buttons no longer leak into menus.
-- Next: item variants (Corrupt/Cursed/Relic/Holographic), audio, more classes.
+- Twenty-third chunk (6a4d02e): item variants, using the vault's own recommended
+  separation — Corrupt is always paid in max health (the player learns what corruption
+  costs), Cursed carries a per-item FIXED penalty (the curse on Fleet Boots is always the
+  same curse — learnable, which I think improves on 'arbitrary'), Relic adds a bonus stat,
+  Holographic is labeled and slightly stronger. Implemented as derived item ids so saves,
+  stacking, and attribution needed zero changes. Worth folding the fixed-curse idea back
+  into the vault's Damage and Defense note.
+- Next: audio direction + implementation, then continued class tranches.

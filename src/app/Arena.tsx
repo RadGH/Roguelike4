@@ -4,6 +4,7 @@ import { TICK_DT, TICK_RATE } from '../sim/core/sim'
 import type { Run } from '../sim/run/run'
 import { toScreen } from '../render/iso'
 import { loadCriticalTextures, type CriticalTextures } from '../render/sprites'
+import { sound } from '../render/audio'
 
 /**
  * The arena canvas. Renders the run's sim with gameplay-critical primitives —
@@ -122,6 +123,11 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
       window.addEventListener('keyup', onKeyUp)
 
       let acc = 0
+      const audioPrev = {
+        gold: -1, level: -1, cleared: true,
+        health: new Map<number, number>(), downed: new Map<number, boolean>(),
+        lastGoldAt: 0, lastHurtAt: 0,
+      }
       let prevStart = false
       let prevPadCount = 0
       const prevA: boolean[] = []
@@ -192,8 +198,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           }
           // Buttons act only in the live arena — menus own A/B elsewhere.
           const inArena = currentRun.phase === 'arena' && !currentRun.paused
-          if (inArena && aDown && !prevA[p.id]) sim.useEquipment(p.id)
-          if (inArena && bDown && !prevB[p.id]) sim.useMovement(p.id)
+          if (inArena && aDown && !prevA[p.id] && sim.useEquipment(p.id)) sound.useActive()
+          if (inArena && bDown && !prevB[p.id] && sim.useMovement(p.id)) sound.useActive()
           prevA[p.id] = aDown
           prevB[p.id] = bDown
         }
@@ -203,6 +209,34 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         while (acc >= TICK_DT) {
           currentRun.tick()
           acc -= TICK_DT
+        }
+
+        // Audio cues from state diffs: sparse, informational only.
+        {
+          const p0 = sim.state.players[0]
+          const nowMs = performance.now()
+          if (audioPrev.gold >= 0 && p0.gold > audioPrev.gold && nowMs - audioPrev.lastGoldAt > 120) {
+            sound.gold()
+            audioPrev.lastGoldAt = nowMs
+          }
+          audioPrev.gold = p0.gold
+          if (audioPrev.level >= 0 && p0.level > audioPrev.level) sound.levelUp()
+          audioPrev.level = p0.level
+          const cleared = sim.state.wave.cleared
+          if (cleared && !audioPrev.cleared && currentRun.phase !== 'victory') sound.waveClear()
+          audioPrev.cleared = cleared
+          for (const pl of sim.state.players) {
+            const prevHp = audioPrev.health.get(pl.id)
+            if (prevHp !== undefined && pl.health < prevHp - 0.5 && nowMs - audioPrev.lastHurtAt > 300) {
+              sound.hurt()
+              audioPrev.lastHurtAt = nowMs
+            }
+            audioPrev.health.set(pl.id, pl.health)
+            const wasDowned = audioPrev.downed.get(pl.id) ?? false
+            if (pl.downed && !wasDowned) sound.down()
+            if (!pl.downed && wasDowned && pl.alive) sound.revive()
+            audioPrev.downed.set(pl.id, pl.downed)
+          }
         }
 
         // Camera: one shared view that zooms out to keep everyone framed.

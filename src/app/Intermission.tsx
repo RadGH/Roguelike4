@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PadPanel, padIndexForPlayer } from './padNav'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
+import { sound } from '../render/audio'
 
 /** Soft intermission timer (multiplayer): warn, then auto-resolve stragglers. */
 const WARN_AT_S = 35
@@ -131,10 +132,10 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                           <div className="desc">{item.description} · {item.tags.join(', ')}{slotNote}</div>
                         </span>
                         <span style={{ display: 'flex', gap: 6 }}>
-                          <button data-testid={`keep-${i}`} onClick={() => { run.resolveReward(p.id, i, 'kept'); onChange() }}>
+                          <button data-testid={`keep-${i}`} onClick={() => { run.resolveReward(p.id, i, 'kept'); sound.pick(); onChange() }}>
                             Keep
                           </button>
-                          <button onClick={() => { run.resolveReward(p.id, i, 'sold'); onChange() }}>
+                          <button onClick={() => { run.resolveReward(p.id, i, 'sold'); sound.purchase(); onChange() }}>
                             Sell {Math.round(item.price / 2)}g
                           </button>
                         </span>
@@ -157,7 +158,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                         className="card"
                         key={i}
                         data-testid={`grant-${i}`}
-                        onClick={() => { run.pickGrant(p.id, i); onChange() }}
+                        onClick={() => { run.pickGrant(p.id, i); sound.pick(); onChange() }}
                       >
                         <span>
                           <span className="name">{def.name}</span>
@@ -182,7 +183,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                         className="card"
                         key={i}
                         data-testid={`draft-${i}`}
-                        onClick={() => { run.pickPerk(p.id, i); onChange() }}
+                        onClick={() => { run.pickPerk(p.id, i); sound.pick(); onChange() }}
                       >
                         <span>
                           <span className={`name tier-${offer.tier}`}>{def.name}</span>
@@ -210,8 +211,8 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                         onClick={() => {
                           if (full) {
                             setReplacing((r) => ({ ...r, [p.id]: i }))
-                          } else {
-                            run.buyWeapon(p.id, i)
+                          } else if (run.buyWeapon(p.id, i) === 'ok') {
+                            sound.purchase()
                           }
                           onChange()
                         }}
@@ -241,7 +242,9 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                             key={slot}
                             data-testid={`replace-${slot}`}
                             onClick={() => {
-                              run.buyReplacing(p.id, replacing[p.id] as number, slot)
+                              if (run.buyReplacing(p.id, replacing[p.id] as number, slot) === 'ok') {
+                                sound.purchase()
+                              }
                               setReplacing((r) => ({ ...r, [p.id]: null }))
                               onChange()
                             }}
@@ -270,7 +273,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                         className="card"
                         key={i}
                         data-testid={`sell-${i}`}
-                        onClick={() => { run.sellWeapon(p.id, i); onChange() }}
+                        onClick={() => { run.sellWeapon(p.id, i); sound.purchase(); onChange() }}
                       >
                         <span className={`name tier-${w.tier}`}>{def.name}</span>
                         <span className="price">sell {run.sellValue(w.defId, w.tier)}g</span>

@@ -15,6 +15,7 @@ import {
   loadHistory, loadSave, storeSave,
 } from './persistence'
 import type { RunSave } from '../sim/run/save'
+import { isMuted, setMuted, sound, unlockAudio } from '../render/audio'
 import './app.css'
 
 const registry = loadContent()
@@ -29,6 +30,7 @@ export function App(): React.JSX.Element {
   const [chosenClasses, setChosenClasses] = useState<string[]>(['student'])
   const [chosenAct, setChosenAct] = useState('act1')
   const [unlockedNow, setUnlockedNow] = useState<string[]>([])
+  const [muted, setMutedState] = useState(() => isMuted())
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const onChange = useCallback(() => bump(), [])
   const savedWave = useRef(0)
@@ -43,6 +45,17 @@ export function App(): React.JSX.Element {
     const id = setInterval(bump, 150)
     return () => clearInterval(id)
   }, [run])
+
+  // The browser only allows audio after a user gesture — unlock on the first.
+  useEffect(() => {
+    const unlock = (): void => unlockAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
 
   // Esc (or a pad's Start button, handled in Arena) toggles the pause menu.
   useEffect(() => {
@@ -93,6 +106,7 @@ export function App(): React.JSX.Element {
         }
         storeProfile(nextProfile)
         setProfile(nextProfile)
+        if (earned.length > 0) sound.unlock()
         setUnlockedNow(earned.map((u) =>
           `${u.name}: ${u.rewards.map((r) => {
             const reg = r.kind === 'class' ? registry.classes :
@@ -246,6 +260,9 @@ export function App(): React.JSX.Element {
           </label>
           <button onClick={() => setShowHistory((v) => !v)} data-testid="history-toggle">
             Run history
+          </button>
+          <button onClick={() => { setMuted(!muted); setMutedState(!muted) }}>
+            {muted ? 'Sound: off' : 'Sound: on'}
           </button>
           <a href="manual.html" target="_blank" rel="noreferrer">
             <button>Manual</button>
