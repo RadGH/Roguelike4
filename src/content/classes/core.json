@@ -482,5 +482,82 @@
     "mods": {
       "goldPct": 10
     }
+  },
+  {
+    "id": "beastmaster",
+    "name": "Beastmaster",
+    "description": "Two ravens ride their shoulders, and every beast they lead borrows half their melee strength. One hand stays free for the whistle: a single weapon slot, and machines refuse their touch.",
+    "weaponSlots": 1,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "startingItems": [
+      "raven-pair"
+    ],
+    "petsInheritMeleePct": 50,
+    "cannotEquipTags": [
+      "Technology"
+    ],
+    "affinities": [
+      {
+        "tag": "Pets",
+        "pct": 10
+      }
+    ],
+    "mods": {}
+  },
+  {
+    "id": "druid",
+    "name": "Druid",
+    "description": "A wolf walks beside them, drawing power from the same magic they cast. The pact claims a weapon slot.",
+    "weaponSlots": 1,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "startingItems": [
+      "summon-wolf"
+    ],
+    "petsInheritMagicPct": 50,
+    "mods": {}
+  },
+  {
+    "id": "warlord",
+    "name": "Warlord",
+    "description": "Leads from the front with a squire at their flank who mirrors their swordwork. A commander carries one weapon and carries it well.",
+    "weaponSlots": 1,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "startingItems": [
+      "squire-oath"
+    ],
+    "mods": {
+      "maxHealth": 2
+    }
+  },
+  {
+    "id": "merchant",
+    "name": "Merchant",
+    "description": "Buys wholesale. Every shop cuts them a deal and always has something premium on the shelf.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "shopPricePct": -25,
+    "shopGuaranteedTier": 2,
+    "mods": {
+      "goldPct": 10
+    }
+  },
+  {
+    "id": "curator",
+    "name": "Curator",
+    "description": "Knows which relics are real and which curses are theater. Half of every curse is theater.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "cursedPenaltyPct": 50,
+    "relicBias": 3
   }
 ]

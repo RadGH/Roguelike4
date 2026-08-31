@@ -236,18 +236,30 @@ export class Run {
     for (let i = 0; i < this.sim.state.wave.chestsDropped && items.length > 0; i++) {
       const receiver = players[this.lootIndex % players.length]
       this.lootIndex++
+      const cls = this.registry.class(receiver.classId)
+      // Class equip restrictions (the Beastmaster shuns Technology): barred
+      // items never even appear for that player.
+      const banned = cls.cannotEquipTags ?? []
+      const pool = banned.length === 0 ? items
+        : items.filter((it) => !it.tags.some((t) => (banned as string[]).includes(t)))
       const rollActive = actives.length > 0 && this.rngRun.chance(0.25)
       let id: string
-      if (rollActive) {
+      if (rollActive || pool.length === 0) {
         id = this.rngRun.pick(actives).id
       } else {
-        const base = this.rngRun.pick(items)
+        const base = this.rngRun.pick(pool)
         // The Gambler's luck: corrupt rewards appear far more often for them.
-        const bias = this.registry.class(receiver.classId).corruptBias ?? 1
+        const bias = cls.corruptBias ?? 1
         let variant = variantEligible(base) ? rollVariant(this.rngRun.next()) : null
         if (!variant && bias > 1 && variantEligible(base) &&
             this.rngRun.chance(Math.min(0.3, 0.07 * (bias - 1)))) {
           variant = 'corrupt'
+        }
+        // The Curator's eye: relics surface for them far more often.
+        const rBias = cls.relicBias ?? 1
+        if (!variant && rBias > 1 && variantEligible(base) &&
+            this.rngRun.chance(Math.min(0.25, 0.05 * (rBias - 1)))) {
+          variant = 'relic'
         }
         id = variant ? `${variant}:${base.id}` : base.id
       }
@@ -332,9 +344,12 @@ export class Run {
   }
 
   private rollShop(playerId: number): ShopEntry[] {
+    const p = this.sim.player(playerId)
+    const cls = this.registry.class(p.classId)
+    const banned = cls.cannotEquipTags ?? []
     const weapons = [...this.registry.weapons.values()]
       .filter((w) => !this.pool || this.pool.weapons.has(w.id))
-    const p = this.sim.player(playerId)
+      .filter((w) => !w.tags.some((t) => (banned as string[]).includes(t)))
     // Build-weighted stock: lean toward tags the player already uses, so a
     // build develops rather than happens. A nudge, never a filter — every
     // weapon keeps a base weight, and the shop stays the pivot mechanism.
@@ -350,6 +365,14 @@ export class Run {
       })
       const tier = this.rollWeaponTier()
       stock.push({ weaponId: w.id, tier, price: this.priceFor(w, tier, playerId), sold: false })
+    }
+    // The Merchant's stock always includes something worth buying: if no
+    // entry reached the guaranteed tier, promote the first one to it.
+    const floor = cls.shopGuaranteedTier
+    if (floor !== undefined && stock.length > 0 && !stock.some((e) => e.tier >= floor)) {
+      const e = stock[0]
+      e.tier = floor
+      e.price = this.priceFor(this.registry.weapon(e.weaponId), floor, playerId)
     }
     return stock
   }

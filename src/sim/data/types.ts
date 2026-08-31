@@ -165,6 +165,18 @@ export interface ClassDef {
   healthPerItem?: number
   /** Personal shop price adjustment in percent (+25 = pays a quarter more). */
   shopPricePct?: number
+  /** All pets inherit this share of the owner's melee bonus (the Beastmaster). */
+  petsInheritMeleePct?: number
+  /** All pets inherit this share of the owner's magic bonus (the Druid). */
+  petsInheritMagicPct?: number
+  /** Items and weapons carrying any of these tags never reach this class. */
+  cannotEquipTags?: Tag[]
+  /** Relic rewards appear this many times more often (the Curator). */
+  relicBias?: number
+  /** Cursed item penalties are scaled to this percent (the Curator's 50). */
+  cursedPenaltyPct?: number
+  /** The shop always stocks at least one weapon at this tier (the Merchant). */
+  shopGuaranteedTier?: number
   /** Tag affinities: percent damage bonus/penalty when a weapon carries the tag. */
   affinities?: { tag: Tag; pct: number }[]
 }
@@ -252,7 +264,7 @@ export interface PetDef {
 
 /** Behavioral unlock conditions — they ask you to DO something, not to grind. */
 export type UnlockCondition =
-  | { type: 'run-as-class'; classId: string }   // finish a run, win or lose
+  | { type: 'run-as-class'; classId: string; win?: boolean } // finish a run; win:true demands victory
   | { type: 'win-act'; actId: string }
   | { type: 'reach-wave'; wave: number }
   | { type: 'total-kills'; count: number }      // lifetime, any run

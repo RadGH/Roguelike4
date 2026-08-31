@@ -74,12 +74,16 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
   // The Looter's trade: max health per item carried.
   if (cls?.healthPerItem) p.maxHealth += cls.healthPerItem * p.items.length
 
-  // Passive items: stat effects stack per copy carried.
+  // Passive items: stat effects stack per copy carried. The Curator shrugs
+  // off half of every curse — only the negative halves of cursed items scale.
+  const curseScale = cls?.cursedPenaltyPct !== undefined ? cls.cursedPenaltyPct / 100 : 1
   for (const itemId of p.items) {
     const item = resolveItem(registry, itemId)
+    const cursed = itemId.startsWith('cursed:')
     for (const eff of item.effects) {
       if (eff.kind !== 'stat') continue
-      applyAttribute(p, eff.attribute, eff.amount)
+      const amount = cursed && eff.amount < 0 ? eff.amount * curseScale : eff.amount
+      applyAttribute(p, eff.attribute, amount)
     }
   }
 

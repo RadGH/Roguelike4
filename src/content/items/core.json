@@ -479,6 +479,23 @@
     ]
   },
   {
+    "id": "squire-oath",
+    "name": "Squire",
+    "description": "A single loyal squire fights for you, sharing half your melee bonuses.",
+    "tags": [
+      "Pets",
+      "Summon"
+    ],
+    "price": 45,
+    "effects": [
+      {
+        "kind": "summon",
+        "petId": "squire",
+        "count": 1
+      }
+    ]
+  },
+  {
     "id": "squire-band",
     "name": "Squires",
     "description": "Three loyal squires fight for you, sharing half your melee bonuses.",

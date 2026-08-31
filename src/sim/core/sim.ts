@@ -303,7 +303,10 @@ export class Sim {
           pet.cooldownLeft = def.cooldown
           pet.firedTick = s.tick
           // Conversion: some pets inherit a share of their owner's melee bonus.
-          const inherited = (def.inheritMeleePct ?? 0) / 100 * owner.meleePct
+          const ownerCls = this.registry.class(owner.classId)
+          const inherited =
+            ((def.inheritMeleePct ?? 0) + (ownerCls.petsInheritMeleePct ?? 0)) / 100 * owner.meleePct +
+            (ownerCls.petsInheritMagicPct ?? 0) / 100 * owner.magicPct
           const damage = def.damage * (1 + (owner.allPct + owner.petPct + inherited) / 100)
           if (def.projectileSpeed) {
             const n = norm(target.x - pet.x, target.y - pet.y)

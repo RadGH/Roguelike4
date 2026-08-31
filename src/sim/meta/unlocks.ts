@@ -15,6 +15,8 @@ export interface Profile {
   runsCompleted: number
   /** Class ids that have finished a run (win or lose). */
   classesRun: string[]
+  /** Classes the player has WON a run with (a stricter unlock condition). */
+  classesWon: string[]
   actsWon: string[]
   bestWaveReached: number
   bestKillsInOneWave: number
@@ -27,6 +29,7 @@ export function emptyProfile(): Profile {
     totalKills: 0,
     runsCompleted: 0,
     classesRun: [],
+    classesWon: [],
     actsWon: [],
     bestWaveReached: 0,
     bestKillsInOneWave: 0,
@@ -52,6 +55,7 @@ export function applyRunResult(profile: Profile, result: RunResult): Profile {
     ...profile,
     unlockedIds: [...profile.unlockedIds],
     classesRun: [...profile.classesRun],
+    classesWon: [...(profile.classesWon ?? [])],
     actsWon: [...profile.actsWon],
   }
   next.runsCompleted++
@@ -61,6 +65,7 @@ export function applyRunResult(profile: Profile, result: RunResult): Profile {
   next.bestSimultaneousBurns = Math.max(next.bestSimultaneousBurns, result.maxSimultaneousBurns)
   for (const p of result.players) {
     if (!next.classesRun.includes(p.classId)) next.classesRun.push(p.classId)
+    if (result.won && !next.classesWon.includes(p.classId)) next.classesWon.push(p.classId)
   }
   if (result.won && !next.actsWon.includes(result.actId)) next.actsWon.push(result.actId)
   return next
@@ -69,7 +74,9 @@ export function applyRunResult(profile: Profile, result: RunResult): Profile {
 export function conditionMet(profile: Profile, def: UnlockDef): boolean {
   const c = def.condition
   switch (c.type) {
-    case 'run-as-class': return profile.classesRun.includes(c.classId)
+    case 'run-as-class': return c.win
+      ? (profile.classesWon ?? []).includes(c.classId)
+      : profile.classesRun.includes(c.classId)
     case 'win-act': return profile.actsWon.includes(c.actId)
     case 'reach-wave': return profile.bestWaveReached >= c.wave
     case 'total-kills': return profile.totalKills >= c.count
@@ -82,7 +89,12 @@ export function conditionMet(profile: Profile, def: UnlockDef): boolean {
 export function conditionProgress(profile: Profile, def: UnlockDef): string {
   const c = def.condition
   switch (c.type) {
-    case 'run-as-class': return profile.classesRun.includes(c.classId) ? 'done' : 'not yet'
+    case 'run-as-class': {
+      const done = c.win
+        ? (profile.classesWon ?? []).includes(c.classId)
+        : profile.classesRun.includes(c.classId)
+      return done ? 'done' : 'not yet'
+    }
     case 'win-act': return profile.actsWon.includes(c.actId) ? 'done' : 'not yet'
     case 'reach-wave': return `${Math.min(profile.bestWaveReached, c.wave)}/${c.wave}`
     case 'total-kills': return `${Math.min(profile.totalKills, c.count)}/${c.count}`

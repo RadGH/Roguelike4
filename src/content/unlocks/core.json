@@ -490,5 +490,82 @@
         "id": "gambler"
       }
     ]
+  },
+  {
+    "id": "pack-leader",
+    "name": "Pack Leader",
+    "description": "Win a run as the Engineer.",
+    "condition": {
+      "type": "run-as-class",
+      "classId": "engineer",
+      "win": true
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "beastmaster"
+      }
+    ]
+  },
+  {
+    "id": "wild-heart",
+    "name": "Wild Heart",
+    "description": "Defeat 400 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 400
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "druid"
+      }
+    ]
+  },
+  {
+    "id": "field-commander",
+    "name": "Field Commander",
+    "description": "Win a run as the King.",
+    "condition": {
+      "type": "run-as-class",
+      "classId": "king",
+      "win": true
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "warlord"
+      }
+    ]
+  },
+  {
+    "id": "cost-of-doing-business",
+    "name": "Cost of Doing Business",
+    "description": "Defeat 500 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 500
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "merchant"
+      }
+    ]
+  },
+  {
+    "id": "keen-eye",
+    "name": "Keen Eye",
+    "description": "Complete Act 2.",
+    "condition": {
+      "type": "win-act",
+      "actId": "act2"
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "curator"
+      }
+    ]
   }
 ]

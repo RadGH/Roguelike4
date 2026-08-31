@@ -331,3 +331,22 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   the Warden is the act's real filter (kills ~27% of runs). Differentiating act
   difficulty beyond the boss needs human playtest, not more sim churn. High-skill
   numbers still show the known non-monotonic policy artifact.
+- Thirty-sixth chunk: five roster classes built on existing machinery — Beastmaster
+  (pets inherit half of melee, Technology barred from their rewards AND their shop),
+  Druid (pets inherit half of magic), Warlord (one squire, real weapons), Merchant
+  (25% off, shop always stocks a tier-2 — its identity lives entirely in the shop,
+  exactly as the vault protects), Curator (cursed penalties halved, relics 3x).
+  Profile grew a `classesWon` list so unlocks can demand a WIN as a class, not just
+  an attempt — old saved profiles default it safely. 31 of 36 classes.
+- **Sidegrade lesson from the sim**: the companion trio first shipped with free pets
+  plus full loadouts and simmed 87–97% (vs student 57%). Stat penalties (-10% damage,
+  -10% speed) did NOTHING — a companion's sim value is body-blocking and free aggro,
+  which stat knobs don't touch. What worked was the King's currency: a weapon slot.
+  All three now run one weapon slot and land 63–75%, near the Engineer's 70%. Vault
+  note candidate: "price companions in slots, not stats" — stat costs undershoot
+  because pets change the SHAPE of a fight, not its arithmetic.
+- Curator note: iron-plating's hash-fixed curse lands on its own bonus stat, so for
+  the Curator the cursed copy is strictly better than the plain one. That's arguably
+  the class working as intended ("half of every curse is theater"), but if fixed
+  curses ever get re-rolled, "curse may not hit the item's own primary stat" would
+  keep Cursed meaningfully cursed for everyone.
