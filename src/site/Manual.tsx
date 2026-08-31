@@ -99,7 +99,7 @@ export function Manual(): React.JSX.Element {
         </p>
         <table>
           <thead>
-            <tr><th>Weapon</th><th>Type</th><th>Damage</th><th>Speed</th><th>Range</th><th>Tags</th><th>Unlock</th></tr>
+            <tr><th>Weapon</th><th>Type</th><th>Damage</th><th>Rate</th><th>Range</th><th>Tags</th><th>Unlock</th></tr>
           </thead>
           <tbody>
             {[...registry.weapons.values()].map((w) => (
@@ -107,7 +107,7 @@ export function Manual(): React.JSX.Element {
                 <td>{w.name}</td>
                 <td>{w.damageType}</td>
                 <td>{w.damage}{(w.projectileCount ?? 1) > 1 ? ` ×${w.projectileCount}` : ''}</td>
-                <td>{w.cooldown}s</td>
+                <td>{Math.round(10 / w.cooldown)} per 10s</td>
                 <td>{w.range}</td>
                 <td className="hint">{w.tags.join(', ')}</td>
                 <td className="hint">{unlockNote('weapon', w.id) ?? '—'}</td>
@@ -142,7 +142,7 @@ export function Manual(): React.JSX.Element {
           <div className="entry-row" key={a.id}>
             <span className="name">{a.name}</span>
             <span>{a.description}</span>
-            <span className="hint">{a.slot === 'equipment' ? 'A' : 'B'} · {a.cooldown}s cooldown</span>
+            <span className="hint">{a.slot === 'equipment' ? 'A' : 'B'} · ready every {Math.round(a.cooldown)}s</span>
           </div>
         ))}
       </section>
@@ -158,7 +158,7 @@ export function Manual(): React.JSX.Element {
           <div className="entry-row" key={pet.id}>
             <span className="name">{pet.name}</span>
             <span>{pet.kind === 'structure' ? 'Structure' : 'Companion'} · {pet.mortal ? `mortal, returns in ${pet.respawn}s` : 'indestructible'}</span>
-            <span className="hint">{pet.damage} damage every {pet.cooldown}s</span>
+            <span className="hint">{pet.damage} damage, {Math.round(10 / pet.cooldown)} hits per 10s</span>
           </div>
         ))}
       </section>

@@ -14,6 +14,21 @@ import { sound } from '../render/audio'
  */
 type DebugView = 'normal' | 'markers' | 'silhouette'
 
+/**
+ * Runtime readability tuning (art-doc requirement): gameplay-critical visuals
+ * expose live-adjustable parameters so problems get tuned, not redrawn.
+ * From the console: __tuning.enemyScale = 1.3, etc. Not a player feature.
+ */
+const tuning = {
+  enemyScale: 1,
+  playerScale: 1,
+  markerAlpha: 0.35,
+  outlineBoost: 0,
+  telegraphAlpha: 1,
+}
+declare global { interface Window { __tuning?: typeof tuning } }
+if (typeof window !== 'undefined') window.__tuning = tuning
+
 export function Arena({ run }: { run: Run }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const runRef = useRef(run)
@@ -313,7 +328,7 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const s = toScreen(tg.x, tg.y)
           const r = tg.radius * 32
           const progress = 1 - tg.timeLeft / tg.window
-          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color: 0xd93a3a, alpha: 0.18 + progress * 0.3 })
+          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color: 0xd93a3a, alpha: (0.18 + progress * 0.3) * tuning.telegraphAlpha })
           gTelegraph.ellipse(s.sx, s.sy, r * progress, (r * progress) / 2)
             .fill({ color: 0xd93a3a, alpha: 0.35 })
           gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 2, color: 0xd93a3a })
@@ -338,7 +353,7 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const def = registry.enemy(e.defId)
           const s = toScreen(e.x, e.y)
           const r = sim.radiusOf(e) * 32
-          gGround.ellipse(s.sx, s.sy, r + 3, (r + 3) / 2).fill({ color: 0x000000, alpha: 0.35 })
+          gGround.ellipse(s.sx, s.sy, r + 3, (r + 3) / 2).fill({ color: 0x000000, alpha: tuning.markerAlpha })
           // Burrowed enemies exist only as a moving ground disturbance.
           if (!sim.isTargetable(e)) {
             gGround.ellipse(s.sx, s.sy, r + 5, (r + 5) / 2).stroke({ width: 2, color: 0xb08a5a })
@@ -349,7 +364,7 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const tex = textures?.enemy(e.defId, def.archetype) ?? null
           if (tex) {
             const sp = sprite(`e${e.id}`, tex)
-            const size = Math.max(20, r * 2.8)
+            const size = Math.max(20, r * 2.8) * tuning.enemyScale
             sp.position.set(s.sx, s.sy - lift + 4)
             sp.height = size
             sp.width = size
@@ -446,8 +461,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
             if (textures) {
               const sp = sprite(`p${p.id}`, textures.player)
               sp.position.set(s.sx, s.sy + 4)
-              sp.height = 40
-              sp.width = 40
+              sp.height = 40 * tuning.playerScale
+              sp.width = 40 * tuning.playerScale
               sp.scale.x = (p.moveX < -0.05 ? -1 : 1) * Math.abs(sp.scale.x)
               sp.tint = tint
             } else {

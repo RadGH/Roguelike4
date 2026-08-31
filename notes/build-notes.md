@@ -265,4 +265,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   vault:** melee-start classes consistently trail ranged starts by ~15 points — the melee
   proximity tax needs either bigger melee numbers or a defensive rider baked into the
   Melee tag. Worth a vault decision rather than more per-class patches.
-- Next: hot-join, readability-gate pass w/ fresh screenshots, whole-numbers audit.
+- Twenty-seventh chunk (8a9f698): hot-join (pause menu → Add player, joins beside P1 at
+  half health with their class kit) and a real readability-gate run at wave-9 density.
+  The screenshot review caught exactly the class of failure the vault's art doc predicts:
+  the solo camera zoomed in so far the horde was off-screen. The camera now frames every
+  threat within 9 units of any player. The vault's review-gates section works as intended
+  — a still exposed what live play hides.
+- Next: whole-numbers audit + 4P framing shot, then further breadth as time allows.
