@@ -164,10 +164,12 @@ export function App(): React.JSX.Element {
     if (debugWave > 1) {
       for (const p of run.sim.state.players) {
         p.level = 6
-        p.maxHealth = 60
-        p.health = 60
+        // Equip first: equipping recomputes stats from scratch and would
+        // wipe a health buff applied before it.
         run.sim.equipWeapon(p.id, 'shortbow', 2)
         run.sim.equipWeapon(p.id, 'practice-sword', 2)
+        p.maxHealth = 60
+        p.health = 60
       }
       run.sim.startWave(registry.act(run.actId).waves, Math.min(debugWave, 10))
     }

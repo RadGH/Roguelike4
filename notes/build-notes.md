@@ -395,3 +395,12 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   If this direction is approved I can build the Camp screen and the Broker/Scout in
   one chunk; the Trainer needs a day. Waiting on that call rather than shelving it
   silently — it's the last big system, and it's his to shape.
+- Thirty-ninth chunk: **v0.3.0 tagged.** Everything since v0.2.0: act 3 (six new
+  mechanic-bearing enemies + The Warden), nine classes (roster 35/36 — every class
+  the vault fully specifies is now built), aura items, splash weapons, totem
+  equipment, structure tiers, win-gated unlocks, run history to spec, and the
+  policy hunt/cleanup fix that ended silent wave-stalls. Release-doc sim band moved
+  to 40–60% with the rationale recorded (the policy got smarter, not the game
+  easier). Act-3 screenshot review passed — grasper/beacon silhouettes read at a
+  glance; the one finding was a dev-tool bug (debug health buff applied before
+  equips, so recompute wiped it) — fixed.
