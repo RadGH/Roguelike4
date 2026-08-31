@@ -73,6 +73,8 @@ export interface EnemyDef {
   splitTo?: string
   /** Spawners: enemy id produced while alive (cadence via props.spawnCd). */
   spawnId?: string
+  /** Bosses count for anti-elite bonuses and boss-specific presentation. */
+  boss?: boolean
   /** Archetype-specific tuning knobs (standoff distance, ...). */
   props?: Record<string, number>
 }
@@ -130,6 +132,15 @@ export interface ClassDef {
   >>
   /** Permanent self-damage per second (the Vampire's clock). */
   selfDamagePerSec?: number
+  /**
+   * Crowd defense (the Bulwark): bonus armor per enemy within radius, up to
+   * a cap — the safest place to stand becomes the middle of the horde.
+   */
+  packDefense?: { radius: number; armorPerEnemy: number; armorCap: number }
+  /** Percent bonus damage against elites and bosses (the Demon Hunter). */
+  eliteDamagePct?: number
+  /** Information class (the Oracle): the arena reveals enemy health bars. */
+  revealsInfo?: boolean
   /** Max health granted per item carried (the Looter's trade). */
   healthPerItem?: number
   /** Personal shop price adjustment in percent (+25 = pays a quarter more). */

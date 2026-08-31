@@ -272,5 +272,66 @@
     "mods": {
       "goldPct": 10
     }
+  },
+  {
+    "id": "bulwark",
+    "name": "Bulwark",
+    "description": "Hardens in a crowd: the more enemies pressing in, the less everything hurts.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "packDefense": {
+      "radius": 3,
+      "armorPerEnemy": 8,
+      "armorCap": 48
+    },
+    "mods": {
+      "maxHealth": 6
+    }
+  },
+  {
+    "id": "magnetist",
+    "name": "Magnetist",
+    "description": "Everything drifts toward them \u2014 and picking things up bites back.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "startingItems": [
+      "static-charm"
+    ],
+    "mods": {
+      "goldPct": 5
+    }
+  },
+  {
+    "id": "demon-hunter",
+    "name": "Demon Hunter",
+    "description": "Quiet against the rabble, decisive against elites and bosses.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "shortbow"
+    ],
+    "eliteDamagePct": 40
+  },
+  {
+    "id": "oracle",
+    "name": "Oracle",
+    "description": "Sees what others cannot: every enemy's health, plainly. Knowledge is its own power.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "revealsInfo": true,
+    "mods": {
+      "xpPct": 10
+    },
+    "affinities": [
+      {
+        "tag": "Magic",
+        "pct": 10
+      }
+    ]
   }
 ]

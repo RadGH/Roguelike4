@@ -9,7 +9,11 @@
     "radius": 0.25,
     "xp": 1,
     "gold": 1,
-    "flock": { "separation": 1.4, "alignment": 0.6, "cohesion": 0.5 }
+    "flock": {
+      "separation": 1.4,
+      "alignment": 0.6,
+      "cohesion": 0.5
+    }
   },
   {
     "id": "scurrier",
@@ -32,7 +36,12 @@
     "radius": 0.35,
     "xp": 3,
     "gold": 2,
-    "props": { "standoff": 6, "attackCd": 3, "attackRange": 9, "attackRadius": 1.2 }
+    "props": {
+      "standoff": 6,
+      "attackCd": 3,
+      "attackRange": 9,
+      "attackRadius": 1.2
+    }
   },
   {
     "id": "slime",
@@ -68,7 +77,12 @@
     "radius": 0.3,
     "xp": 3,
     "gold": 2,
-    "props": { "wanderCd": 1.1, "diveCd": 4, "diveSpeed": 9, "diveTime": 0.55 }
+    "props": {
+      "wanderCd": 1.1,
+      "diveCd": 4,
+      "diveSpeed": 9,
+      "diveTime": 0.55
+    }
   },
   {
     "id": "thornback",
@@ -80,7 +94,11 @@
     "radius": 0.45,
     "xp": 4,
     "gold": 3,
-    "props": { "spikeCd": 1.2, "spikeRange": 2.4, "spikeDamage": 3 }
+    "props": {
+      "spikeCd": 1.2,
+      "spikeRange": 2.4,
+      "spikeDamage": 3
+    }
   },
   {
     "id": "gorer",
@@ -92,7 +110,13 @@
     "radius": 0.6,
     "xp": 6,
     "gold": 4,
-    "props": { "chargeCd": 4.5, "chargeTrigger": 7, "windup": 0.8, "chargeSpeed": 11, "chargeTime": 0.9 }
+    "props": {
+      "chargeCd": 4.5,
+      "chargeTrigger": 7,
+      "windup": 0.8,
+      "chargeSpeed": 11,
+      "chargeTime": 0.9
+    }
   },
   {
     "id": "bloater",
@@ -104,7 +128,12 @@
     "radius": 0.5,
     "xp": 5,
     "gold": 3,
-    "props": { "burstRadius": 1.6, "burstDamage": 4, "poolTtl": 4, "poolDps": 2 }
+    "props": {
+      "burstRadius": 1.6,
+      "burstDamage": 4,
+      "poolTtl": 4,
+      "poolDps": 2
+    }
   },
   {
     "id": "weaver",
@@ -116,7 +145,12 @@
     "radius": 0.4,
     "xp": 4,
     "gold": 3,
-    "props": { "webCd": 4.5, "webRadius": 1.5, "webTtl": 7, "webSlow": 0.45 }
+    "props": {
+      "webCd": 4.5,
+      "webRadius": 1.5,
+      "webTtl": 7,
+      "webSlow": 0.45
+    }
   },
   {
     "id": "delver",
@@ -128,7 +162,13 @@
     "radius": 0.45,
     "xp": 6,
     "gold": 4,
-    "props": { "burrowSpeed": 3.4, "eruptTrigger": 1.4, "eruptWindow": 1.1, "eruptRadius": 1.4, "surfacedTime": 2.5 }
+    "props": {
+      "burrowSpeed": 3.4,
+      "eruptTrigger": 1.4,
+      "eruptWindow": 1.1,
+      "eruptRadius": 1.4,
+      "surfacedTime": 2.5
+    }
   },
   {
     "id": "brood-sac",
@@ -141,7 +181,10 @@
     "xp": 10,
     "gold": 8,
     "spawnId": "nibbler",
-    "props": { "spawnCd": 2.5, "spawnCount": 2 }
+    "props": {
+      "spawnCd": 2.5,
+      "spawnCount": 2
+    }
   },
   {
     "id": "kingslime-t1",
@@ -155,7 +198,14 @@
     "gold": 30,
     "splitInto": 3,
     "splitTo": "kingslime-t2",
-    "props": { "slamCd": 5, "slamSeverity": 2, "slamRadius": 2.6, "slamDamage": 8, "slamRange": 10 }
+    "props": {
+      "slamCd": 5,
+      "slamSeverity": 2,
+      "slamRadius": 2.6,
+      "slamDamage": 8,
+      "slamRange": 10
+    },
+    "boss": true
   },
   {
     "id": "kingslime-t2",
@@ -169,7 +219,14 @@
     "gold": 10,
     "splitInto": 3,
     "splitTo": "kingslime-t3",
-    "props": { "slamCd": 4, "slamSeverity": 1, "slamRadius": 1.7, "slamDamage": 5, "slamRange": 8 }
+    "props": {
+      "slamCd": 4,
+      "slamSeverity": 1,
+      "slamRadius": 1.7,
+      "slamDamage": 5,
+      "slamRange": 8
+    },
+    "boss": true
   },
   {
     "id": "kingslime-t3",
@@ -182,7 +239,8 @@
     "xp": 3,
     "gold": 4,
     "splitInto": 3,
-    "splitTo": "kingslime-t4"
+    "splitTo": "kingslime-t4",
+    "boss": true
   },
   {
     "id": "kingslime-t4",
@@ -194,6 +252,11 @@
     "radius": 0.32,
     "xp": 1,
     "gold": 2,
-    "flock": { "separation": 1.2, "alignment": 0.5, "cohesion": 0.6 }
+    "flock": {
+      "separation": 1.2,
+      "alignment": 0.5,
+      "cohesion": 0.6
+    },
+    "boss": true
   }
 ]

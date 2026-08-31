@@ -295,5 +295,65 @@
         "id": "act2"
       }
     ]
+  },
+  {
+    "id": "unmoved",
+    "name": "Unmoved",
+    "description": "Defeat 70 enemies in a single wave.",
+    "condition": {
+      "type": "kills-in-one-wave",
+      "count": 70
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "bulwark"
+      }
+    ]
+  },
+  {
+    "id": "drawn-in",
+    "name": "Drawn In",
+    "description": "Defeat 350 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 350
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "magnetist"
+      }
+    ]
+  },
+  {
+    "id": "slayer",
+    "name": "Slayer",
+    "description": "Complete Act 2.",
+    "condition": {
+      "type": "win-act",
+      "actId": "act2"
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "demon-hunter"
+      }
+    ]
+  },
+  {
+    "id": "foresight",
+    "name": "Foresight",
+    "description": "Reach wave 9 in any run.",
+    "condition": {
+      "type": "reach-wave",
+      "wave": 9
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "oracle"
+      }
+    ]
   }
 ]

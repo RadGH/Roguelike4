@@ -9,7 +9,12 @@
     "radius": 0.4,
     "xp": 4,
     "gold": 3,
-    "props": { "hopCd": 2.2, "hopSpeed": 9, "hopTime": 0.45, "hopCrouch": 0.4 }
+    "props": {
+      "hopCd": 2.2,
+      "hopSpeed": 9,
+      "hopTime": 0.45,
+      "hopCrouch": 0.4
+    }
   },
   {
     "id": "sprayer",
@@ -21,7 +26,12 @@
     "radius": 0.45,
     "xp": 5,
     "gold": 4,
-    "props": { "trailCd": 1.1, "trailRadius": 0.9, "trailTtl": 5, "trailDps": 2 }
+    "props": {
+      "trailCd": 1.1,
+      "trailRadius": 0.9,
+      "trailTtl": 5,
+      "trailDps": 2
+    }
   },
   {
     "id": "fumer",
@@ -33,7 +43,14 @@
     "radius": 0.55,
     "xp": 6,
     "gold": 5,
-    "props": { "fumeCd": 2, "fumeBase": 1, "fumeGrowth": 0.18, "fumeMax": 3.2, "fumeTtl": 2.2, "fumeDps": 2 }
+    "props": {
+      "fumeCd": 2,
+      "fumeBase": 1,
+      "fumeGrowth": 0.18,
+      "fumeMax": 3.2,
+      "fumeTtl": 2.2,
+      "fumeDps": 2
+    }
   },
   {
     "id": "bannerman",
@@ -45,7 +62,10 @@
     "radius": 0.5,
     "xp": 8,
     "gold": 6,
-    "props": { "auraRadius": 4, "auraDamagePct": 30 }
+    "props": {
+      "auraRadius": 4,
+      "auraDamagePct": 30
+    }
   },
   {
     "id": "shielder",
@@ -57,7 +77,10 @@
     "radius": 0.5,
     "xp": 8,
     "gold": 6,
-    "props": { "shieldRadius": 4, "shieldReductionPct": 50 }
+    "props": {
+      "shieldRadius": 4,
+      "shieldReductionPct": 50
+    }
   },
   {
     "id": "caller",
@@ -70,7 +93,10 @@
     "xp": 7,
     "gold": 6,
     "spawnId": "scurrier",
-    "props": { "spawnCd": 6, "spawnCount": 2 }
+    "props": {
+      "spawnCd": 6,
+      "spawnCount": 2
+    }
   },
   {
     "id": "broodmother",
@@ -84,8 +110,14 @@
     "gold": 40,
     "spawnId": "nibbler",
     "props": {
-      "spawnCd": 4, "spawnCount": 3,
-      "slamCd": 6, "slamSeverity": 1, "slamRadius": 2.2, "slamDamage": 7, "slamRange": 7
-    }
+      "spawnCd": 4,
+      "spawnCount": 3,
+      "slamCd": 6,
+      "slamSeverity": 1,
+      "slamRadius": 2.2,
+      "slamDamage": 7,
+      "slamRange": 7
+    },
+    "boss": true
   }
 ]

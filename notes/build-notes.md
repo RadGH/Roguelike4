@@ -246,4 +246,11 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   Holographic is labeled and slightly stronger. Implemented as derived item ids so saves,
   stacking, and attribution needed zero changes. Worth folding the fixed-curse idea back
   into the vault's Damage and Defense note.
-- Next: audio direction + implementation, then continued class tranches.
+- Twenty-fourth chunk (05f0d84): audio. My proposed direction (the vault left it open):
+  fully procedural Web Audio — no files, no downloads, and cues only where they carry
+  information (money, level-ups, wave clears, getting hit, downs and revives, shop
+  transactions, the unlock fanfare). Weapon fire and enemy hits are deliberately silent;
+  in a horde game constant combat noise would just be static. Mute toggle persists.
+  Suggest adding an Audio Direction note to the vault with this principle: sound obeys
+  the same rule as the critical art layer — it exists to carry information, not decoration.
+- Next: continued class tranches + a fresh full-game balance sweep + updated screenshot.

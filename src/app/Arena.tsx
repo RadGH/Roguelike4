@@ -275,6 +275,9 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
 
         const silho = view === 'silhouette'
         const markersOnly = view === 'markers'
+        const oracleSight = sim.state.players.some(
+          (p) => registry.classes.get(p.classId)?.revealsInfo,
+        )
 
         const { arenaW: aw, arenaH: ah } = sim.state
         const corners = [
@@ -368,6 +371,12 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           // Shocked: a crackling yellow ring — this target takes extra damage.
           if (e.shockTtl > 0) {
             gCritical.ellipse(s.sx, s.sy, r + 9, (r + 9) / 2).stroke({ width: 2, color: 0xffe95a })
+          }
+          // The Oracle sees every enemy's health, plainly.
+          if (oracleSight && e.health < e.maxHealth) {
+            const bw = Math.max(16, r * 1.5)
+            gCritical.rect(s.sx - bw / 2, s.sy - lift - r - 8, bw, 3).fill(0x000000)
+            gCritical.rect(s.sx - bw / 2, s.sy - lift - r - 8, (bw * e.health) / e.maxHealth, 3).fill(0xffd34d)
           }
         }
 

@@ -1003,7 +1003,19 @@ export class Sim {
     sourceId: string,
     isAttack: boolean,
   ): void {
-    const result = resolveDamage(amount, type, p.defenses, isAttack, this.rngCombat.next())
+    // Crowd defense (the Bulwark): the middle of the horde is the safe place.
+    let defenses = p.defenses
+    const pack = this.registry.classes.get(p.classId)?.packDefense
+    if (pack) {
+      let nearby = 0
+      const r2 = pack.radius * pack.radius
+      for (const e of this.state.enemies) {
+        if (distSq(e, p) <= r2) nearby++
+      }
+      const bonus = Math.min(pack.armorCap, nearby * pack.armorPerEnemy)
+      if (bonus > 0) defenses = { ...defenses, armor: defenses.armor + bonus }
+    }
+    const result = resolveDamage(amount, type, defenses, isAttack, this.rngCombat.next())
     this.tracker.recordTaken({
       tick: this.state.tick,
       wave: this.state.wave.number,
@@ -1153,6 +1165,15 @@ export class Sim {
     }
     // Shocked targets take more from everything — amplification, not control.
     if (e.shockTtl > 0) amount *= 1.25
+
+    // The Demon Hunter: quiet against the rabble, decisive against the big.
+    const hunter = this.state.players.find((p) => p.id === playerId)
+    if (hunter) {
+      const elitePct = this.registry.classes.get(hunter.classId)?.eliteDamagePct
+      if (elitePct && (e.elite || this.registry.enemy(e.defId).boss)) {
+        amount *= 1 + elitePct / 100
+      }
+    }
 
     // Lightning striking a shocked target arcs to nearby enemies.
     if (!isArc && e.shockTtl > 0 && this.sourceTags(sourceId).includes('Lightning')) {

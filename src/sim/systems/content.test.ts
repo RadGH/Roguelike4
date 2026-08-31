@@ -97,3 +97,52 @@ describe('new classes', () => {
     expect(avail.weapons).not.toContain('shotgun')
   })
 })
+
+describe('tranche-four classes', () => {
+  it('the bulwark takes less damage the more enemies press in', () => {
+    const quiet2: WaveDef[] = [{ wave: 1, groups: [{ at: 999, enemy: 'nibbler', count: 1 }] }]
+    const hit = (crowd: number): number => {
+      const sim = new Sim(registry, { seed: 5, playerCount: 1, classIds: ['bulwark'] })
+      sim.startWave(quiet2, 1)
+      const p = sim.state.players[0]
+      p.maxHealth = 1000
+      p.health = 1000
+      for (let i = 0; i < crowd; i++) {
+        sim.state.wave.pendingSpawns.push({ at: 0, enemy: 'nibbler', remaining: 1, spacing: 0, nextAt: 0, elite: null })
+      }
+      sim.tick()
+      for (const e of sim.state.enemies) { e.x = p.x + 0.5; e.y = p.y }
+      sim['damagePlayer'](p, 20, 'Melee', 'test', false)
+      return 1000 - p.health
+    }
+    const alone = hit(0)
+    const crowded = hit(5)
+    expect(crowded).toBeLessThan(alone)
+  })
+
+  it('the demon hunter hits elites and bosses harder', () => {
+    const quiet2: WaveDef[] = [{ wave: 1, groups: [{ at: 999, enemy: 'nibbler', count: 1 }] }]
+    const sim = new Sim(registry, { seed: 6, playerCount: 1, classIds: ['demon-hunter'] })
+    sim.startWave(quiet2, 1)
+    sim.state.wave.pendingSpawns.push(
+      { at: 0, enemy: 'scurrier', remaining: 1, spacing: 0, nextAt: 0, elite: null },
+      { at: 0, enemy: 'brood-sac', remaining: 1, spacing: 0, nextAt: 0, elite: 'resistant' },
+    )
+    sim.tick()
+    const plain = sim.state.enemies.find((e) => e.defId === 'scurrier')
+    const elite = sim.state.enemies.find((e) => e.defId === 'brood-sac')
+    if (!plain || !elite) throw new Error('missing')
+    const h0 = plain.health
+    sim['damageEnemy'](plain, 4, 0, 'shortbow', 'Ranged')
+    expect(h0 - plain.health).toBeCloseTo(4, 5) // no bonus vs plain
+    const h1 = elite.health
+    sim['damageEnemy'](elite, 10, 0, 'shortbow', 'Ranged')
+    // resistant absorbs 30%, hunter adds 40%: 10 * 0.7 * 1.4 = 9.8
+    expect(h1 - elite.health).toBeCloseTo(9.8, 5)
+  })
+
+  it('the magnetist starts wired for pickup damage; the oracle reveals', () => {
+    expect(registry.class('magnetist').startingItems).toContain('static-charm')
+    expect(registry.class('oracle').revealsInfo).toBe(true)
+  })
+})
