@@ -430,5 +430,50 @@
         "id": "quartermaster"
       }
     ]
+  },
+  {
+    "id": "gravecaller",
+    "name": "Gravecaller",
+    "description": "Defeat 1200 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 1200
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "necromancer"
+      }
+    ]
+  },
+  {
+    "id": "venomous",
+    "name": "Venomous",
+    "description": "Defeat 80 enemies in a single wave.",
+    "condition": {
+      "type": "kills-in-one-wave",
+      "count": 80
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "toxicologist"
+      }
+    ]
+  },
+  {
+    "id": "high-roller",
+    "name": "High Roller",
+    "description": "Defeat 650 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 650
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "gambler"
+      }
+    ]
   }
 ]

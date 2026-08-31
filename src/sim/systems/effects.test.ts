@@ -106,3 +106,42 @@ describe('elements are effects, not damage types', () => {
     expect(sawBurn).toBe(true)
   })
 })
+
+describe('tranche-seven class mechanics', () => {
+  it('poison stacks without limit and deals attributed damage', () => {
+    const sim = new Sim(registry, { seed: 70, playerCount: 1, classIds: ['toxicologist'] })
+    sim.equipWeapon(0, 'throwing-stars')
+    const p = sim.state.players[0]
+    p.maxHealth = 100000
+    p.health = 100000
+    sim.startWave(quiet, 1)
+    sim.state.wave.pendingSpawns.push({ at: 0, enemy: 'kingslime-t1', remaining: 1, spacing: 0, nextAt: 0, elite: null })
+    let maxStack = 0
+    for (let i = 0; i < TICK_RATE * 60; i++) {
+      sim.tick()
+      for (const e of sim.state.enemies) maxStack = Math.max(maxStack, e.poisonDps)
+    }
+    expect(maxStack).toBeGreaterThan(1) // stacked beyond one application
+    expect(sim.tracker.bySource(0).get('throwing-stars') ?? 0).toBeGreaterThan(0)
+  })
+
+  it('the necromancer raises temporary allies from kills, and they expire', () => {
+    const sim = new Sim(registry, { seed: 71, playerCount: 1, classIds: ['necromancer'] })
+    sim.equipWeapon(0, 'practice-wand')
+    const p = sim.state.players[0]
+    p.maxHealth = 100000
+    p.health = 100000
+    sim.startWave(quiet, 1)
+    sim.state.wave.pendingSpawns.push({ at: 0, enemy: 'nibbler', remaining: 40, spacing: 0.2, nextAt: 0, elite: null })
+    let sawRisen = false
+    for (let i = 0; i < TICK_RATE * 120; i++) {
+      sim.tick()
+      if (sim.state.pets.some((pet) => pet.defId === 'risen')) sawRisen = true
+      if (sawRisen && sim.state.enemies.length === 0 && sim.state.wave.pendingSpawns.length === 0) break
+    }
+    expect(sawRisen).toBe(true)
+    // Risen expire: run the clock with nothing to kill.
+    for (let i = 0; i < TICK_RATE * 14; i++) sim.tick()
+    expect(sim.state.pets.filter((pet) => pet.defId === 'risen').length).toBe(0)
+  })
+})

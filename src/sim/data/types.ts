@@ -25,6 +25,7 @@ export type Applier =
   | { effect: 'burn'; chance: number; dps: number; duration: number }
   | { effect: 'shocked'; chance: number; duration: number }
   | { effect: 'chilled'; chance: number; slow: number; duration: number }
+  | { effect: 'poison'; chance: number; dps: number; duration: number }
 
 export interface WeaponDef {
   id: string
@@ -152,6 +153,14 @@ export interface ClassDef {
   equipmentCooldownPct?: number
   /** Burning ground left behind while moving (the Windrunner). */
   moveTrail?: { radius: number; dps: number; ttl: number; interval: number }
+  /** Innate appliers rolled on every weapon hit (the Toxicologist). */
+  allAppliers?: Applier[]
+  /** Kills may rise as temporary allies (the Necromancer). */
+  riseOnKill?: { chance: number; petId: string; duration: number }
+  /** Corrupt rewards appear this many times more often (the Gambler). */
+  corruptBias?: number
+  /** The first shop reroll each wave is free (the Gambler). */
+  freeReroll?: boolean
   /** Max health granted per item carried (the Looter's trade). */
   healthPerItem?: number
   /** Personal shop price adjustment in percent (+25 = pays a quarter more). */

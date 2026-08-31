@@ -52,5 +52,17 @@
     "radius": 0.38,
     "targeting": "nearest",
     "inheritMeleePct": 50
+  },
+  {
+    "id": "risen",
+    "name": "Risen",
+    "kind": "companion",
+    "mortal": false,
+    "damage": 2,
+    "cooldown": 0.9,
+    "range": 1.5,
+    "speed": 3.4,
+    "radius": 0.32,
+    "targeting": "nearest"
   }
 ]

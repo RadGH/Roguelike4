@@ -213,7 +213,7 @@ export class Sim {
     }
   }
 
-  private spawnPet(owner: PlayerState, petId: string): void {
+  private spawnPet(owner: PlayerState, petId: string, expire = 0): void {
     const s = this.state
     const def = this.registry.pet(petId)
     const structure = def.kind === 'structure'
@@ -234,6 +234,7 @@ export class Sim {
       health: def.health ?? 1,
       maxHealth: def.health ?? 1,
       respawnLeft: 0,
+      expireLeft: expire,
       cooldownLeft: 0,
       targetId: null,
       firedTick: -1000,
@@ -243,6 +244,10 @@ export class Sim {
   private tickPets(): void {
     const s = this.state
     for (const pet of s.pets) {
+      if (pet.expireLeft > 0) {
+        pet.expireLeft -= TICK_DT
+        if (pet.expireLeft <= 0) pet.expireLeft = -1 // marked for removal
+      }
       const def = this.registry.pet(pet.defId)
       const owner = s.players.find((p) => p.id === pet.ownerId)
       if (!owner) continue
@@ -426,6 +431,10 @@ export class Sim {
       chillTtl: 0,
       chillSlow: 0,
       chillsApplied: 0,
+      poisonDps: 0,
+      poisonTtl: 0,
+      poisonOwnerId: -1,
+      poisonSourceId: '',
     }
     s.enemies.push(e)
     return e
@@ -1295,7 +1304,17 @@ export class Sim {
     }
     if (killed) {
       this.killEnemy(e)
-      if (owner) this.triggerOnKill(owner, e)
+      if (owner) {
+        this.triggerOnKill(owner, e)
+        // The Necromancer: the fallen may rise to fight for their killer.
+        const rise = this.registry.classes.get(owner.classId)?.riseOnKill
+        if (rise && this.rngCombat.chance(rise.chance)) {
+          this.spawnPet(owner, rise.petId, rise.duration)
+          const risen = this.state.pets[this.state.pets.length - 1]
+          risen.x = e.x
+          risen.y = e.y
+        }
+      }
     }
   }
 
@@ -1328,6 +1347,12 @@ export class Sim {
           e.chillSlow = Math.min(0.6, a.slow * factor)
           e.chillTtl = a.duration
           e.chillsApplied++
+        } else if (a.effect === 'poison') {
+          // Poison stacks without limit — every application adds, by design.
+          e.poisonDps += a.dps
+          e.poisonTtl = Math.max(e.poisonTtl, a.duration)
+          e.poisonOwnerId = owner?.id ?? -1
+          e.poisonSourceId = applierSource
         }
       }
     }
@@ -1344,6 +1369,8 @@ export class Sim {
       if (cls?.meleeAppliers && weaponDef?.tags.includes('Melee')) {
         rollAll(cls.meleeAppliers, sourceId)
       }
+      // Class-innate appliers on every weapon hit (the Toxicologist).
+      if (cls?.allAppliers) rollAll(cls.allAppliers, sourceId)
     }
   }
 
@@ -1363,6 +1390,14 @@ export class Sim {
     for (const e of [...this.state.enemies]) {
       if (e.shockTtl > 0) e.shockTtl -= TICK_DT
       if (e.chillTtl > 0) e.chillTtl -= TICK_DT
+      if (e.poisonTtl > 0) {
+        const beat = Math.floor(e.poisonTtl * 2) !== Math.floor((e.poisonTtl + TICK_DT) * 2)
+        e.poisonTtl -= TICK_DT
+        if (beat) {
+          this.damageEnemy(e, e.poisonDps * 0.5, e.poisonOwnerId, e.poisonSourceId || 'poison', 'Magic', true)
+        }
+        if (e.poisonTtl <= 0) e.poisonDps = 0
+      }
       if (e.burnTtl > 0) {
         burning++
         // Burn ticks twice a second, attributed to whoever lit it.
@@ -1375,6 +1410,7 @@ export class Sim {
       }
     }
     this.maxSimultaneousBurns = Math.max(this.maxSimultaneousBurns, burning)
+    this.state.pets = this.state.pets.filter((pet) => pet.expireLeft >= 0)
   }
 
   /** Item on-kill effects — attributed to the item, so builds become visible. */

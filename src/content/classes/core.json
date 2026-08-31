@@ -431,5 +431,56 @@
     "mods": {
       "maxHealth": 4
     }
+  },
+  {
+    "id": "necromancer",
+    "name": "Necromancer",
+    "description": "The fallen sometimes rise to fight for them, for a little while.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-wand"
+    ],
+    "riseOnKill": {
+      "chance": 0.12,
+      "petId": "risen",
+      "duration": 12
+    },
+    "mods": {
+      "allPct": -10
+    }
+  },
+  {
+    "id": "toxicologist",
+    "name": "Toxicologist",
+    "description": "Weak strikes, but the poison never stops stacking.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "throwing-stars"
+    ],
+    "allAppliers": [
+      {
+        "effect": "poison",
+        "chance": 0.35,
+        "dps": 1,
+        "duration": 4
+      }
+    ],
+    "mods": {
+      "allPct": -15
+    }
+  },
+  {
+    "id": "gambler",
+    "name": "Gambler",
+    "description": "Corrupt goods find them constantly, and the first reroll is always on the house.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "corruptBias": 4,
+    "freeReroll": true,
+    "mods": {
+      "goldPct": 10
+    }
   }
 ]

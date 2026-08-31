@@ -224,7 +224,7 @@ export class Run {
         draft: p.pendingDrafts > 0 ? this.rollDraft(p.perks) : null,
         grant: nextGrant && p.level >= nextGrant.level ? [...nextGrant.options] : null,
         shop: this.rollShop(p.id),
-        rerollPrice: 10,
+        rerollPrice: cls.freeReroll ? 0 : 10,
         done: false,
       })
     }
@@ -242,7 +242,13 @@ export class Run {
         id = this.rngRun.pick(actives).id
       } else {
         const base = this.rngRun.pick(items)
-        const variant = variantEligible(base) ? rollVariant(this.rngRun.next()) : null
+        // The Gambler's luck: corrupt rewards appear far more often for them.
+        const bias = this.registry.class(receiver.classId).corruptBias ?? 1
+        let variant = variantEligible(base) ? rollVariant(this.rngRun.next()) : null
+        if (!variant && bias > 1 && variantEligible(base) &&
+            this.rngRun.chance(Math.min(0.3, 0.07 * (bias - 1)))) {
+          variant = 'corrupt'
+        }
         id = variant ? `${variant}:${base.id}` : base.id
       }
       this.personal.get(receiver.id)?.rewards.push({ itemId: id, resolved: null })
@@ -443,7 +449,7 @@ export class Run {
     if (p.gold < screen.rerollPrice) return
     p.gold -= screen.rerollPrice
     screen.shop = this.rollShop(playerId)
-    screen.rerollPrice = Math.round(screen.rerollPrice * 1.5)
+    screen.rerollPrice = screen.rerollPrice === 0 ? 15 : Math.round(screen.rerollPrice * 1.5)
   }
 
   /** Player is done shopping. When everyone is done, the next wave starts. */

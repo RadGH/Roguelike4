@@ -289,4 +289,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   boss every fifth wave), unlocked by finishing act 2, and deliberately progression-free
   so it never competes with normal play. Randomized waves belong to endless exactly as
   the Idea Backlog suggested.
-- Remaining electives: classes 21–36, act 3, the hub (post-v1). Good review point.
+- Thirty-second chunk (6968953): the slot-count trade — the Combat Model's strongest
+  class identity lever — is real. Windrunner (two movement slots, no equipment, burning
+  trail) and Quartermaster (two equipment slots, no movement, faster cooldowns). One
+  button per slot type still fires the first ready item, so the two-button budget holds
+  even with doubled slots. Player-made ground hazards now exist as a general mechanic.
+- Remaining electives: classes 23–36, act 3, the hub (post-v1). Good review point.

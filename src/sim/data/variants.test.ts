@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { loadContent } from './loadContent'
 import { parseItemId, resolveItem, rollVariant, variantEligible } from './variants'
 import { Sim } from '../core/sim'
+import { Run } from '../run/run'
 import { recomputePlayer } from '../systems/stats'
 
 const registry = loadContent()
@@ -55,5 +56,17 @@ describe('item variants', () => {
     expect(rollVariant(0.1)).toBe('cursed')
     expect(rollVariant(0.16)).toBe('relic')
     expect(rollVariant(0.2)).toBe('holo')
+  })
+})
+
+describe('the gambler', () => {
+  it('gets a free first reroll that becomes paid after use', () => {
+    const run = new Run(registry, { seed: 72, playerCount: 1, actId: 'act1', classIds: ['gambler'] })
+    run.phase = 'recap'
+    run.proceedFromRecap()
+    const screen = run.personal.get(0)
+    expect(screen?.rerollPrice).toBe(0)
+    run.reroll(0)
+    expect(run.personal.get(0)?.rerollPrice).toBe(15)
   })
 })

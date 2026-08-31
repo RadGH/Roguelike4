@@ -132,6 +132,11 @@ export interface EnemyState {
   chillTtl: number
   chillSlow: number
   chillsApplied: number
+  /** Poison: stacking damage over time, no cap by design. */
+  poisonDps: number
+  poisonTtl: number
+  poisonOwnerId: number
+  poisonSourceId: string
 }
 
 export type EliteKind = 'resistant' | 'enlarged' | 'shrunk'
@@ -195,6 +200,8 @@ export interface PetState {
   maxHealth: number
   /** Seconds until a killed mortal companion returns (0 = active). */
   respawnLeft: number
+  /** Temporary allies vanish when this hits zero (0 = permanent). */
+  expireLeft: number
   cooldownLeft: number
   targetId: number | null
   /** Sim tick of the last attack, for the renderer's lunge. */
