@@ -294,4 +294,10 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   trail) and Quartermaster (two equipment slots, no movement, faster cooldowns). One
   button per slot type still fires the first ready item, so the two-button budget holds
   even with doubled slots. Player-made ground hazards now exist as a general mechanic.
-- Remaining electives: classes 23–36, act 3, the hub (post-v1). Good review point.
+- Thirty-third chunk (ebbf13e): Necromancer (kills rise as 12-second allies), Toxicologist
+  (poison — a fourth effect that stacks without limit, per the vault's "accepted with
+  unlimited stacking" note, cost taken as reduced direct damage from its own candidate
+  list), and Gambler (heavy Corrupt bias + free first reroll). 25 of 36 classes.
+- Remaining electives: classes 26–36 (several need mechanics that don't exist yet —
+  Runesmith's player-facing tags, Bard's aura items, Merchant/Curator variant hooks),
+  act 3, the hub. Good review point.
