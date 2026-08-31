@@ -264,10 +264,11 @@
     "description": "Turns greed into a weapon: collecting gold hits everything nearby.",
     "weaponSlots": 2,
     "startingWeapons": [
-      "practice-sword"
+      "shortbow"
     ],
     "startingItems": [
-      "gold-strike"
+      "gold-strike",
+      "lodestone"
     ],
     "mods": {
       "goldPct": 10
@@ -279,12 +280,13 @@
     "description": "Hardens in a crowd: the more enemies pressing in, the less everything hurts.",
     "weaponSlots": 2,
     "startingWeapons": [
-      "practice-sword"
+      "practice-sword",
+      "shield"
     ],
     "packDefense": {
       "radius": 3,
-      "armorPerEnemy": 8,
-      "armorCap": 48
+      "armorPerEnemy": 10,
+      "armorCap": 60
     },
     "mods": {
       "maxHealth": 6
@@ -325,12 +327,12 @@
     ],
     "revealsInfo": true,
     "mods": {
-      "xpPct": 10
+      "xpPct": 5
     },
     "affinities": [
       {
         "tag": "Magic",
-        "pct": 10
+        "pct": 5
       }
     ]
   }

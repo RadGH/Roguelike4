@@ -253,4 +253,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   in a horde game constant combat noise would just be static. Mute toggle persists.
   Suggest adding an Audio Direction note to the vault with this principle: sound obeys
   the same rule as the critical art layer — it exists to carry information, not decoration.
-- Next: continued class tranches + a fresh full-game balance sweep + updated screenshot.
+- Twenty-fifth chunk (3971f61): classes 14–17. The Bulwark's crowd-armor makes the middle
+  of the horde the safe place (the vault's favorite revision, working); the Oracle proves
+  the information-class axis is nearly free to build; the Demon Hunter is the first
+  act-2-gated unlock. 17 of 36 roster classes playable.
+- Next: full 17-class balance sweep, fresh screenshot for Radley, then remaining polish
+  (hot-join, readability gate pass, whole-numbers audit).
