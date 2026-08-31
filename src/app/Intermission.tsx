@@ -3,6 +3,7 @@ import { PadPanel, padIndexForPlayer } from './padNav'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
 import { sound } from '../render/audio'
+import { TagRow } from './TagRow'
 
 /** Soft intermission timer (multiplayer): warn, then auto-resolve stragglers. */
 const WARN_AT_S = 35
@@ -129,7 +130,7 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                       <div className="card" key={i} style={{ cursor: 'default' }}>
                         <span>
                           <span className="name">{item.name}</span>
-                          <div className="desc">{item.description} · {item.tags.join(', ')}{slotNote}</div>
+                          <div className="desc">{item.description}{slotNote} <TagRow tags={item.tags} /></div>
                         </span>
                         <span style={{ display: 'flex', gap: 6 }}>
                           <button data-testid={`keep-${i}`} onClick={() => { run.resolveReward(p.id, i, 'kept'); sound.pick(); onChange() }}>
@@ -221,7 +222,8 @@ export function Intermission({ run, onChange }: { run: Run; onChange: () => void
                           <span className={`name tier-${entry.tier}`}>{def.name}</span>
                           <span className="hint"> · {TIER_NAMES[entry.tier]}</span>
                           <div className="desc">
-                            {def.damageType} · {Math.round(def.damage * [1, 1.5, 2, 2.6][entry.tier])} dmg · {def.tags.join(', ')}
+                            {def.damageType} · {Math.round(def.damage * [1, 1.5, 2, 2.6][entry.tier])} dmg
+                            <TagRow tags={def.tags} />
                           </div>
                         </span>
                         <span className="price">{entry.sold ? 'Sold' : `${entry.price}g`}</span>

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { PadPanel } from './padNav'
+import { classBaseline } from '../sim/systems/stats'
+import { TagRow } from './TagRow'
 import type { Run } from '../sim/run/run'
 import { TIER_NAMES } from '../sim/data/types'
 
@@ -17,22 +19,25 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
   const taken = run.sim.tracker.takenSummary(p.id)
   const pct = (v: number): number => Math.round(v * 100)
 
-  const stats: [string, string | number][] = [
-    ['Health', `${Math.ceil(p.health)} / ${p.maxHealth}`],
-    ['Recovery', Math.round(p.regen * 10)],
-    ['Move Speed', Math.round((p.moveSpeed / 5) * 100)],
-    ['Armor', Math.round(p.defenses.armor)],
-    ['Dodge', pct(p.defenses.dodge)],
-    ['Resistance', pct(p.defenses.resist)],
-    ['Damage Reduction', Math.round(p.defenses.flatReduction)],
-    ['Lifesteal', pct(p.lifesteal)],
-    ['Melee Damage', 100 + p.meleePct + p.allPct],
-    ['Ranged Damage', 100 + p.rangedPct + p.allPct],
-    ['Magic Damage', 100 + p.magicPct + p.allPct],
-    ['Attack Speed', 100 + p.cooldownPct],
-    ['Gold Gain', 100 + p.goldPct],
-    ['Experience Gain', 100 + p.xpPct],
-    ['Pickup Radius', Math.round((p.pickupRadius / 1.5) * 100)],
+  // Colour shows deviation from the class baseline: what the build has
+  // actually done to this character, without comparing remembered numbers.
+  const base = classBaseline(p.classId, run.registry)
+  const stats: [string, string | number, number, number][] = [
+    ['Health', `${Math.ceil(p.health)} / ${p.maxHealth}`, p.maxHealth, base.maxHealth],
+    ['Recovery', Math.round(p.regen * 10), p.regen, base.regen],
+    ['Move Speed', Math.round((p.moveSpeed / 5) * 100), p.moveSpeed, base.moveSpeed],
+    ['Armor', Math.round(p.defenses.armor), p.defenses.armor, base.defenses.armor],
+    ['Dodge', pct(p.defenses.dodge), p.defenses.dodge, base.defenses.dodge],
+    ['Resistance', pct(p.defenses.resist), p.defenses.resist, base.defenses.resist],
+    ['Damage Reduction', Math.round(p.defenses.flatReduction), p.defenses.flatReduction, base.defenses.flatReduction],
+    ['Lifesteal', pct(p.lifesteal), p.lifesteal, base.lifesteal],
+    ['Melee Damage', 100 + p.meleePct + p.allPct, p.meleePct + p.allPct, base.meleePct + base.allPct],
+    ['Ranged Damage', 100 + p.rangedPct + p.allPct, p.rangedPct + p.allPct, base.rangedPct + base.allPct],
+    ['Magic Damage', 100 + p.magicPct + p.allPct, p.magicPct + p.allPct, base.magicPct + base.allPct],
+    ['Attack Speed', 100 + p.cooldownPct, p.cooldownPct, base.cooldownPct],
+    ['Gold Gain', 100 + p.goldPct, p.goldPct, base.goldPct],
+    ['Experience Gain', 100 + p.xpPct, p.xpPct, base.xpPct],
+    ['Pickup Radius', Math.round((p.pickupRadius / 1.5) * 100), p.pickupRadius, base.pickupRadius],
   ]
 
   return (
@@ -59,7 +64,7 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
           return (
             <div className="recap-row" key={i}>
               <span className={`name tier-${w.tier}`}>{def.name}</span>
-              <span className="hint">{TIER_NAMES[w.tier]} · {def.damageType} · {def.tags.join(', ')}</span>
+              <span className="hint">{TIER_NAMES[w.tier]} · {def.damageType} <TagRow tags={def.tags} /></span>
             </div>
           )
         })}
@@ -100,10 +105,12 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
         })}
 
         <h3>Stats</h3>
-        {stats.map(([label, value]) => (
+        {stats.map(([label, value, now, baseline]) => (
           <div className="recap-row" key={label}>
             <span>{label}</span>
-            <span>{value}</span>
+            <span className={now > baseline + 0.001 ? 'stat-up' : now < baseline - 0.001 ? 'stat-down' : undefined}>
+              {value}
+            </span>
           </div>
         ))}
 

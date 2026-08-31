@@ -104,6 +104,30 @@ export function recomputePlayer(p: PlayerState, registry: Registry): void {
 }
 
 /**
+ * A fresh character of this class, before any items, perks, or weapons —
+ * the baseline that stat-deviation colouring compares against.
+ */
+export function classBaseline(classId: string, registry: Registry): PlayerState {
+  const p: PlayerState = {
+    id: -1,
+    classId,
+    x: 0, y: 0, moveX: 0, moveY: 0,
+    health: 0, maxHealth: 0, moveSpeed: 0, regen: 0, lifesteal: 0,
+    defenses: emptyDefenses(),
+    xp: 0, level: 1, pendingDrafts: 0, grantsClaimed: 0, gold: 0,
+    pickupRadius: 0,
+    perks: [], items: [],
+    equipment: null, movement: null,
+    meleePct: 0, rangedPct: 0, magicPct: 0, petPct: 0, allPct: 0,
+    cooldownPct: 0, goldPct: 0, xpPct: 0,
+    weapons: [],
+    alive: true, downed: false, bleedOut: 0, reviveProgress: 0,
+  }
+  recomputePlayer(p, registry)
+  return p
+}
+
+/**
  * Damage multiplier for a specific weapon, from the owner's build:
  * type bonus + all-damage bonus + the class's tag affinities.
  */

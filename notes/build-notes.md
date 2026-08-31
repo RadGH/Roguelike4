@@ -271,4 +271,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   the solo camera zoomed in so far the horde was off-screen. The camera now frames every
   threat within 9 units of any player. The vault's review-gates section works as intended
   — a still exposed what live play hides.
-- Next: whole-numbers audit + 4P framing shot, then further breadth as time allows.
+- Twenty-eighth chunk (85d7300): the remaining readability-gate work. Four-player framing
+  passes (rings carry identity at distance), the last decimal displays became whole
+  attacks-per-10s rates, and the art doc's runtime tuning requirement is real — enemy and
+  player scale, marker alpha, and telegraph alpha are adjustable live from the console.
+- Next: continued breadth as time allows (stat deviation colors, more classes, act 3
+  planning) — or wind down for Radley's review pass.
