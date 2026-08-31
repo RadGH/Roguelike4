@@ -176,3 +176,26 @@ button:disabled { opacity: 0.45; cursor: default; }
   pointer-events: none;
   z-index: 5;
 }
+
+/* Run history: expandable retired-character records. */
+.history-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: none;
+  border: 1px solid #3a3a48;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.history-row:hover { border-color: #7fc9ff; }
+.history-detail {
+  padding: 4px 10px 10px;
+  border-left: 2px solid #3a3a48;
+  margin: 0 0 10px 6px;
+}
+.history-player { margin-bottom: 8px; }
+.history-player-head { font-weight: 600; margin-bottom: 2px; }

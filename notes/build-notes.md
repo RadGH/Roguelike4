@@ -369,3 +369,29 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
 - Remaining: Tinker (needs item tiers + a post-wave personal screen) and Runesmith
   (player-facing tag adding, needs UI + persistent per-item tags). Both are design
   work first, build second — flagged for Radley review rather than improvised.
+- Thirty-eighth chunk: **Run history done to spec.** The vault's line is "retired
+  characters remain viewable — their build, their performance, their full damage
+  attribution," and the old history screen stored only kills and a top-3. Now every
+  finished run archives the complete RunRecord (class, weapons with tiers, items
+  with variants, perks, damage by every source, damage taken), the list expands
+  into a per-player detail view, and entries saved by older builds are backfilled
+  rather than broken. The record builder is a pure function with a unit test that
+  checks attribution sums to the recorded total.
+- **The hub: proposal, not improvisation.** The vault deliberately leaves the hub
+  unspecified (post-v1, "sells access, never power" as the only hard rule, and the
+  walkable version explicitly needs a Control Budget pass). Building it now would
+  mean inventing Radley's design space, so here is a menu-first proposal instead:
+    1. START MENU-FIRST. A "Camp" screen between runs, same pad navigation as every
+       other menu. The walkable version can wrap it later without redoing content.
+    2. Services that sell ACCESS with run-earned gold carried out at 10% (small,
+       so in-run gold stays the real economy): a Broker who moves one chosen item
+       into next run's drop pool; a Scout who reveals an act's enemy roster in the
+       codex before you've faced it; a Trainer who opens a no-rewards practice
+       arena against chosen enemies (uses the sim as-is).
+    3. A recurring cast: each service fronted by a character whose face is an
+       unlocked class — the roster doubles as the town, which is cheap personality.
+    4. Never: stat vendors, rerollable meta-upgrades, or anything that gives one
+       couch player a different baseline than another (DR-001's whole argument).
+  If this direction is approved I can build the Camp screen and the Broker/Scout in
+  one chunk; the Trainer needs a day. Waiting on that call rather than shelving it
+  silently — it's the last big system, and it's his to shape.

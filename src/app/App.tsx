@@ -10,6 +10,8 @@ import { Intermission, Recap, RunEnd } from './Intermission'
 import { PauseMenu } from './PauseMenu'
 import { ClassSelect, Codex } from './Codex'
 import { loadProfile, storeProfile } from './profile'
+import { buildRunRecord } from '../sim/meta/history'
+import { resolveItem } from '../sim/data/variants'
 import {
   appendHistory, clearSave, exportSave, importSaveFile,
   loadHistory, loadSave, storeSave,
@@ -26,6 +28,7 @@ export function App(): React.JSX.Element {
   const [profile, setProfile] = useState(() => loadProfile())
   const [screen, setScreen] = useState<'title' | 'classes' | 'codex'>('title')
   const [showHistory, setShowHistory] = useState(false)
+  const [openHistory, setOpenHistory] = useState<number | null>(null)
   const [playerCount, setPlayerCount] = useState(1)
   const [chosenClasses, setChosenClasses] = useState<string[]>(['student'])
   const [chosenAct, setChosenAct] = useState('act1')
@@ -91,21 +94,7 @@ export function App(): React.JSX.Element {
         const won = run.phase === 'victory'
         // Endless is a sandbox: it never advances unlock progression.
         if (run.endless) {
-          appendHistory({
-            date: new Date().toISOString().slice(0, 16).replace('T', ' '),
-            result: 'defeat',
-            waveReached: wave,
-            players: run.sim.state.players.map((p) => ({
-              id: p.id,
-              level: p.level,
-              kills: run.sim.tracker.killsFor(p.id),
-              dealt: Math.round(run.sim.tracker.totalFor(p.id)),
-              topSources: [...run.sim.tracker.bySource(p.id).entries()]
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([k, v]) => [k, Math.round(v)] as [string, number]),
-            })),
-          })
+          appendHistory(buildRunRecord(run, new Date().toISOString().slice(0, 16).replace('T', ' ')))
           return
         }
         let nextProfile = applyRunResult(profile, {
@@ -136,21 +125,7 @@ export function App(): React.JSX.Element {
           }).join(', ')}`,
         ))
 
-        appendHistory({
-          date: new Date().toISOString().slice(0, 16).replace('T', ' '),
-          result: won ? 'victory' : 'defeat',
-          waveReached: wave,
-          players: run.sim.state.players.map((p) => ({
-            id: p.id,
-            level: p.level,
-            kills: run.sim.tracker.killsFor(p.id),
-            dealt: Math.round(run.sim.tracker.totalFor(p.id)),
-            topSources: [...run.sim.tracker.bySource(p.id).entries()]
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 3)
-              .map(([k, v]) => [k, Math.round(v)] as [string, number]),
-          })),
-        })
+        appendHistory(buildRunRecord(run, new Date().toISOString().slice(0, 16).replace('T', ' ')))
       }
     }, 300)
     return () => clearInterval(id)
@@ -320,15 +295,53 @@ export function App(): React.JSX.Element {
           <div className="panel" data-testid="history">
             {history.length === 0 && <div className="hint">No completed runs yet.</div>}
             {history.map((h, i) => (
-              <div className="recap-row" key={i}>
-                <span>{h.date}</span>
-                <span>{h.result === 'victory' ? 'Victory' : `Fell on wave ${h.waveReached}`}</span>
-                <span>
-                  {h.players.map((p) =>
-                    `P${p.id + 1} lv${p.level} · ${p.kills} kills` +
-                    (p.topSources[0] ? ` · mostly ${p.topSources[0][0]}` : ''),
-                  ).join('  ')}
-                </span>
+              <div key={i}>
+                <button
+                  className="history-row"
+                  onClick={() => setOpenHistory(openHistory === i ? null : i)}
+                >
+                  <span>{h.date}</span>
+                  <span>{registry.acts.get(h.actId)?.name ?? h.actId}{h.endless ? ' · Endless' : ''}</span>
+                  <span>{h.result === 'victory' ? 'Victory' : `Fell on wave ${h.waveReached}`}</span>
+                  <span>
+                    {h.players.map((p) => registry.classes.get(p.classId)?.name ?? p.classId).join(', ')}
+                  </span>
+                </button>
+                {openHistory === i && (
+                  <div className="history-detail">
+                    {h.players.map((p) => (
+                      <div className="history-player" key={p.id}>
+                        <div className="history-player-head">
+                          P{p.id + 1} · {registry.classes.get(p.classId)?.name ?? p.classId} · level {p.level}
+                          {' · '}{p.kills} kills · {p.dealt} dealt · {p.taken} taken
+                        </div>
+                        <div className="hint">
+                          Weapons: {p.weapons.length === 0 ? 'none' :
+                            p.weapons.map((w) =>
+                              `${registry.weapons.get(w.id)?.name ?? w.id}${w.tier > 0 ? ` T${w.tier + 1}` : ''}`,
+                            ).join(', ')}
+                        </div>
+                        {p.items.length > 0 && (
+                          <div className="hint">
+                            Items: {p.items.map((id) => resolveItem(registry, id).name).join(', ')}
+                          </div>
+                        )}
+                        {p.perks.length > 0 && (
+                          <div className="hint">
+                            Perks: {p.perks.map((pk) =>
+                              `${registry.perk(pk.perkId).name}${pk.tier > 0 ? ` T${pk.tier + 1}` : ''}`,
+                            ).join(', ')}
+                          </div>
+                        )}
+                        {p.sources.length > 0 && (
+                          <div className="hint">
+                            Damage: {p.sources.map(([k, v]) => `${k} ${v}`).join(' · ')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

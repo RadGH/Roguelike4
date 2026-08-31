@@ -1,4 +1,5 @@
 import { isRunSave, type RunSave } from '../sim/run/save'
+import type { RunRecord } from '../sim/meta/history'
 
 /**
  * Browser-side persistence. The sim stays clock-free and storage-free;
@@ -9,21 +10,12 @@ const SAVE_KEY = 'run-save'
 const HISTORY_KEY = 'run-history'
 const HISTORY_LIMIT = 50
 
-export interface HistoryPlayer {
-  id: number
-  level: number
-  kills: number
-  dealt: number
-  /** [sourceId, amount] sorted desc — the "what carried this build" list. */
-  topSources: [string, number][]
-}
-
-export interface HistoryEntry {
-  date: string
-  result: 'victory' | 'defeat'
-  waveReached: number
-  players: HistoryPlayer[]
-}
+/**
+ * A stored run: the full RunRecord (build + complete damage attribution).
+ * Entries written by older builds may lack the newer fields — the history
+ * screen treats everything beyond the basics as optional.
+ */
+export type HistoryEntry = RunRecord
 
 export function loadSave(): RunSave | null {
   try {
@@ -49,7 +41,27 @@ export function loadHistory(): HistoryEntry[] {
     const raw = localStorage.getItem(HISTORY_KEY)
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as HistoryEntry[]) : []
+    if (!Array.isArray(parsed)) return []
+    // Backfill fields that pre-upgrade entries did not store.
+    return (parsed as Partial<HistoryEntry>[]).map((e) => ({
+      date: e.date ?? '',
+      actId: e.actId ?? 'act1',
+      endless: e.endless ?? false,
+      result: e.result ?? 'defeat',
+      waveReached: e.waveReached ?? 0,
+      players: (e.players ?? []).map((pl) => ({
+        id: pl.id ?? 0,
+        classId: pl.classId ?? 'student',
+        level: pl.level ?? 1,
+        kills: pl.kills ?? 0,
+        dealt: pl.dealt ?? 0,
+        taken: pl.taken ?? 0,
+        weapons: pl.weapons ?? [],
+        items: pl.items ?? [],
+        perks: pl.perks ?? [],
+        sources: pl.sources ?? (pl as { topSources?: [string, number][] }).topSources ?? [],
+      })),
+    }))
   } catch {
     return []
   }
