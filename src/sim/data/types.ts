@@ -145,6 +145,13 @@ export interface ClassDef {
   shareArmor?: { radius: number; armor: number }
   /** Innate appliers rolled on hits from Melee-tagged weapons (Dragon Knight). */
   meleeAppliers?: Applier[]
+  /** Slot-count trades: how many A and B slots (default one each). */
+  equipmentSlots?: number
+  movementSlots?: number
+  /** Percent off equipment cooldowns (the Quartermaster). */
+  equipmentCooldownPct?: number
+  /** Burning ground left behind while moving (the Windrunner). */
+  moveTrail?: { radius: number; dps: number; ttl: number; interval: number }
   /** Max health granted per item carried (the Looter's trade). */
   healthPerItem?: number
   /** Personal shop price adjustment in percent (+25 = pays a quarter more). */

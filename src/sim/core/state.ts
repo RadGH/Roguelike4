@@ -37,10 +37,12 @@ export interface PlayerState {
   perks: OwnedPerk[]
   /** Passive items carried (the effects layer). Duplicates stack. */
   items: string[]
-  /** The A slot: one active equipment item, or empty. */
-  equipment: ActiveSlot | null
-  /** The B slot: one movement item, or empty. */
-  movement: ActiveSlot | null
+  /** A-slot equipment items (count is a class trait; usually one). */
+  equipment: ActiveSlot[]
+  /** B-slot movement items (count is a class trait; usually one). */
+  movement: ActiveSlot[]
+  /** Seconds until the next movement-trail drop (trail classes only). */
+  trailCd: number
   /** Whole-number percent modifiers derived from perks (see stats.ts). */
   meleePct: number
   rangedPct: number
@@ -150,6 +152,8 @@ export interface PoolState {
   /** Seconds remaining. */
   ttl: number
   sourceId: string
+  /** Present on player-made pools: damages enemies, attributed to the owner. */
+  ownerId?: number
 }
 
 export interface ProjectileState {

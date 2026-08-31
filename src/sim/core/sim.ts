@@ -102,8 +102,9 @@ export class Sim {
       pickupRadius: 1.5,
       perks: [],
       items: [],
-      equipment: null,
-      movement: null,
+      equipment: [],
+      movement: [],
+      trailCd: 0,
       meleePct: 0,
       rangedPct: 0,
       magicPct: 0,
@@ -499,38 +500,82 @@ export class Sim {
           }
         }
       }
-      if (p.equipment && p.equipment.cdLeft > 0) p.equipment.cdLeft -= TICK_DT
-      if (p.movement && p.movement.cdLeft > 0) p.movement.cdLeft -= TICK_DT
+      for (const slot of p.equipment) { if (slot.cdLeft > 0) slot.cdLeft -= TICK_DT }
+      for (const slot of p.movement) { if (slot.cdLeft > 0) slot.cdLeft -= TICK_DT }
+
+      // Trail classes leave burning ground while moving (the Windrunner).
+      const trail = this.registry.classes.get(p.classId)?.moveTrail
+      if (trail && (p.moveX !== 0 || p.moveY !== 0)) {
+        p.trailCd -= TICK_DT
+        if (p.trailCd <= 0) {
+          p.trailCd = trail.interval
+          s.pools.push({
+            id: s.nextEntityId++,
+            x: p.x,
+            y: p.y,
+            radius: trail.radius,
+            dps: trail.dps,
+            slowFactor: 1,
+            ttl: trail.ttl,
+            sourceId: 'move-trail',
+            ownerId: p.id,
+          })
+        }
+      }
     }
   }
 
-  /** Equip a slot item, replacing whatever occupied the slot (exclusive). */
-  equipActive(playerId: number, defId: string): void {
+  /** How many of each slot type this player's class allows. */
+  slotCapacity(playerId: number, kind: 'equipment' | 'movement'): number {
+    const cls = this.registry.classes.get(this.player(playerId).classId)
+    return kind === 'equipment' ? (cls?.equipmentSlots ?? 1) : (cls?.movementSlots ?? 1)
+  }
+
+  /**
+   * Equip a slot item. Fills a free slot if the class allows more than one;
+   * otherwise replaces the first. Returns the replaced def id, if any;
+   * returns undefined-refused as null when the class has no such slot at all.
+   */
+  equipActive(playerId: number, defId: string): { replaced: string | null; ok: boolean } {
     const def = this.registry.active(defId)
     const p = this.player(playerId)
-    const slot = { defId: def.id, cdLeft: 0 }
-    if (def.slot === 'equipment') p.equipment = slot
-    else p.movement = slot
+    const arr = def.slot === 'equipment' ? p.equipment : p.movement
+    const capacity = this.slotCapacity(playerId, def.slot)
+    if (capacity === 0) return { replaced: null, ok: false }
+    if (arr.length < capacity) {
+      arr.push({ defId: def.id, cdLeft: 0 })
+      return { replaced: null, ok: true }
+    }
+    const old = arr[0].defId
+    arr[0] = { defId: def.id, cdLeft: 0 }
+    return { replaced: old, ok: true }
   }
 
-  /** The A button: fire the equipment item if ready. */
+  /** One button per slot type: fires the first ready item of that kind. */
+  private useActiveOf(playerId: number, kind: 'equipment' | 'movement'): boolean {
+    const p = this.player(playerId)
+    if (!p.alive || p.downed) return false
+    const arr = kind === 'equipment' ? p.equipment : p.movement
+    const slot = arr.find((s2) => s2.cdLeft <= 0)
+    if (!slot) return false
+    const def = this.registry.active(slot.defId)
+    this.executeActive(p, def)
+    // The Quartermaster pattern: class-reduced equipment cooldowns.
+    const cdPct = kind === 'equipment'
+      ? (this.registry.classes.get(p.classId)?.equipmentCooldownPct ?? 0)
+      : 0
+    slot.cdLeft = def.cooldown * (1 - cdPct / 100)
+    return true
+  }
+
+  /** The A button. */
   useEquipment(playerId: number): boolean {
-    const p = this.player(playerId)
-    if (!p.alive || p.downed || !p.equipment || p.equipment.cdLeft > 0) return false
-    const def = this.registry.active(p.equipment.defId)
-    this.executeActive(p, def)
-    p.equipment.cdLeft = def.cooldown
-    return true
+    return this.useActiveOf(playerId, 'equipment')
   }
 
-  /** The B button: fire the movement item if ready. */
+  /** The B button. */
   useMovement(playerId: number): boolean {
-    const p = this.player(playerId)
-    if (!p.alive || p.downed || !p.movement || p.movement.cdLeft > 0) return false
-    const def = this.registry.active(p.movement.defId)
-    this.executeActive(p, def)
-    p.movement.cdLeft = def.cooldown
-    return true
+    return this.useActiveOf(playerId, 'movement')
   }
 
   private executeActive(p: PlayerState, def: ActiveDef): void {
@@ -970,6 +1015,16 @@ export class Sim {
       const beat = Math.floor((pool.ttl * 2)) !== Math.floor((pool.ttl + TICK_DT) * 2)
       if (!beat) continue
       const r2 = pool.radius * pool.radius
+      if (pool.ownerId !== undefined) {
+        // A player-made pool burns enemies, with full attribution.
+        for (const e of [...s.enemies]) {
+          if (!this.isTargetable(e)) continue
+          if (distSq(pool, e) <= r2) {
+            this.damageEnemy(e, pool.dps * 0.5, pool.ownerId, pool.sourceId, 'Magic', true)
+          }
+        }
+        continue
+      }
       for (const p of s.players) {
         if (!p.alive || p.downed) continue
         if (distSq(pool, p) <= r2) {

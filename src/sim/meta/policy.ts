@@ -149,11 +149,11 @@ export function useActives(sim: Sim, p: PlayerState, rng: Rng): void {
     const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2
     if (d2 < 16) nearby++
   }
-  if (p.equipment && p.equipment.cdLeft <= 0) {
+  if (p.equipment.some((slot) => slot.cdLeft <= 0)) {
     const hurt = p.health < p.maxHealth * 0.5
     if (nearby >= 4 || (hurt && rng.next() < 0.1)) sim.useEquipment(p.id)
   }
-  if (p.movement && p.movement.cdLeft <= 0 && nearby >= 5) {
+  if (p.movement.some((slot) => slot.cdLeft <= 0) && nearby >= 5) {
     sim.useMovement(p.id)
   }
 }

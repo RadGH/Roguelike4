@@ -117,7 +117,7 @@ export function classBaseline(classId: string, registry: Registry): PlayerState 
     xp: 0, level: 1, pendingDrafts: 0, grantsClaimed: 0, gold: 0,
     pickupRadius: 0,
     perks: [], items: [],
-    equipment: null, movement: null,
+    equipment: [], movement: [], trailCd: 0,
     meleePct: 0, rangedPct: 0, magicPct: 0, petPct: 0, allPct: 0,
     cooldownPct: 0, goldPct: 0, xpPct: 0,
     weapons: [],

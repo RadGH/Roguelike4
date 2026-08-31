@@ -394,5 +394,42 @@
         "pct": 10
       }
     ]
+  },
+  {
+    "id": "windrunner",
+    "name": "Windrunner",
+    "description": "Two movement items, no equipment at all \u2014 and the ground burns where they ran.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "throwing-stars"
+    ],
+    "startingMovement": "dash",
+    "equipmentSlots": 0,
+    "movementSlots": 2,
+    "mods": {
+      "moveSpeedPct": 10
+    },
+    "moveTrail": {
+      "radius": 0.7,
+      "dps": 2,
+      "ttl": 2.5,
+      "interval": 0.5
+    }
+  },
+  {
+    "id": "quartermaster",
+    "name": "Quartermaster",
+    "description": "Two equipment items and no escape. The right tool, twice, on a faster clock.",
+    "weaponSlots": 2,
+    "startingWeapons": [
+      "practice-sword"
+    ],
+    "startingEquipment": "ground-slam",
+    "equipmentSlots": 2,
+    "movementSlots": 0,
+    "equipmentCooldownPct": 25,
+    "mods": {
+      "maxHealth": 4
+    }
   }
 ]

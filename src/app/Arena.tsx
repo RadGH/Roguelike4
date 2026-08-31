@@ -520,11 +520,11 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         const playerLines = sim.state.players.map((p) => {
           const status = !p.alive ? 'returning next wave' : p.downed ? 'DOWN — rescue!' :
             `HP ${Math.ceil(p.health)}/${p.maxHealth}`
-          const slot = (label: string, s2: typeof p.equipment): string => {
-            if (!s2) return ''
-            const name = registry.active(s2.defId).name
-            return `  ${label}:${name}${s2.cdLeft > 0 ? ` ${Math.ceil(s2.cdLeft)}s` : ' ✓'}`
-          }
+          const slot = (label: string, arr: typeof p.equipment): string =>
+            arr.map((s2) => {
+              const name = registry.active(s2.defId).name
+              return `  ${label}:${name}${s2.cdLeft > 0 ? ` ${Math.ceil(s2.cdLeft)}s` : ' ✓'}`
+            }).join('')
           return `P${p.id + 1}  ${status}  Lv ${p.level}  Gold ${p.gold}` +
             slot('A', p.equipment) + slot('B', p.movement)
         })

@@ -400,5 +400,35 @@
         "id": "king"
       }
     ]
+  },
+  {
+    "id": "second-wind-runner",
+    "name": "Trailblazer",
+    "description": "Reach wave 10 in any run.",
+    "condition": {
+      "type": "reach-wave",
+      "wave": 10
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "windrunner"
+      }
+    ]
+  },
+  {
+    "id": "well-supplied",
+    "name": "Well Supplied",
+    "description": "Defeat 900 enemies across all runs.",
+    "condition": {
+      "type": "total-kills",
+      "count": 900
+    },
+    "rewards": [
+      {
+        "kind": "class",
+        "id": "quartermaster"
+      }
+    ]
   }
 ]

@@ -136,7 +136,7 @@ describe('hot-join', () => {
     expect(run.sim.state.players.length).toBe(2)
     const joined = run.sim.state.players[1]
     expect(joined.classId).toBe('rogue')
-    expect(joined.movement?.defId).toBe('dash')
+    expect(joined.movement[0]?.defId).toBe('dash')
     expect(joined.health).toBe(Math.round(joined.maxHealth / 2))
     // The run continues cleanly with the newcomer in it.
     for (let i = 0; i < 30 * 5; i++) run.tick()

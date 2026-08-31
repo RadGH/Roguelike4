@@ -70,11 +70,15 @@ export function PauseMenu({ run, onResume }: { run: Run; onResume: () => void })
         })}
 
         <h3>Slots</h3>
-        {([['A — Equipment', p.equipment], ['B — Movement', p.movement]] as const).map(([label, slot]) => (
+        {([['A — Equipment', p.equipment], ['B — Movement', p.movement]] as const).map(([label, slots]) => (
           <div className="recap-row" key={label}>
             <span>{label}</span>
-            <span className={slot ? 'name' : 'hint'}>
-              {slot ? `${run.registry.active(slot.defId).name}${slot.cdLeft > 0 ? ` (${Math.ceil(slot.cdLeft)}s)` : ''}` : 'empty'}
+            <span className={slots.length > 0 ? 'name' : 'hint'}>
+              {slots.length > 0
+                ? slots.map((slot) =>
+                    `${run.registry.active(slot.defId).name}${slot.cdLeft > 0 ? ` (${Math.ceil(slot.cdLeft)}s)` : ''}`,
+                  ).join(' · ')
+                : 'empty'}
             </span>
           </div>
         ))}

@@ -116,8 +116,11 @@ export class Run {
         p.grantsClaimed = ps.grantsClaimed ?? 0
         p.perks = ps.perks.map((o) => ({ ...o }))
         p.items = [...(ps.items ?? [])]
-        if (ps.equipment) this.sim.equipActive(ps.id, ps.equipment)
-        if (ps.movement) this.sim.equipActive(ps.id, ps.movement)
+        const savedActives = [
+          ...(Array.isArray(ps.equipment) ? ps.equipment : ps.equipment ? [ps.equipment] : []),
+          ...(Array.isArray(ps.movement) ? ps.movement : ps.movement ? [ps.movement] : []),
+        ]
+        for (const activeId of savedActives) this.sim.equipActive(ps.id, activeId)
         for (const w of ps.weapons) this.sim.equipWeapon(ps.id, w.defId, w.tier ?? 0)
         recomputePlayer(p, registry)
         p.health = Math.min(ps.health, p.maxHealth)
@@ -168,8 +171,8 @@ export class Run {
         health: Math.max(1, Math.round(p.health)),
         perks: p.perks.map((o) => ({ ...o })),
         items: [...p.items],
-        equipment: p.equipment?.defId ?? null,
-        movement: p.movement?.defId ?? null,
+        equipment: p.equipment.map((slot) => slot.defId),
+        movement: p.movement.map((slot) => slot.defId),
         weapons: p.weapons.map((w) => ({ defId: w.defId, tier: w.tier })),
       })),
       lootIndex: this.lootIndex,
@@ -279,12 +282,14 @@ export class Run {
     if (this.isActive(entry.itemId)) {
       const def = this.registry.active(entry.itemId)
       if (choice === 'kept') {
-        // Slots are exclusive: the replaced item is sold automatically.
-        const old = def.slot === 'equipment' ? p.equipment : p.movement
-        if (old) {
-          p.gold += Math.round(this.registry.active(old.defId).price * SELL_FRACTION)
+        // Slots are exclusive: a replaced item is sold automatically. A class
+        // with no slot of this kind gets the gold instead of a dead pickup.
+        const result = this.sim.equipActive(playerId, def.id)
+        if (!result.ok) {
+          p.gold += Math.round(def.price * SELL_FRACTION)
+        } else if (result.replaced) {
+          p.gold += Math.round(this.registry.active(result.replaced).price * SELL_FRACTION)
         }
-        this.sim.equipActive(playerId, def.id)
       } else {
         p.gold += Math.round(def.price * SELL_FRACTION)
       }

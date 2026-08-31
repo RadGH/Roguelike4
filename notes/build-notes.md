@@ -284,5 +284,9 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   summoner delivered as a class. Paladin completes the mitigation trio the vault sketched
   (Priest shares regen, Bulwark self-tanks in crowds, Paladin shares armor), and the
   Dragon Knight is the conversion pattern pointed at fire. 20 of 36 classes.
-- The remaining open checklist is purely elective breadth: classes 21–36, act 3, the
-  vault's post-v1 items (endless mode, the hub). Good pause point for Radley's review.
+- Thirty-first chunk (55b316d): endless mode, straight from the Run Structure spec —
+  generated escalating waves past the final boss (random pressure, rising elite share, a
+  boss every fifth wave), unlocked by finishing act 2, and deliberately progression-free
+  so it never competes with normal play. Randomized waves belong to endless exactly as
+  the Idea Backlog suggested.
+- Remaining electives: classes 21–36, act 3, the hub (post-v1). Good review point.

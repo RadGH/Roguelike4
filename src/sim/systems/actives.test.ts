@@ -80,12 +80,12 @@ describe('the two-button budget', () => {
 describe('classes and rewards with slot items', () => {
   it('class starting slots are equipped content, not innate abilities', () => {
     const rogue = new Run(registry, { seed: 3, playerCount: 1, actId: 'act1', classIds: ['rogue'] })
-    expect(rogue.sim.state.players[0].movement?.defId).toBe('dash')
+    expect(rogue.sim.state.players[0].movement[0]?.defId).toBe('dash')
     const sentinel = new Run(registry, { seed: 3, playerCount: 1, actId: 'act1', classIds: ['sentinel'] })
-    expect(sentinel.sim.state.players[0].equipment?.defId).toBe('repulse')
+    expect(sentinel.sim.state.players[0].equipment[0]?.defId).toBe('repulse')
     const student = new Run(registry, { seed: 3, playerCount: 1, actId: 'act1', classIds: ['student'] })
-    expect(student.sim.state.players[0].equipment).toBeNull()
-    expect(student.sim.state.players[0].movement).toBeNull()
+    expect(student.sim.state.players[0].equipment).toEqual([])
+    expect(student.sim.state.players[0].movement).toEqual([])
   })
 
   it('keeping a slot reward replaces the old item and refunds half its price', () => {
@@ -102,7 +102,49 @@ describe('classes and rewards with slot items', () => {
     })
     const goldBefore = p.gold
     run.resolveReward(0, 0, 'kept')
-    expect(p.movement?.defId).toBe('blink')
+    expect(p.movement[0]?.defId).toBe('blink')
     expect(p.gold).toBe(goldBefore + Math.round(registry.active('dash').price / 2))
+  })
+})
+
+describe('slot-count trades', () => {
+  it('the windrunner holds two movement items and refuses equipment', () => {
+    const run = new Run(registry, { seed: 60, playerCount: 1, actId: 'act1', classIds: ['windrunner'] })
+    const p = run.sim.state.players[0]
+    expect(p.movement.length).toBe(1) // starts with dash
+    expect(run.sim.equipActive(0, 'blink').ok).toBe(true)
+    expect(p.movement.length).toBe(2) // second slot fills, nothing replaced
+    expect(run.sim.equipActive(0, 'repulse').ok).toBe(false) // no equipment slot
+    expect(p.equipment.length).toBe(0)
+    // B fires whichever movement item is ready.
+    run.sim.setMoveIntent(0, 1, 0)
+    expect(run.sim.useMovement(0)).toBe(true)
+    expect(run.sim.useMovement(0)).toBe(true) // second item still ready
+    expect(run.sim.useMovement(0)).toBe(false) // both cooling down
+  })
+
+  it('the windrunner leaves a burning trail that hurts enemies', () => {
+    const run = new Run(registry, { seed: 61, playerCount: 1, actId: 'act1', classIds: ['windrunner'] })
+    const p = run.sim.state.players[0]
+    p.maxHealth = 100000
+    p.health = 100000
+    run.sim.setMoveIntent(0, 1, 0)
+    for (let i = 0; i < 90; i++) run.sim.tick()
+    expect(run.sim.state.pools.some((pool) => pool.ownerId === 0)).toBe(true)
+  })
+
+  it('the quartermaster stacks two equipment items with faster cooldowns', () => {
+    const run = new Run(registry, { seed: 62, playerCount: 1, actId: 'act1', classIds: ['quartermaster'] })
+    const p = run.sim.state.players[0]
+    expect(run.sim.equipActive(0, 'repulse').ok).toBe(true)
+    expect(p.equipment.length).toBe(2)
+    expect(run.sim.equipActive(0, 'dash').ok).toBe(false) // no movement slot
+    expect(run.sim.useEquipment(0)).toBe(true)
+    // Cooldown reduced 25% from the definition.
+    const used = p.equipment.find((slot) => slot.cdLeft > 0)
+    if (used) {
+      const def = registry.active(used.defId)
+      expect(used.cdLeft).toBeCloseTo(def.cooldown * 0.75, 3)
+    }
   })
 })
