@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The Warden: act-3 boss. Charger family bulk, twin horns, and a
+       cracked chest sigil that says "wounding me is what feeds me". -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M6 42 Q6 18 30 14 Q52 12 58 28 L60 38 Q60 50 46 50 L16 50 Q6 50 6 42 Z" fill="#b0483a"/>
+    <path d="M50 22 L64 10 L58 28 Z" fill="#f2f2f2"/>
+    <path d="M44 16 L52 2 L54 18 Z" fill="#f2f2f2"/>
+    <rect x="12" y="48" width="10" height="12" rx="3" fill="#b0483a"/>
+    <rect x="40" y="48" width="10" height="12" rx="3" fill="#b0483a"/>
+  </g>
+  <path d="M26 28 L32 24 L30 34 L36 30 L30 42 L32 34 L26 38 Z" fill="#ffd34d" stroke="#000" stroke-width="2" stroke-linejoin="round"/>
+  <circle cx="48" cy="30" r="4" fill="#000"/>
+</svg>

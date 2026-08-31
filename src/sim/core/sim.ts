@@ -435,6 +435,8 @@ export class Sim {
       poisonTtl: 0,
       poisonOwnerId: -1,
       poisonSourceId: '',
+      rage: 0,
+      reflectCdLeft: 0,
     }
     s.enemies.push(e)
     return e
@@ -656,6 +658,27 @@ export class Sim {
     const alivePlayers = this.activePlayers()
     if (alivePlayers.length === 0) return
 
+    // A living Beacon marks one player (nearest to it, re-marked on a timer,
+    // stored in dirX — beacons never move so the field is free) and the whole
+    // horde converges on them. Killing the beacon is the counterplay.
+    let markedId = -1
+    for (const e of s.enemies) {
+      const bp = this.registry.enemy(e.defId).props
+      if (!bp?.beacon) continue
+      if (e.attackCdLeft <= 0 || !alivePlayers.some((p) => p.id === e.dirX)) {
+        let t = alivePlayers[0]
+        let bd = distSq(e, t)
+        for (const p of alivePlayers) {
+          const d = distSq(e, p)
+          if (d < bd) { bd = d; t = p }
+        }
+        e.dirX = t.id
+        e.attackCdLeft = bp.markCd ?? 8
+      }
+      markedId = e.dirX
+      break
+    }
+
     for (const e of s.enemies) {
       const def = this.registry.enemy(e.defId)
       // Nearest living player is the default pursuit target.
@@ -665,9 +688,14 @@ export class Sim {
         const d = distSq(e, p)
         if (d < best) { best = d; target = p }
       }
+      if (markedId >= 0 && !def.props?.beacon) {
+        const marked = alivePlayers.find((p) => p.id === markedId)
+        if (marked) target = marked
+      }
 
       e.touchCdLeft -= TICK_DT
       e.attackCdLeft -= TICK_DT
+      e.reflectCdLeft -= TICK_DT
       if (e.modeTime > 0) e.modeTime -= TICK_DT
 
       this.behave(e, def, target)
@@ -691,7 +719,7 @@ export class Sim {
         for (const p of alivePlayers) {
           const touch = this.radiusOf(e) + 0.4
           if (distSq(e, p) < touch * touch) {
-            this.damagePlayer(p, def.damage * banner, 'Melee', def.id, true)
+            this.damagePlayer(p, def.damage * banner * (1 + e.rage * 0.1), 'Melee', def.id, true)
             e.touchCdLeft = def.props?.touchCd ?? 0.8
             hit = true
             break
@@ -814,6 +842,14 @@ export class Sim {
           e.dirY = n.y
           return
         }
+        // Harriers circle a fixed ring around the target between dives.
+        if (props.orbitRadius) {
+          const n = norm(target.x - e.x, target.y - e.y)
+          const err = clamp(d - props.orbitRadius, -2, 2)
+          const t = norm(-n.y + n.x * err * 0.5, n.x + n.y * err * 0.5)
+          this.moveBy(e, t.x * speed, t.y * speed)
+          return
+        }
         // Erratic wander biased toward the target.
         if (e.modeTime <= 0) {
           const n = norm(
@@ -879,8 +915,40 @@ export class Sim {
       }
 
       default: {
+        // Graspers root in place and drag players toward their arms — a
+        // positional threat, not crowd control: movement stays in your hands,
+        // the pull just fights it.
+        if (props.pullRadius) {
+          e.vx = 0; e.vy = 0
+          const r2 = props.pullRadius * props.pullRadius
+          for (const p of this.activePlayers()) {
+            const d2 = distSq(e, p)
+            if (d2 < r2 && d2 > 0.8) {
+              const n = norm(e.x - p.x, e.y - p.y)
+              const pull = (props.pullStrength ?? 2) * TICK_DT
+              p.x = clamp(p.x + n.x * pull, -s.arenaW / 2, s.arenaW / 2)
+              p.y = clamp(p.y + n.y * pull, -s.arenaH / 2, s.arenaH / 2)
+            }
+          }
+          return
+        }
         // Chase, flock if flocking, and lay ground effects if so equipped.
         this.chaseMove(e, def, target, speed)
+        // Seeders bury hazards that arm after a delay — dormant marks first.
+        if (props.seedCd && e.attackCdLeft <= 0) {
+          e.attackCdLeft = props.seedCd
+          s.pools.push({
+            id: s.nextEntityId++,
+            x: e.x,
+            y: e.y,
+            radius: props.seedRadius ?? 1.3,
+            dps: props.seedDps ?? 4,
+            slowFactor: 1,
+            ttl: props.seedTtl ?? 9,
+            sourceId: def.id,
+            armDelay: props.seedArm ?? 2.2,
+          })
+        }
         if (props.webCd && e.attackCdLeft <= 0) {
           e.attackCdLeft = props.webCd
           s.pools.push({
@@ -1018,6 +1086,10 @@ export class Sim {
   private tickPools(): void {
     const s = this.state
     for (const pool of s.pools) {
+      if (pool.armDelay && pool.armDelay > 0) {
+        pool.armDelay -= TICK_DT
+        continue // dormant: no damage, no decay
+      }
       pool.ttl -= TICK_DT
       if (pool.dps <= 0) continue
       // Damaging pools hit twice a second, not per tick, to keep events sane.
@@ -1274,6 +1346,22 @@ export class Sim {
 
     e.health -= amount
     e.lastDamagedTick = this.state.tick
+
+    // The Grudge grows with every wound that fails to kill it.
+    const defG = this.registry.enemy(e.defId)
+    if (defG.props?.ragePerHit && e.health > 0) {
+      e.rage = Math.min(defG.props.rageCap ?? 10, e.rage + defG.props.ragePerHit)
+    }
+    // Reflectors return a share of what they take to the attacker — at most
+    // once a second. Autofire means you cannot choose to stop hitting them,
+    // so an uncapped mirror would be unavoidable damage, not a mechanic.
+    if (defG.props?.reflectPct && e.health > 0 && !isArc && e.reflectCdLeft <= 0) {
+      const attacker = this.state.players.find((p) => p.id === playerId)
+      if (attacker && attacker.alive && !attacker.downed) {
+        e.reflectCdLeft = defG.props.reflectCd ?? 1
+        this.damagePlayer(attacker, amount * (defG.props.reflectPct / 100), 'Magic', defG.id, false)
+      }
+    }
 
     // Retaliators answer close-range damage with an avoidable spike.
     const def = this.registry.enemy(e.defId)

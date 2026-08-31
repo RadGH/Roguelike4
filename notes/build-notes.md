@@ -298,6 +298,36 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   (poison — a fourth effect that stacks without limit, per the vault's "accepted with
   unlimited stacking" note, cost taken as reduced direct damage from its own candidate
   list), and Gambler (heavy Corrupt bias + free first reroll). 25 of 36 classes.
+- Thirty-fourth chunk: **v0.2.0 tagged.** All release gates green (130 unit + 4 E2E,
+  stress 0.22ms/tick, 53% mid-skill solo win rate, single title constant, private dirs
+  untracked). Everything since v0.1.0: act 2, elements incl. stacking poison, item
+  variants, audio, pad menus, touch, hot-join, endless, grants, slot trades, 25 classes.
 - Remaining electives: classes 26–36 (several need mechanics that don't exist yet —
   Runesmith's player-facing tags, Bard's aura items, Merchant/Curator variant hooks),
   act 3, the hub. Good review point.
+- Thirty-fifth chunk: **Act 3** — six enemies that each teach a new verb: Harrier
+  (orbits a ring, dives untelegraphed — so its payload had to come DOWN to 3 to honor
+  the window∝payload rule), Grasper (rooted, drags players in — positional threat, not
+  crowd control), Seeder (buries hazards that arm after a delay; dormant marks render
+  faint and brighten), Reflector (returns 15% of hits — capped at one return per
+  second, because autofire means the player cannot choose to stop hitting it; an
+  uncapped mirror is unavoidable damage, not a mechanic — this tension is worth a
+  vault note), Grudge (rage stacks per wound survived, capped), and Beacon (marks a
+  player, the whole horde converges until the beacon dies — the strongest co-op verb
+  in the roster; mark rendered as a gold ring). Boss: The Warden — charger bulk plus
+  a weak mirror and slow rage, so long fights get scarier. Gate: win act 2.
+- **The big find of the chunk was a simulator bug, not a design one.** Act 3's first
+  numbers looked catastrophic (0–3% win), but most "deaths" were silent WAVE STALLS:
+  the policy player had no reason to ever approach enemies, so rooted Graspers and
+  standoff Spitters circled it forever until the 300s guard tripped and recorded a
+  loss at that wave. Acts 1–2 masked this because chasers always forced contact.
+  Fix: a "hunt" behavior (close to weapon range when unpressured) plus a "cleanup"
+  mode (≤4 enemies left, none pending: dive stragglers, accept chip damage). That
+  alone moved act 3 from 0% to 60% and lifted acts 1–2 too — meaning EVERY previous
+  balance number was depressed by stall-losses. Sim caveat for the vault: batch
+  reports need a stall-vs-death split, or wall-shaped histograms lie about why.
+- Balance after tuning waves 5–9 back up: act1 59%, act2 53%, act3 54% mid-skill solo
+  (n=100 each, ±10). Ordering is flat — act 3 doesn't yet FEEL harder in sim terms;
+  the Warden is the act's real filter (kills ~27% of runs). Differentiating act
+  difficulty beyond the boss needs human playtest, not more sim churn. High-skill
+  numbers still show the known non-monotonic policy artifact.

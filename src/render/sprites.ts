@@ -17,6 +17,10 @@ import wolfUrl from '../../art/critical/wolf.svg'
 import ravenUrl from '../../art/critical/raven.svg'
 import turretUrl from '../../art/critical/turret.svg'
 import squireUrl from '../../art/critical/squire.svg'
+import grasperUrl from '../../art/critical/grasper.svg'
+import beaconUrl from '../../art/critical/beacon.svg'
+import reflectorUrl from '../../art/critical/reflector.svg'
+import wardenUrl from '../../art/critical/warden.svg'
 
 /**
  * Gameplay-critical sprite textures, rasterized from the SVG files in
@@ -42,6 +46,10 @@ const ARCHETYPE_URL: Record<string, string> = {
 const ENEMY_URL_OVERRIDE: Record<string, string> = {
   'kingslime-t1': kingslimeUrl,
   'kingslime-t2': kingslimeUrl,
+  grasper: grasperUrl,
+  beacon: beaconUrl,
+  reflector: reflectorUrl,
+  warden: wardenUrl,
 }
 
 const PET_URL: Record<string, string> = {
@@ -64,7 +72,7 @@ export async function loadCriticalTextures(): Promise<CriticalTextures> {
     playerUrl, goldUrl, xpUrl,
     ...Object.values(ARCHETYPE_URL),
     ...Object.values(PET_URL),
-    kingslimeUrl,
+    ...Object.values(ENEMY_URL_OVERRIDE),
   ]
   await Assets.load(urls.map((src) => ({ src, data: { resolution: 2 } })))
   const get = (url: string): Texture => Assets.get<Texture>(url)

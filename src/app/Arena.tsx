@@ -319,9 +319,27 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         for (const pool of sim.state.pools) {
           const s = toScreen(pool.x, pool.y)
           const r = pool.radius * 32
+          // Dormant seeds: a faint buried marker, not yet a hazard. It
+          // brightens as it arms so the player has fair warning.
+          if (pool.armDelay && pool.armDelay > 0) {
+            gTelegraph.ellipse(s.sx, s.sy, r * 0.5, r / 4).fill({ color: 0x9acd32, alpha: 0.14 })
+            gTelegraph.ellipse(s.sx, s.sy, r * 0.5, r / 4).stroke({ width: 1.5, color: 0x6b8e23 })
+            continue
+          }
           const color = pool.dps > 0 ? 0x9acd32 : 0xcfcfe8
           gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color, alpha: 0.22 })
           gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 1.5, color })
+        }
+
+        // A living Beacon paints its mark under the hunted player.
+        for (const e of sim.state.enemies) {
+          if (!sim.registry.enemy(e.defId).props?.beacon) continue
+          const marked = sim.state.players.find((p) => p.id === e.dirX)
+          if (!marked) break
+          const s = toScreen(marked.x, marked.y)
+          gTelegraph.ellipse(s.sx, s.sy, 26, 13).stroke({ width: 2.5, color: 0xffd34d })
+          gTelegraph.moveTo(s.sx, s.sy - 46).lineTo(s.sx, s.sy - 38).stroke({ width: 3, color: 0xffd34d })
+          break
         }
 
         for (const tg of sim.state.telegraphs) {

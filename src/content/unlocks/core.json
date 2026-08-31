@@ -402,6 +402,21 @@
     ]
   },
   {
+    "id": "the-deep-gate",
+    "name": "The Deep Gate",
+    "description": "Complete Act 2.",
+    "condition": {
+      "type": "win-act",
+      "actId": "act2"
+    },
+    "rewards": [
+      {
+        "kind": "act",
+        "id": "act3"
+      }
+    ]
+  },
+  {
     "id": "second-wind-runner",
     "name": "Trailblazer",
     "description": "Reach wave 10 in any run.",

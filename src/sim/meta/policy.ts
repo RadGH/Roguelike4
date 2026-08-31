@@ -33,6 +33,19 @@ export function moveIntent(sim: Sim, p: PlayerState, skill: number, rng: Rng): {
     const dx = p.x - e.x
     const dy = p.y - e.y
     const d2 = Math.max(0.4, dx * dx + dy * dy)
+    // Rooted pullers: ranged builds skirt the pull zone from outside their
+    // own weapon range. Melee builds do the opposite — the pull drags them
+    // where they already want to be, so they dive in and kill it.
+    const pull = sim.registry.enemy(e.defId).props?.pullRadius
+    if (pull && !meleeBuild) {
+      const berth = Math.min(pull + 1.5, Math.max(1.2, maxRange - 1.2))
+      if (d2 < berth * berth && rng.next() < skill) {
+        const n = norm(dx, dy)
+        vx += n.x * 4
+        vy += n.y * 4
+        continue
+      }
+    }
     if (d2 > fleeRadius2) continue
     vx += (dx / d2) * 3
     vy += (dy / d2) * 3
@@ -118,6 +131,30 @@ export function moveIntent(sim: Sim, p: PlayerState, skill: number, rng: Rng): {
     const n = norm(nearest.x - p.x, nearest.y - p.y)
     vx += n.x
     vy += n.y
+  }
+
+  // Hunt: waves only end when every enemy dies, so with no pressure and
+  // stragglers left (rooted graspers, standoff spitters) close to weapon
+  // range and let autofire work. Without this, a cautious kiter and a
+  // cautious enemy can circle each other forever. When the wave is nearly
+  // done ("cleanup"), real players stop respecting the dance and dive the
+  // stragglers, eating a little chip damage to end the wave — mirror that.
+  const cleanup = s.wave.pendingSpawns.length === 0 && s.enemies.length <= 4
+  if ((pressure < 1.2 || (cleanup && pressure < 3)) && maxRange > 0) {
+    let quarry = null as { x: number; y: number } | null
+    let qBest = Infinity
+    for (const e of s.enemies) {
+      if (!sim.isTargetable(e)) continue
+      const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2
+      if (d2 < qBest) { qBest = d2; quarry = e }
+    }
+    const closeTo = cleanup ? Math.max(1.2, maxRange * 0.6) : maxRange * 0.85
+    if (quarry && qBest > closeTo * closeTo) {
+      const n = norm(quarry.x - p.x, quarry.y - p.y)
+      const w = cleanup ? 3 : 1.2
+      vx += n.x * w
+      vy += n.y * w
+    }
   }
 
   // Rescue downed teammates: overriding priority when it is safe enough.

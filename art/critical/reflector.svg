@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Reflector: chaser body plan (orange quadruped) wearing a mirror
+       plate. The bright face is the warning: what you deal, it returns. -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M6 38 Q10 26 24 26 L44 26 Q54 26 56 34 L56 40 Q56 46 48 46 L14 46 Q6 46 6 38 Z" fill="#e08a3a"/>
+    <rect x="12" y="44" width="7" height="14" rx="3" fill="#e08a3a"/>
+    <rect x="40" y="44" width="7" height="14" rx="3" fill="#e08a3a"/>
+    <path d="M44 20 L60 24 L60 44 L44 48 Z" fill="#f2f2f2"/>
+  </g>
+  <path d="M48 26 L56 30 L56 34 Z" fill="#ffffff"/>
+</svg>

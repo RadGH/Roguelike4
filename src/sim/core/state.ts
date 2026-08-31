@@ -137,6 +137,10 @@ export interface EnemyState {
   poisonTtl: number
   poisonOwnerId: number
   poisonSourceId: string
+  /** The Grudge: grows stronger each time it is damaged but not killed. */
+  rage: number
+  /** Reflectors: time until the mirror can return damage again. */
+  reflectCdLeft: number
 }
 
 export type EliteKind = 'resistant' | 'enlarged' | 'shrunk'
@@ -159,6 +163,8 @@ export interface PoolState {
   sourceId: string
   /** Present on player-made pools: damages enemies, attributed to the owner. */
   ownerId?: number
+  /** Dormant until this many seconds pass (the Seeder's buried hazards). */
+  armDelay?: number
 }
 
 export interface ProjectileState {

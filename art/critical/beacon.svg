@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Beacon: an obelisk with a burning signal. Unique silhouette on
+       purpose — the whole point is "see it, kill it first". -->
+  <g stroke="#000" stroke-width="3" stroke-linejoin="round">
+    <path d="M24 58 L26 24 L38 24 L40 58 Z" fill="#8a5cc9"/>
+    <path d="M20 58 Q16 52 24 52 L40 52 Q48 52 44 58 Z" fill="#6a3fa8"/>
+    <path d="M32 4 L40 16 L32 26 L24 16 Z" fill="#ffd34d"/>
+  </g>
+  <path d="M32 9 L36 16 L32 22 L28 16 Z" fill="#fff3c4"/>
+  <circle cx="32" cy="38" r="4" fill="#000"/>
+</svg>
