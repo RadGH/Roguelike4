@@ -404,3 +404,30 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   easier). Act-3 screenshot review passed — grasper/beacon silhouettes read at a
   glance; the one finding was a dev-tool bug (debug health buff applied before
   equips, so recompute wiped it) — fixed.
+- Playtest feedback round 2 (2026-08-31), all eight items in one pass:
+  (1) Dead air between spawn groups: a cleared field now pulls the whole remaining
+  schedule forward so the next group lands in 2s, relative gaps preserved.
+  (2) Stacked volleys: one weapon trigger per player per tick — three javelins now
+  fire on consecutive ticks in mount order (reads as alternating motion) and prefer
+  targets no sibling weapon has claimed, stacking only when enemies run short.
+  (3) Mounts: with exactly three weapons the third sits centered overhead; four keep
+  2/2. All weapons track the nearest live enemy even out of range or on cooldown.
+  (4) The isometric diamond is gone — top-down projection, rectangular rooms. One
+  projection function change plus circle-izing the ground ellipses and unrotating
+  the input mapping; the sim never knew the difference.
+  (5) Camera: response now scales with how wrong the framing is (error-squared
+  curve). An 11th enemy joining ten rounds to nothing; the first enemy on an empty
+  field commits fast. Trickle spawns glide instead of jumping.
+  (6) Manual "Graphics" tab: an auto-globbed contact sheet of every file under
+  art/ plus swatches of everything drawn in code — new assets appear without
+  anyone remembering to list them.
+  (7) Controllers dialog (console-style): any device to any slot, assign-by-press,
+  live activity dots, persisted; unassigned slots keep the legacy auto layout.
+  Two pads and no keyboard is now a legal couch.
+  (8) Weapon feel: per-weapon projectile speeds (8–17) and sizes, javelins draw as
+  streaks, thrown stars zigzag (deterministic trig-free flutter), melee weapons
+  wind up before landing (slash sweeps an arc, jabs thrust) and WHIFF if the target
+  escapes mid-swing — fast enemies finally get their chance. Melee classes held
+  their win rates after the wind-up (fighter 65%), so no compensation was needed.
+- Radley will supply updated docs + a git diff of the design docs later for a
+  cross-reference pass against everything built. Pending that review.

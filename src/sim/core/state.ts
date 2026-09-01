@@ -90,6 +90,10 @@ export interface WeaponInstance {
   cooldownLeft: number
   /** Per-weapon stagger offset so weapons spread across targets. */
   staggerOffset: number
+  /** Melee wind-up: seconds until the committed swing lands (0 = idle). */
+  windupLeft: number
+  /** Target the wind-up committed to when it began. */
+  windupTargetId: number | null
   /** Entity id of the current target, if any (render reads this for aim). */
   targetId: number | null
   /** Sim tick of the last shot — the renderer animates the melee lunge from it. */
@@ -185,6 +189,9 @@ export interface ProjectileState {
   ttl: number
   /** Splash radius on impact (area weapons). */
   aoe?: number
+  /** Zigzag flight (thrown stars): degrees of alternating deflection. */
+  wobble?: number
+  wobblePhase?: number
 }
 
 export interface PickupState {

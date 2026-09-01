@@ -153,6 +153,8 @@ export class Sim {
       cooldownLeft: 0,
       // Stagger spreads target selection so multiple weapons fan out.
       staggerOffset: (p.weapons.length * 0.37) % 1,
+      windupLeft: 0,
+      windupTargetId: null,
       targetId: null,
       firedTick: -1000,
     }
@@ -385,6 +387,20 @@ export class Sim {
     while (w.deferred.length > 0 && s.enemies.length < DENSITY_CAP) {
       const d = w.deferred.shift() as DeferredSpawn
       this.spawnEnemy(d.enemy, d.elite)
+    }
+
+    // No dead time: if the field is clear and the next group is still far
+    // off, pull the WHOLE remaining schedule forward so it lands in 2s.
+    // Relative timing between groups is preserved; only the gap collapses.
+    if (s.enemies.length === 0 && w.deferred.length === 0 && w.pendingSpawns.length > 0) {
+      let minNext = Infinity
+      for (const g of w.pendingSpawns) {
+        if (g.remaining > 0) minNext = Math.min(minNext, g.nextAt)
+      }
+      const shift = minNext - w.elapsed - 2
+      if (shift > 0) {
+        for (const g of w.pendingSpawns) g.nextAt -= shift
+      }
     }
 
     for (const g of w.pendingSpawns) {
@@ -1265,13 +1281,54 @@ export class Sim {
     const s = this.state
     for (const p of s.players) {
       if (!p.alive || p.downed) continue
+      // One trigger per player per tick: multiple ready weapons fire in slot
+      // order on consecutive ticks instead of stacking into one super-shot.
+      // Mounts alternate right/left, so this reads as an alternating motion.
+      let firedThisTick = false
       for (const w of p.weapons) {
         w.cooldownLeft -= TICK_DT
-        if (w.cooldownLeft > 0) continue
         const def = this.registry.weapon(w.defId)
-        const target = this.selectTarget(p, def.range, def.targeting, w.staggerOffset)
+
+        // A committed melee swing lands (or whiffs) when its wind-up ends.
+        if (w.windupLeft > 0) {
+          w.windupLeft -= TICK_DT
+          if (w.windupLeft <= 0) {
+            w.windupLeft = 0
+            const target = s.enemies.find((e) => e.id === w.windupTargetId)
+            const reach = def.range * 1.25 // a little follow-through
+            if (target && this.isTargetable(target) && distSq(target, p) <= reach * reach) {
+              const damage = def.damage * WEAPON_TIER_MULT[w.tier] * damageMultiplier(p, def, this.registry)
+              this.damageEnemy(target, damage, p.id, def.id, def.damageType)
+              if (target.health > 0) this.applyOnHit(target, def.id, p)
+              w.cooldownLeft = def.cooldown * (1 - p.cooldownPct / 100)
+            } else {
+              // Whiffed — the target got away. Recover faster than a hit.
+              w.cooldownLeft = def.cooldown * (1 - p.cooldownPct / 100) * 0.5
+            }
+            w.windupTargetId = null
+          }
+          continue
+        }
+
+        if (w.cooldownLeft > 0) continue
+        if (firedThisTick) continue // wait a beat; keeps volleys alternating
+        const claimed = new Set<number>()
+        for (const other of p.weapons) {
+          if (other !== w && other.targetId !== null) claimed.add(other.targetId)
+        }
+        const target = this.selectTarget(p, def.range, def.targeting, claimed)
         w.targetId = target?.id ?? null
         if (!target) continue // hold fire — no sensible target
+        firedThisTick = true
+
+        if (!def.projectileSpeed && (def.windup ?? 0) > 0) {
+          // Melee commits to a wind-up instead of resolving instantly.
+          w.windupLeft = def.windup as number
+          w.windupTargetId = target.id
+          w.firedTick = s.tick
+          continue
+        }
+
         w.cooldownLeft = def.cooldown * (1 - p.cooldownPct / 100)
         w.firedTick = s.tick
         const damage = def.damage * WEAPON_TIER_MULT[w.tier] * damageMultiplier(p, def, this.registry)
@@ -1306,6 +1363,8 @@ export class Sim {
               sourceId: def.id,
               ttl: def.range / def.projectileSpeed + 0.2,
               aoe: def.aoeRadius,
+              wobble: def.projectileWobble,
+              wobblePhase: 0,
             }
             s.projectiles.push(pr)
           }
@@ -1322,7 +1381,7 @@ export class Sim {
     p: PlayerState,
     range: number,
     rule: string,
-    stagger: number,
+    claimed?: Set<number>,
   ): EnemyState | null {
     const s = this.state
     const inRange: EnemyState[] = []
@@ -1332,9 +1391,6 @@ export class Sim {
       if (distSq(e, p) <= r2) inRange.push(e)
     }
     if (inRange.length === 0) return null
-    // Stagger applies to target selection: skip forward in the sorted list so
-    // simultaneous weapons distribute across enemies rather than stacking.
-    const skip = Math.floor(stagger * Math.min(inRange.length, 4))
     const sorted = inRange.slice()
     switch (rule) {
       case 'nearest':
@@ -1356,7 +1412,15 @@ export class Sim {
         sorted.sort((a, b) => density(b) - density(a)); break
       }
     }
-    return sorted[Math.min(skip, sorted.length - 1)]
+    // Weapons spread across the crowd: prefer the best target no other
+    // weapon of this player has claimed. If everything is claimed (fewer
+    // enemies than weapons), stack up on the best one.
+    if (claimed && claimed.size > 0) {
+      for (const e of sorted) {
+        if (!claimed.has(e.id)) return e
+      }
+    }
+    return sorted[0]
   }
 
   /** Enemies alight at once, highest seen this run (drives an unlock). */
@@ -1681,6 +1745,23 @@ export class Sim {
     const dead: ProjectileState[] = []
     for (const pr of s.projectiles) {
       pr.ttl -= TICK_DT
+      // Zigzag flight (thrown stars): alternate a fixed 15-degree deflection
+      // every few ticks. Constants are literals — deterministic, trig-free.
+      if (pr.wobble) {
+        pr.wobblePhase = (pr.wobblePhase ?? 0) + 1
+        if (pr.wobblePhase % 3 === 0) {
+          // Sign sequence +,-,-,+,+,-,-,... keeps the flutter symmetric
+          // around the original heading instead of drifting to one side.
+          const k = Math.floor(pr.wobblePhase / 3) - 1
+          const sign = Math.floor((k + 1) / 2) % 2 === 0 ? 1 : -1
+          const C = 0.966
+          const S = 0.259 * pr.wobble
+          const vx = pr.vx * C - pr.vy * S * sign
+          const vy = pr.vx * S * sign + pr.vy * C
+          pr.vx = vx
+          pr.vy = vy
+        }
+      }
       pr.x += pr.vx * TICK_DT
       pr.y += pr.vy * TICK_DT
       if (pr.ttl <= 0 || Math.abs(pr.x) > s.arenaW / 2 + 1 || Math.abs(pr.y) > s.arenaH / 2 + 1) {

@@ -199,3 +199,13 @@ button:disabled { opacity: 0.45; cursor: default; }
 }
 .history-player { margin-bottom: 8px; }
 .history-player-head { font-weight: 600; margin-bottom: 2px; }
+
+/* Controller assignment dialog. */
+.assign-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.assign-slot { min-width: 32px; font-weight: 700; }
+.assign-live { color: #6dff6d; font-size: 18px; transition: opacity 0.2s; }

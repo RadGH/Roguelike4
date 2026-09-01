@@ -6,6 +6,7 @@ import { toScreen } from '../render/iso'
 import { loadCriticalTextures, type CriticalTextures } from '../render/sprites'
 import { resolveItem } from '../sim/data/variants'
 import { sound } from '../render/audio'
+import { resolveDevices, type InputMap } from './inputMap'
 
 /**
  * The arena canvas. Renders the run's sim with gameplay-critical primitives —
@@ -30,10 +31,12 @@ const tuning = {
 declare global { interface Window { __tuning?: typeof tuning } }
 if (typeof window !== 'undefined') window.__tuning = tuning
 
-export function Arena({ run }: { run: Run }): React.JSX.Element {
+export function Arena({ run, inputMap }: { run: Run; inputMap?: InputMap }): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null)
   const runRef = useRef(run)
   runRef.current = run
+  const inputMapRef = useRef<InputMap>(inputMap ?? [null, null, null, null])
+  inputMapRef.current = inputMap ?? [null, null, null, null]
   // Touch: a drag anywhere on the arena is a virtual stick for player 1.
   const touchVec = useRef({ x: 0, y: 0 })
   const touchOrigin = useRef<{ x: number; y: number; id: number } | null>(null)
@@ -158,9 +161,11 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         const registry = currentRun.registry
         const playerCount = sim.state.players.length
 
-        // Input assignment: player 1 owns the keyboard. With one player a
-        // gamepad also drives them; with more, pads map to players in order.
-        const pads = (navigator.getGamepads?.() ?? []).filter((p) => p && p.connected)
+        // Input assignment: the Controllers dialog maps any device to any
+        // slot; unassigned slots fall back to the legacy auto layout.
+        const pads = (navigator.getGamepads?.() ?? [])
+          .filter((p): p is Gamepad => !!p && p.connected)
+        const devices = resolveDevices(inputMapRef.current, playerCount, pads)
 
         // Any pad's Start button toggles pause; losing a pad mid-fight pauses.
         let startPressed = false
@@ -178,7 +183,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         for (const p of sim.state.players) {
           let mx = 0
           let my = 0
-          if (p.id === 0) {
+          const dev = devices[p.id] ?? { keyboard: false, pad: null }
+          if (dev.keyboard) {
             if (keys.has('a') || keys.has('arrowleft')) mx -= 1
             if (keys.has('d') || keys.has('arrowright')) mx += 1
             if (keys.has('w') || keys.has('arrowup')) my -= 1
@@ -190,21 +196,19 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
               my = tv.y
             }
           }
-          const pad = playerCount === 1
-            ? pads[0]
-            : p.id === 0 ? null : pads[p.id - 1]
+          const pad = dev.pad
           if (pad && (Math.abs(pad.axes[0]) > 0.2 || Math.abs(pad.axes[1]) > 0.2)) {
             mx = pad.axes[0]
             my = pad.axes[1]
           }
-          // Screen-relative input mapped onto the iso ground plane.
-          sim.setMoveIntent(p.id, my + mx, my - mx)
+          // Top-down camera: screen directions are world directions.
+          sim.setMoveIntent(p.id, mx, my)
 
           // The two-button budget: A = equipment, B = movement item.
           // Keyboard (P1): Space = A, Shift = B. Pads: buttons 0 and 1.
           let aDown = false
           let bDown = false
-          if (p.id === 0) {
+          if (dev.keyboard) {
             if (keys.has(' ')) aDown = true
             if (keys.has('shift')) bDown = true
           }
@@ -290,9 +294,20 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         if (!camInit) {
           camScale = targetScale; camX = targetX; camY = targetY; camInit = true
         } else {
-          camScale += (targetScale - camScale) * 0.08
-          camX += (targetX - camX) * 0.12
-          camY += (targetY - camY) * 0.12
+          // Normalized response: the camera's speed scales with how WRONG the
+          // current framing is, not with how often the target updates. An 11th
+          // enemy joining ten barely moves the target, so the response rounds
+          // to nothing; the first enemy appearing on an empty field is a big
+          // relative change, so the camera commits quickly. Repeated small
+          // nudges (a trickling spawn wave) glide instead of jumping.
+          const errScale = Math.abs(targetScale - camScale) / Math.max(targetScale, camScale, 0.001)
+          const errPos = Math.hypot(targetX - camX, targetY - camY) /
+            Math.max(app.screen.width, app.screen.height, 1)
+          const err = errScale + errPos
+          const rate = Math.min(0.22, err * err * 2.2 + 0.008)
+          camScale += (targetScale - camScale) * rate
+          camX += (targetX - camX) * rate * 1.4
+          camY += (targetY - camY) * rate * 1.4
         }
         world.scale.set(camScale)
         world.x = camX
@@ -323,13 +338,13 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           // Dormant seeds: a faint buried marker, not yet a hazard. It
           // brightens as it arms so the player has fair warning.
           if (pool.armDelay && pool.armDelay > 0) {
-            gTelegraph.ellipse(s.sx, s.sy, r * 0.5, r / 4).fill({ color: 0x9acd32, alpha: 0.14 })
-            gTelegraph.ellipse(s.sx, s.sy, r * 0.5, r / 4).stroke({ width: 1.5, color: 0x6b8e23 })
+            gTelegraph.ellipse(s.sx, s.sy, r * 0.5, r * 0.5).fill({ color: 0x9acd32, alpha: 0.14 })
+            gTelegraph.ellipse(s.sx, s.sy, r * 0.5, r * 0.5).stroke({ width: 1.5, color: 0x6b8e23 })
             continue
           }
           const color = pool.dps > 0 ? 0x9acd32 : 0xcfcfe8
-          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color, alpha: 0.22 })
-          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 1.5, color })
+          gTelegraph.ellipse(s.sx, s.sy, r, r).fill({ color, alpha: 0.22 })
+          gTelegraph.ellipse(s.sx, s.sy, r, r).stroke({ width: 1.5, color })
         }
 
         // Shared auras (the Bard): the reach is a place on the ground, so
@@ -347,7 +362,7 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           if (radius > 0) {
             const s = toScreen(p.x, p.y)
             const r = radius * 32
-            gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 1.5, color: 0x7fc9ff, alpha: 0.5 })
+            gTelegraph.ellipse(s.sx, s.sy, r, r).stroke({ width: 1.5, color: 0x7fc9ff, alpha: 0.5 })
           }
         }
 
@@ -357,7 +372,7 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const marked = sim.state.players.find((p) => p.id === e.dirX)
           if (!marked) break
           const s = toScreen(marked.x, marked.y)
-          gTelegraph.ellipse(s.sx, s.sy, 26, 13).stroke({ width: 2.5, color: 0xffd34d })
+          gTelegraph.ellipse(s.sx, s.sy, 24, 24).stroke({ width: 2.5, color: 0xffd34d })
           gTelegraph.moveTo(s.sx, s.sy - 46).lineTo(s.sx, s.sy - 38).stroke({ width: 3, color: 0xffd34d })
           break
         }
@@ -366,10 +381,10 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const s = toScreen(tg.x, tg.y)
           const r = tg.radius * 32
           const progress = 1 - tg.timeLeft / tg.window
-          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).fill({ color: 0xd93a3a, alpha: (0.18 + progress * 0.3) * tuning.telegraphAlpha })
-          gTelegraph.ellipse(s.sx, s.sy, r * progress, (r * progress) / 2)
+          gTelegraph.ellipse(s.sx, s.sy, r, r).fill({ color: 0xd93a3a, alpha: (0.18 + progress * 0.3) * tuning.telegraphAlpha })
+          gTelegraph.ellipse(s.sx, s.sy, r * progress, r * progress)
             .fill({ color: 0xd93a3a, alpha: 0.35 })
-          gTelegraph.ellipse(s.sx, s.sy, r, r / 2).stroke({ width: 2, color: 0xd93a3a })
+          gTelegraph.ellipse(s.sx, s.sy, r, r).stroke({ width: 2, color: 0xd93a3a })
         }
 
         if (!markersOnly) {
@@ -391,10 +406,10 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const def = registry.enemy(e.defId)
           const s = toScreen(e.x, e.y)
           const r = sim.radiusOf(e) * 32
-          gGround.ellipse(s.sx, s.sy, r + 3, (r + 3) / 2).fill({ color: 0x000000, alpha: tuning.markerAlpha })
+          gGround.ellipse(s.sx, s.sy, r + 3, r + 3).fill({ color: 0x000000, alpha: tuning.markerAlpha })
           // Burrowed enemies exist only as a moving ground disturbance.
           if (!sim.isTargetable(e)) {
-            gGround.ellipse(s.sx, s.sy, r + 5, (r + 5) / 2).stroke({ width: 2, color: 0xb08a5a })
+            gGround.ellipse(s.sx, s.sy, r + 5, r + 5).stroke({ width: 2, color: 0xb08a5a })
             continue
           }
           if (markersOnly) continue
@@ -433,11 +448,11 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           }
           // Elite ring: resistant elites read as armored.
           if (e.elite === 'resistant') {
-            gCritical.ellipse(s.sx, s.sy, r + 6, (r + 6) / 2).stroke({ width: 2, color: 0xf2f2f2 })
+            gCritical.ellipse(s.sx, s.sy, r + 6, r + 6).stroke({ width: 2, color: 0xf2f2f2 })
           }
           // Shocked: a crackling yellow ring — this target takes extra damage.
           if (e.shockTtl > 0) {
-            gCritical.ellipse(s.sx, s.sy, r + 9, (r + 9) / 2).stroke({ width: 2, color: 0xffe95a })
+            gCritical.ellipse(s.sx, s.sy, r + 9, r + 9).stroke({ width: 2, color: 0xffe95a })
           }
           // The Oracle sees every enemy's health, plainly.
           if (oracleSight && e.health < e.maxHealth) {
@@ -450,7 +465,20 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
         if (!markersOnly) {
           for (const pr of sim.state.projectiles) {
             const s = toScreen(pr.x, pr.y)
-            gCritical.circle(s.sx, s.sy - 8, 4).fill(silho ? 0x000000 : 0xffffff).stroke({ width: 1, color: silho ? 0xffffff : 0x000000 })
+            const wdef = registry.weapons.get(pr.sourceId)
+            const size = wdef?.projectileSize ?? 4
+            const fill = silho ? 0x000000 : 0xffffff
+            const line = silho ? 0xffffff : 0x000000
+            if (size >= 5) {
+              // Fast heavy shots (javelins) draw as streaks along their flight.
+              const sp = Math.hypot(pr.vx, pr.vy) || 1
+              const lx = (pr.vx / sp) * size * 2.4
+              const ly = (pr.vy / sp) * size * 2.4
+              gCritical.moveTo(s.sx - lx, s.sy - 8 - ly).lineTo(s.sx + lx, s.sy - 8 + ly)
+                .stroke({ width: 3.5, color: fill })
+            } else {
+              gCritical.circle(s.sx, s.sy - 8, size).fill(fill).stroke({ width: 1, color: line })
+            }
           }
         }
 
@@ -461,8 +489,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           const def = registry.pet(pet.defId)
           const s = toScreen(pet.x, pet.y)
           const r = def.radius * 32
-          gGround.ellipse(s.sx, s.sy, r + 3, (r + 3) / 2).fill({ color: 0x000000, alpha: 0.3 })
-          gGround.ellipse(s.sx, s.sy, r + 5, (r + 5) / 2).stroke({ width: 1.5, color: 0x4da6ff })
+          gGround.ellipse(s.sx, s.sy, r + 3, r + 3).fill({ color: 0x000000, alpha: 0.3 })
+          gGround.ellipse(s.sx, s.sy, r + 5, r + 5).stroke({ width: 1.5, color: 0x4da6ff })
           if (markersOnly) continue
           const tex = textures?.pet(pet.defId) ?? null
           if (tex) {
@@ -491,8 +519,8 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
           if (!p.alive) continue // dead players return at wave clear
           const s = toScreen(p.x, p.y)
           const ring = PLAYER_COLORS[p.id % PLAYER_COLORS.length]
-          gGround.ellipse(s.sx, s.sy, 14, 7).fill({ color: 0x000000, alpha: 0.4 })
-          gGround.ellipse(s.sx, s.sy, 16, 8).stroke({ width: 2, color: ring })
+          gGround.ellipse(s.sx, s.sy, 14, 14).fill({ color: 0x000000, alpha: 0.4 })
+          gGround.ellipse(s.sx, s.sy, 16, 16).stroke({ width: 2, color: ring })
           if (markersOnly) continue
 
           const drawBody = (tint: number): void => {
@@ -522,26 +550,62 @@ export function Arena({ run }: { run: Run }): React.JSX.Element {
 
           drawBody(silho ? 0x000000 : 0xffffff)
 
+          // Nearest live enemy: every weapon tracks it even while out of
+          // range or cooling down, so the character always faces the fight.
+          let aimFallback: { x: number; y: number } | null = null
+          {
+            let best = Infinity
+            for (const e of sim.state.enemies) {
+              const d2 = (e.x - p.x) ** 2 + (e.y - p.y) ** 2
+              if (d2 < best) { best = d2; aimFallback = e }
+            }
+          }
+          const n = p.weapons.length
           p.weapons.forEach((w, i) => {
             const def = registry.weapon(w.defId)
-            const side = i % 2 === 0 ? 1 : -1
-            const baseX = s.sx + side * 22
-            const baseY = s.sy - 18 - Math.floor(i / 2) * 12
-            let angle = side === 1 ? -0.5 : Math.PI + 0.5
-            const target = sim.state.enemies.find((e) => e.id === w.targetId)
+            // Mounts: right, left, then (with exactly 3) centered overhead
+            // for symmetry; 4+ stack in rows of two.
+            let mx2 = 22
+            let my2 = -18
+            if (n === 3 && i === 2) { mx2 = 0; my2 = -44 }
+            else {
+              mx2 = (i % 2 === 0 ? 1 : -1) * 22
+              my2 = -18 - Math.floor(i / 2) * 12
+            }
+            const baseX = s.sx + mx2
+            const baseY = s.sy + my2
+            let angle = mx2 >= 0 ? -0.5 : Math.PI + 0.5
+            const target = sim.state.enemies.find((e) => e.id === w.targetId) ?? aimFallback
             if (target) {
               const ts = toScreen(target.x, target.y)
               angle = Math.atan2(ts.sy - baseY, ts.sx - baseX)
             }
             const sinceFired = (sim.state.tick - w.firedTick) / TICK_RATE
             const isMelee = !def.projectileSpeed
-            const lunge = isMelee && sinceFired < 0.18 ? (1 - sinceFired / 0.18) * 14 : 0
-            const wx = baseX + Math.cos(angle) * lunge
-            const wy = baseY + Math.sin(angle) * lunge
-            const len = 16
+            const style = def.attackStyle ?? (isMelee ? 'slash' : undefined)
+            const windupTotal = def.windup ?? 0
+            const winding = isMelee && w.windupLeft > 0
+            const windProgress = winding && windupTotal > 0 ? 1 - w.windupLeft / windupTotal : 0
+            let drawAngle = angle
+            let lunge = 0
+            if (isMelee && style === 'slash') {
+              // Wind back through the wind-up, then sweep through the arc.
+              if (winding) drawAngle = angle - 1.1 * (0.4 + 0.6 * windProgress)
+              else if (sinceFired < 0.16 && w.windupLeft === 0) {
+                const t2 = sinceFired / 0.16
+                drawAngle = angle + (-1.1 + 2.2 * t2) // sweep -63° → +63°
+              }
+            } else if (isMelee) {
+              // Jab: pull back during wind-up, thrust on release.
+              if (winding) lunge = -6 * windProgress
+              else if (sinceFired < 0.18) lunge = (1 - sinceFired / 0.18) * 16
+            }
+            const wx = baseX + Math.cos(drawAngle) * lunge
+            const wy = baseY + Math.sin(drawAngle) * lunge
+            const len = isMelee && def.attackStyle === 'jab' ? 18 : 16
             const color = silho ? 0x000000 : isMelee ? 0xd9d9e0 : 0x9fe0ff
-            gCritical.moveTo(wx, wy).lineTo(wx + Math.cos(angle) * len, wy + Math.sin(angle) * len)
-              .stroke({ width: 4, color })
+            gCritical.moveTo(wx, wy).lineTo(wx + Math.cos(drawAngle) * len, wy + Math.sin(drawAngle) * len)
+              .stroke({ width: winding ? 5 : 4, color })
             gCritical.circle(wx, wy, 3.5).fill(color)
           })
 

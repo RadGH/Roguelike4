@@ -18,6 +18,8 @@ import {
 } from './persistence'
 import type { RunSave } from '../sim/run/save'
 import { isMuted, setMuted, sound, unlockAudio } from '../render/audio'
+import { InputAssign } from './InputAssign'
+import { loadInputMap, type InputMap } from './inputMap'
 import './app.css'
 
 const registry = loadContent()
@@ -35,6 +37,8 @@ export function App(): React.JSX.Element {
   const [endless, setEndless] = useState(false)
   const [unlockedNow, setUnlockedNow] = useState<string[]>([])
   const [muted, setMutedState] = useState(() => isMuted())
+  const [inputMap, setInputMap] = useState<InputMap>(() => loadInputMap())
+  const [showInput, setShowInput] = useState(false)
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const onChange = useCallback(() => bump(), [])
   const savedWave = useRef(0)
@@ -286,6 +290,9 @@ export function App(): React.JSX.Element {
           <button onClick={() => setShowHistory((v) => !v)} data-testid="history-toggle">
             Run history
           </button>
+          <button onClick={() => { setShowInput(!showInput); setShowHistory(false) }}>
+            Controllers
+          </button>
           <button onClick={() => { setMuted(!muted); setMutedState(!muted) }}>
             {muted ? 'Sound: off' : 'Sound: on'}
           </button>
@@ -293,6 +300,14 @@ export function App(): React.JSX.Element {
             <button>Manual</button>
           </a>
         </div>
+        {showInput && (
+          <InputAssign
+            map={inputMap}
+            playerCount={playerCount}
+            onChange={setInputMap}
+            onClose={() => setShowInput(false)}
+          />
+        )}
         {showHistory && (
           <div className="panel" data-testid="history">
             {history.length === 0 && <div className="hint">No completed runs yet.</div>}
@@ -354,7 +369,7 @@ export function App(): React.JSX.Element {
 
   return (
     <>
-      <Arena run={run} />
+      <Arena run={run} inputMap={inputMap} />
       {run.paused && run.phase === 'arena' && (
         <PauseMenu run={run} onResume={() => { run.paused = false; onChange() }} />
       )}

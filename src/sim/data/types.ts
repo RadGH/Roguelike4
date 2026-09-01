@@ -47,6 +47,14 @@ export interface WeaponDef {
   grantsBlock?: number
   /** Splash: on projectile impact, everything within this radius is hit. */
   aoeRadius?: number
+  /** Melee wind-up: seconds between committing to a swing and it landing.
+      The swing whiffs if the target escapes — fast enemies get their chance. */
+  windup?: number
+  /** Melee animation: a wide slash or a straight jab. */
+  attackStyle?: 'slash' | 'jab'
+  /** Projectile presentation/physics: visual size and zigzag flight. */
+  projectileSize?: number
+  projectileWobble?: number
   /** Effects this weapon's hits may apply. */
   applies?: Applier[]
   /** Shop price at tier 1 (weapons are shop-only). */

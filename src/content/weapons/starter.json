@@ -11,7 +11,9 @@
     "cooldown": 0.8,
     "range": 1.8,
     "targeting": "nearest",
-    "price": 20
+    "price": 20,
+    "windup": 0.2,
+    "attackStyle": "slash"
   },
   {
     "id": "practice-wand",
@@ -25,8 +27,9 @@
     "cooldown": 0.7,
     "range": 8,
     "targeting": "nearest",
-    "projectileSpeed": 12,
-    "price": 20
+    "projectileSpeed": 11,
+    "price": 20,
+    "projectileSize": 3
   },
   {
     "id": "runed-sword",
@@ -41,7 +44,9 @@
     "cooldown": 0.9,
     "range": 1.9,
     "targeting": "nearest",
-    "price": 35
+    "price": 35,
+    "windup": 0.22,
+    "attackStyle": "slash"
   },
   {
     "id": "throwing-stars",
@@ -56,8 +61,10 @@
     "cooldown": 0.5,
     "range": 6,
     "targeting": "nearest",
-    "projectileSpeed": 15,
-    "price": 30
+    "projectileSpeed": 16,
+    "price": 30,
+    "projectileSize": 3,
+    "projectileWobble": 1
   },
   {
     "id": "shotgun",
@@ -72,9 +79,10 @@
     "cooldown": 1.2,
     "range": 6,
     "targeting": "densest",
-    "projectileSpeed": 13,
+    "projectileSpeed": 11,
     "projectileCount": 3,
-    "price": 40
+    "price": 40,
+    "projectileSize": 2.5
   },
   {
     "id": "shield",
@@ -90,7 +98,9 @@
     "range": 1.6,
     "targeting": "nearest",
     "grantsBlock": 3,
-    "price": 35
+    "price": 35,
+    "windup": 0.3,
+    "attackStyle": "jab"
   },
   {
     "id": "javelin",
@@ -104,8 +114,9 @@
     "cooldown": 1.4,
     "range": 7,
     "targeting": "densest",
-    "projectileSpeed": 13,
-    "price": 35
+    "projectileSpeed": 17,
+    "price": 35,
+    "projectileSize": 5
   },
   {
     "id": "hammer",
@@ -119,7 +130,9 @@
     "cooldown": 1.8,
     "range": 2.0,
     "targeting": "highestHealth",
-    "price": 40
+    "price": 40,
+    "windup": 0.5,
+    "attackStyle": "slash"
   },
   {
     "id": "shortbow",
@@ -134,8 +147,9 @@
     "cooldown": 1.0,
     "range": 9,
     "targeting": "farthest",
-    "projectileSpeed": 14,
-    "price": 25
+    "projectileSpeed": 15,
+    "price": 25,
+    "projectileSize": 3.5
   },
   {
     "id": "ember-wand",
@@ -150,7 +164,7 @@
     "cooldown": 0.8,
     "range": 7,
     "targeting": "nearest",
-    "projectileSpeed": 12,
+    "projectileSpeed": 11,
     "price": 35,
     "applies": [
       {
@@ -159,7 +173,8 @@
         "dps": 2,
         "duration": 3
       }
-    ]
+    ],
+    "projectileSize": 3.5
   },
   {
     "id": "ice-shotgun",
@@ -175,7 +190,7 @@
     "cooldown": 1.4,
     "range": 6,
     "targeting": "densest",
-    "projectileSpeed": 13,
+    "projectileSpeed": 11,
     "projectileCount": 3,
     "price": 50,
     "applies": [
@@ -185,7 +200,8 @@
         "slow": 0.4,
         "duration": 2.5
       }
-    ]
+    ],
+    "projectileSize": 2.5
   },
   {
     "id": "storm-javelin",
@@ -200,7 +216,7 @@
     "cooldown": 1.3,
     "range": 7,
     "targeting": "densest",
-    "projectileSpeed": 13,
+    "projectileSpeed": 17,
     "price": 50,
     "applies": [
       {
@@ -208,7 +224,8 @@
         "chance": 0.4,
         "duration": 4
       }
-    ]
+    ],
+    "projectileSize": 5
   },
   {
     "id": "void-scepter",
@@ -224,7 +241,8 @@
     "range": 7,
     "targeting": "highestHealth",
     "projectileSpeed": 12,
-    "price": 60
+    "price": 60,
+    "projectileSize": 4
   },
   {
     "id": "mortar",
@@ -241,6 +259,7 @@
     "targeting": "densest",
     "projectileSpeed": 9,
     "aoeRadius": 1.8,
-    "price": 45
+    "price": 45,
+    "projectileSize": 6
   }
 ]

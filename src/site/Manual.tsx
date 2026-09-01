@@ -11,6 +11,39 @@ import './manual.css'
  */
 const registry = loadContent()
 
+// The Graphics tab: a contact sheet of every SVG under art/, grouped by
+// folder, plus swatches for everything drawn in code (projectiles, rings,
+// telegraphs). import.meta.glob keeps it complete automatically — a new
+// asset file appears here without anyone remembering to list it.
+const ART_FILES = import.meta.glob('../../art/**/*.{svg,png,webp}', {
+  eager: true, query: '?url', import: 'default',
+}) as Record<string, string>
+const ART_GROUPS: Record<string, { name: string; url: string }[]> = {}
+for (const [path, url] of Object.entries(ART_FILES).sort()) {
+  const parts = path.split('/')
+  const folder = parts[parts.length - 2]
+  const group = folder === 'critical' ? 'Gameplay-critical sprites' :
+    folder === 'decor' ? 'Decorative layer' : folder
+  const name = (parts[parts.length - 1] ?? '').replace(/\.(svg|png|webp)$/, '')
+  ;(ART_GROUPS[group] ??= []).push({ name, url })
+}
+
+const CODE_SWATCHES: { name: string; shape: React.JSX.Element }[] = [
+  { name: 'projectile (standard)', shape: <circle cx="32" cy="32" r="8" fill="#ffffff" stroke="#000" strokeWidth="2" /> },
+  { name: 'projectile (pellet)', shape: <circle cx="32" cy="32" r="5" fill="#ffffff" stroke="#000" strokeWidth="2" /> },
+  { name: 'projectile (javelin streak)', shape: <line x1="10" y1="48" x2="54" y2="16" stroke="#ffffff" strokeWidth="7" strokeLinecap="round" /> },
+  { name: 'telegraph zone', shape: <circle cx="32" cy="32" r="24" fill="#d93a3a" fillOpacity="0.35" stroke="#d93a3a" strokeWidth="3" /> },
+  { name: 'damage pool', shape: <circle cx="32" cy="32" r="24" fill="#9acd32" fillOpacity="0.3" stroke="#9acd32" strokeWidth="2" /> },
+  { name: 'web / slow pool', shape: <circle cx="32" cy="32" r="24" fill="#cfcfe8" fillOpacity="0.3" stroke="#cfcfe8" strokeWidth="2" /> },
+  { name: 'dormant seed', shape: <circle cx="32" cy="32" r="13" fill="#9acd32" fillOpacity="0.2" stroke="#6b8e23" strokeWidth="2" /> },
+  { name: 'ally ring', shape: <circle cx="32" cy="32" r="22" fill="none" stroke="#4da6ff" strokeWidth="3" /> },
+  { name: 'elite ring', shape: <circle cx="32" cy="32" r="22" fill="none" stroke="#ffe95a" strokeWidth="3" /> },
+  { name: 'shielded ring', shape: <circle cx="32" cy="32" r="22" fill="none" stroke="#f2f2f2" strokeWidth="3" /> },
+  { name: 'beacon mark', shape: <circle cx="32" cy="32" r="20" fill="none" stroke="#ffd34d" strokeWidth="4" /> },
+  { name: 'bard aura reach', shape: <circle cx="32" cy="32" r="24" fill="none" stroke="#7fc9ff" strokeWidth="2.5" strokeOpacity="0.7" /> },
+  { name: 'gold pickup ring', shape: <circle cx="32" cy="32" r="14" fill="none" stroke="#b08a5a" strokeWidth="3" /> },
+]
+
 const ATTRIBUTE_LABEL: Record<string, string> = {
   maxHealth: 'Max Health', regen: 'Recovery', armor: 'Armor', dodge: 'Dodge',
   flatReduction: 'Damage Reduction', resist: 'Resistance', lifesteal: 'Lifesteal',
@@ -37,7 +70,7 @@ export function Manual(): React.JSX.Element {
           data files the game itself runs on.
         </p>
         <nav>
-          {['How to play', 'Classes', 'Weapons', 'Items', 'Slot items', 'Companions', 'Perks', 'Enemies', 'Unlocks'].map((s) => (
+          {['How to play', 'Classes', 'Weapons', 'Items', 'Slot items', 'Companions', 'Perks', 'Enemies', 'Unlocks', 'Graphics'].map((s) => (
             <a key={s} href={`#${s.toLowerCase().replace(/ /g, '-')}`}>{s}</a>
           ))}
           <a href="./">Play the game</a>
@@ -222,6 +255,39 @@ export function Manual(): React.JSX.Element {
             </span>
           </div>
         ))}
+      </section>
+
+      <section id="graphics">
+        <h2>Graphics</h2>
+        <p className="hint">
+          Every art asset in the build, straight from <code>art/</code> — an
+          asset-review contact sheet. Gameplay-critical sprites are bold flat
+          shapes on purpose: the silhouette family is the enemy archetype.
+          Projectiles and ground effects are drawn in code; their swatches
+          below show the live colors.
+        </p>
+        {Object.entries(ART_GROUPS).map(([group, entries]) => (
+          <div key={group}>
+            <h3>{group}</h3>
+            <div className="asset-grid">
+              {entries.map(({ name, url }) => (
+                <figure className="asset-cell" key={name}>
+                  <img src={url} alt={name} width={64} height={64} />
+                  <figcaption>{name}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        ))}
+        <h3>Drawn in code</h3>
+        <div className="asset-grid">
+          {CODE_SWATCHES.map((sw) => (
+            <figure className="asset-cell" key={sw.name}>
+              <svg width="64" height="64" viewBox="0 0 64 64">{sw.shape}</svg>
+              <figcaption>{sw.name}</figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
       <footer className="hint">
