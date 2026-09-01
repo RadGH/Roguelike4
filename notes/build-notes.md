@@ -431,3 +431,14 @@ call, log it here under *Calls I made*, and keep it easy to reverse.
   their win rates after the wind-up (fighter 65%), so no compensation was needed.
 - Radley will supply updated docs + a git diff of the design docs later for a
   cross-reference pass against everything built. Pending that review.
+- Feedback: the HUD's enemy counter was already the whole-wave remainder (live +
+  pending + deferred), but it was free for everyone — which quietly gave away the
+  Oracle's entire class identity ("sees remaining enemy count and health bars",
+  the vault's one information class). Now the counter and enemy health bars both
+  key off a shared `hasInfoSight` check: the Oracle has it innately, and a new
+  RARE item — the Crystal Ball (drop weight 0.3 vs the standard 1, priced 80) —
+  grants the same sight to anyone. Item drop weights now exist as a general
+  mechanic (`weight` on ItemDef, weighted reward rolls), which future rare items
+  can reuse. A Corrupt Crystal Ball still sees everything but costs max health —
+  the variant system composes with it for free. One couch, one HUD: any sighted
+  player lights the counter up for the whole screen.

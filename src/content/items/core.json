@@ -547,5 +547,21 @@
         "radius": 5
       }
     ]
+  },
+  {
+    "id": "crystal-ball",
+    "name": "Crystal Ball",
+    "description": "See everything the Oracle sees: how many enemies remain in the wave, and every enemy's health.",
+    "tags": [
+      "Occult",
+      "Utility"
+    ],
+    "price": 80,
+    "weight": 0.3,
+    "effects": [
+      {
+        "kind": "revealInfo"
+      }
+    ]
   }
 ]

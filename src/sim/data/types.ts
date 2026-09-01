@@ -212,6 +212,7 @@ export type ItemEffect =
   | { kind: 'onPickupDamage'; chance: number; radius: number; damage: number; pickup?: 'gold' | 'xp' | 'any' }
   | { kind: 'onPickupHeal'; chance: number; amount: number; pickup?: 'gold' | 'xp' | 'any' }
   | { kind: 'aura'; attribute: 'allPct' | 'regen'; amount: number; radius: number }
+  | { kind: 'revealInfo' }
 
 export interface ItemDef {
   id: string
@@ -220,6 +221,8 @@ export interface ItemDef {
   description: string
   tags: Tag[]
   price: number
+  /** Drop weight in reward rolls (default 1; below 1 = rare). */
+  weight?: number
   effects: ItemEffect[]
 }
 

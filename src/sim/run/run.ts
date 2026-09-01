@@ -247,7 +247,9 @@ export class Run {
       if (rollActive || pool.length === 0) {
         id = this.rngRun.pick(actives).id
       } else {
-        const base = this.rngRun.pick(pool)
+        // Drop weights: most items are 1; rarities like the Crystal Ball
+        // roll well under that.
+        const base = this.rngRun.weighted(pool, (it) => it.weight ?? 1)
         // The Gambler's luck: corrupt rewards appear far more often for them.
         const bias = cls.corruptBias ?? 1
         let variant = variantEligible(base) ? rollVariant(this.rngRun.next()) : null

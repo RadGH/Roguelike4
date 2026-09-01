@@ -5,6 +5,7 @@ import type { Run } from '../sim/run/run'
 import { toScreen } from '../render/iso'
 import { loadCriticalTextures, type CriticalTextures } from '../render/sprites'
 import { resolveItem } from '../sim/data/variants'
+import { hasInfoSight } from '../sim/systems/stats'
 import { sound } from '../render/audio'
 import { resolveDevices, type InputMap } from './inputMap'
 
@@ -320,9 +321,10 @@ export function Arena({ run, inputMap }: { run: Run; inputMap?: InputMap }): Rea
 
         const silho = view === 'silhouette'
         const markersOnly = view === 'markers'
-        const oracleSight = sim.state.players.some(
-          (p) => registry.classes.get(p.classId)?.revealsInfo,
-        )
+        // Information is class/item power (the Oracle, the Crystal Ball):
+        // whoever has it lights up health bars and the wave counter for the
+        // shared screen — one couch, one HUD.
+        const oracleSight = sim.state.players.some((p) => hasInfoSight(p, registry))
 
         const { arenaW: aw, arenaH: ah } = sim.state
         const corners = [
@@ -634,7 +636,7 @@ export function Arena({ run, inputMap }: { run: Run; inputMap?: InputMap }): Rea
           ? `Endless ${sim.state.wave.number}`
           : `Wave ${sim.state.wave.number}/${sim.lastWaveNumber}`
         hud.text =
-          `${waveLabel}   Enemies ${enemiesLeft}\n` +
+          `${waveLabel}${oracleSight ? `   Enemies ${enemiesLeft}` : ''}\n` +
           playerLines.join('\n') +
           (bossPieces.length > 0 ? `\nKing Slime — ${bossPieces.length} piece${bossPieces.length > 1 ? 's' : ''}` : '') +
           (view !== 'normal' ? `\n[debug view: ${view} — F1 normal]` : '')

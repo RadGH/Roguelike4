@@ -133,6 +133,19 @@ export function classBaseline(classId: string, registry: Registry): PlayerState 
 }
 
 /**
+ * Information sight (the Oracle's power, also granted by items like the
+ * Crystal Ball): whole-wave enemy count and enemy health bars.
+ */
+export function hasInfoSight(p: PlayerState, registry: Registry): boolean {
+  if (registry.classes.get(p.classId)?.revealsInfo) return true
+  for (const itemId of p.items) {
+    const item = resolveItem(registry, itemId)
+    if (item.effects.some((e) => e.kind === 'revealInfo')) return true
+  }
+  return false
+}
+
+/**
  * Damage multiplier for a specific weapon, from the owner's build:
  * type bonus + all-damage bonus + the class's tag affinities.
  */

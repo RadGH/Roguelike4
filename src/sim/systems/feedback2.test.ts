@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { Sim, TICK_RATE } from '../core/sim'
 import { loadContent } from '../data/loadContent'
+import { hasInfoSight } from './stats'
 
 const registry = loadContent()
 
@@ -149,5 +150,28 @@ describe('playtest round 2 — combat feel', () => {
     const wandVy = flightYs('practice-wand')
     // The wand bolt holds one heading (target is dead ahead: vy stays ~0).
     expect(Math.max(...wandVy.map(Math.abs))).toBeLessThan(0.5)
+  })
+})
+
+describe('information sight is earned, not free', () => {
+  it('the oracle sees wave intel; a student does not', () => {
+    const oracle = new Sim(registry, { seed: 400, playerCount: 1, classIds: ['oracle'] })
+    const student = new Sim(registry, { seed: 400, playerCount: 1, classIds: ['student'] })
+    expect(hasInfoSight(oracle.state.players[0], registry)).toBe(true)
+    expect(hasInfoSight(student.state.players[0], registry)).toBe(false)
+  })
+
+  it('a crystal ball grants the same sight, variants included', () => {
+    const sim = new Sim(registry, { seed: 401, playerCount: 1, classIds: ['student'] })
+    const p = sim.state.players[0]
+    p.items.push('crystal-ball')
+    expect(hasInfoSight(p, registry)).toBe(true)
+    p.items.length = 0
+    p.items.push('corrupt:crystal-ball')
+    expect(hasInfoSight(p, registry)).toBe(true)
+  })
+
+  it('the crystal ball is authored rare', () => {
+    expect(registry.item('crystal-ball').weight).toBeLessThan(0.5)
   })
 })
